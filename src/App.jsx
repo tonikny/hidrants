@@ -28,7 +28,7 @@ function App() {
     })
       .then(r => r.json())
       .then(data => {
-        const geojson = osmtogeojson(data)
+        const geojson = osm2geojson(data)
         L.geoJSON(geojson).addTo(map)
       })
   }, [])

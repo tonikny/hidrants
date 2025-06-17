@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import L from 'leaflet'
-import osmtogeojson from 'osmtogeojson'
+import osm2geojson from 'osm2geojson-lite'
 
 function App() {
   useEffect(() => {

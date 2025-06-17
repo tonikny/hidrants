@@ -1,39 +1,64 @@
-import { useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import osm2geojson from 'osm2geojson-lite'
+import { useEffect, useState } from 'react'
 
-function App() {
+// 👇 Icona bàsica per evitar errors amb les icones per defecte
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+})
+
+export default function App() {
+  const [features, setFeatures] = useState([])
+
   useEffect(() => {
-    const map = L.map('map').setView([41.3851, 2.1734], 13)
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-    }).addTo(map)
-
     const query = `
-      [out:json][timeout:25];
-      (
-        node["leisure"="park"](around:3000,41.3851,2.1734);
-        way["leisure"="park"](around:3000,41.3851,2.1734);
-        relation["leisure"="park"](around:3000,41.3851,2.1734);
-      );
+      [out:json];
+      node["amenity"](around:1000,41.387,2.170); // Ex: nodes amb "amenity" prop a Barcelona
       out body;
-      >;
-      out skel qt;
     `
-
-    fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
+    fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
       body: query,
     })
-      .then(r => r.json())
+      .then(res => res.json())
       .then(data => {
         const geojson = osm2geojson(data)
-        L.geoJSON(geojson).addTo(map)
+        setFeatures(geojson.features)
       })
   }, [])
 
-  return <div id="map" />
-}
+  return (
+    <MapContainer center={[41.387, 2.170]} zoom={15} style={{ height: '100vh', width: '100%' }}>
+      <TileLayer
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution="© OpenStreetMap contributors"
+      />
 
-export default App
+      {features.map((feature, i) => {
+        const coords = feature.geometry.coordinates
+        const tags = feature.properties.tags || {}
+
+        // Si és un node (punt), el renderitzem
+        if (feature.geometry.type === 'Point') {
+          return (
+            <Marker key={i} position={[coords[1], coords[0]]}>
+              <Popup>
+                <strong>ID:</strong> {feature.id}<br />
+                {Object.entries(tags).map(([key, value]) => (
+                  <div key={key}><strong>{key}:</strong> {value}</div>
+                ))}
+              </Popup>
+            </Marker>
+          )
+        }
+
+        return null
+      })}
+    </MapContainer>
+  )
+}

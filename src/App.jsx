@@ -10,7 +10,7 @@ function App() {
       maxZoom: 19,
     }).addTo(map)
 
-    const query = \`
+    const query = `
       [out:json][timeout:25];
       (
         node["leisure"="park"](around:3000,41.3851,2.1734);
@@ -20,7 +20,7 @@ function App() {
       out body;
       >;
       out skel qt;
-    \`
+    `
 
     fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",

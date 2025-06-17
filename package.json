@@ -1,5 +1,5 @@
 {
-  "name": "leaflet-overpass-react",
+  "name": "hidrants",
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",

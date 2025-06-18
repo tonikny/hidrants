@@ -1,12 +1,7 @@
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMapEvents,
-} from 'react-leaflet';
+import { useMapEvents } from 'react-leaflet';
 import { useState } from 'react';
 import * as L from 'leaflet';
+import { sendToTelegram } from './sendToTelegram';
 
 type Feature = GeoJSON.Feature<GeoJSON.Point, Record<string, any>>;
 
@@ -16,77 +11,21 @@ type NodeFormProps = {
   onClose: () => void;
 };
 
-// export const sendToTelegram = async (formData: {
-//   lat: number;
-//   lon: number;
-//   tags: Record<string, string>;
-// }) => {
-//   const token = 'TEU_TOKEN'; // ⬅️ Canvia-ho pel teu token
-//   const chatId = 'TEU_CHAT_ID'; // ⬅️ Canvia-ho pel teu chat ID
-
-//   const text = `
-// 🆕 Nova proposta o comentari OSM
-// 📍 ${formData.lat.toFixed(5)}, ${formData.lon.toFixed(5)}
-// 📝 Dades:
-// ${Object.entries(formData.tags)
-//   .map(([k, v]) => `- ${k}: ${v}`)
-//   .join('\n')}
-// `;
-
-//   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify({
-//       chat_id: chatId,
-//       text,
-//     }),
-//   });
-// };
-
 export const NodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // await sendToTelegram({
-    //   lat,
-    //   lon,
-    //   tags: { message },
-    // });
-
-    const handleSend = async () => {
-      try {
-        const res = await fetch(
-          'https://hidrants.vercel.app/api/sendToTelegram',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              lat,
-              lon,
-              // tags: selectedFeature?.properties || {},
-              message,
-            }),
-          }
-        );
-
-        if (!res.ok) throw new Error('Error enviant el missatge');
-
-        alert('Missatge enviat!');
-        setMessage(''); // buida el formulari
-        onClose();
-      } catch (err) {
-        console.error('Error:', err);
-        alert('Error enviant el missatge');
-      }
-    };
-    await handleSend();
+    try {
+      await sendToTelegram({ lat, lon, message });
+      alert('Missatge enviat!');
+      setMessage('');
+      onClose();
+    } catch (err) {
+      console.log(err);
+      alert('Error enviant el missatge');
+    }
   };
-
   return (
     <div
       className="form-popup"
@@ -127,37 +66,17 @@ export const NodePopup = ({ feature }: { feature: Feature }) => {
   const [message, setMessage] = useState('');
 
   const handleSend = async () => {
-    // await sendToTelegram({
-    //   lat: feature.geometry.coordinates[1],
-    //   lon: feature.geometry.coordinates[0],
-    //   tags: {
-    //     ...feature.properties,
-    //     comment: message,
-    //   },
-    // });
     try {
-      const res = await fetch(
-        'https://hidrants.vercel.app/api/sendToTelegram',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            lat: feature.geometry.coordinates[0],
-            lon: feature.geometry.coordinates[1],
-            //   tags: selectedFeature?.properties || {},
-            message,
-          }),
-        }
-      );
-
-      if (!res.ok) throw new Error('Error enviant el missatge');
-
+      await sendToTelegram({
+        lat: feature.geometry.coordinates[0],
+        lon: feature.geometry.coordinates[1],
+        tags: feature.properties,
+        message,
+      });
       alert('Missatge enviat!');
-      setMessage(''); // buida el formulari
+      setMessage('');
     } catch (err) {
-      console.error('Error:', err);
+      console.log(err);
       alert('Error enviant el missatge');
     }
   };
@@ -195,44 +114,3 @@ export const MapClickHandler = ({
   });
   return null;
 };
-
-// export const MapWithForm = ({ features }: { features: Feature[] }) => {
-//   const [clickedPosition, setClickedPosition] = useState<
-//     [number, number] | null
-//   >(null);
-
-//   return (
-//     <>
-//       <MapContainer
-//         center={[41.38, 2.17]}
-//         zoom={13}
-//         style={{ height: '100vh' }}
-//       >
-//         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-//         {features.map((feature) => {
-//           const coords = feature.geometry.coordinates;
-//           return (
-//             <Marker key={feature.id} position={[coords[1], coords[0]]}>
-//               <Popup>
-//                 <NodePopup feature={feature} />
-//               </Popup>
-//             </Marker>
-//           );
-//         })}
-
-//         <MapClickHandler
-//           onClick={(latlng) => setClickedPosition([latlng.lat, latlng.lng])}
-//         />
-//       </MapContainer>
-
-//       {clickedPosition && (
-//         <NodeForm
-//           lat={clickedPosition[0]}
-//           lon={clickedPosition[1]}
-//           onClose={() => setClickedPosition(null)}
-//         />
-//       )}
-//     </>
-//   );
-// };

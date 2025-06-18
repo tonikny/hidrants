@@ -24,10 +24,10 @@ module.exports = async function handler(req, res) {
     }
 
     const text = `
-🗺️ Nova entrada OSM:
-📍 Lat: ${lat}, Lon: ${lon}
-🏷️ Tags: ${JSON.stringify(tags, null, 2)}
-💬 Missatge: ${message || '(cap)'}
+      ${tags ? '📝 Comentari del node:' : '🗺️ Nova entrada OSM:'}
+      📍 Lat: ${lat}, Lon: ${lon}
+      🏷️ Tags: ${JSON.stringify(tags, null, 2)}
+      💬 Missatge: ${message || '(cap)'}
     `;
 
     const response = await fetch(

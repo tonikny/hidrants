@@ -12,7 +12,8 @@ import osm2geojson from 'osm2geojson-lite';
 import { Feature, Point } from 'geojson';
 import getHydrantIcon from './icons';
 import { Legend } from './Legend';
-import { MapClickHandler, NodeForm, NodePopup } from './MapWithForm';
+import { MapClickHandler, NodeForm } from './MapWithForm';
+import { sendToTelegram } from './sendToTelegram';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -28,11 +29,7 @@ L.Icon.Default.mergeOptions({
 interface OSMFeature extends Feature {
   id: string;
   properties: Record<string, string>;
-  // {
-  //   id: number;
-  //   type: 'node' | 'way' | 'relation';
-  //   // tags?: Record<string, string>;
-  // };
+
   geometry: Point;
 }
 
@@ -77,42 +74,20 @@ export default function App() {
   const [message, setMessage] = useState('');
 
   const handleSend = async (feature: OSMFeature) => {
-    // await sendToTelegram({
-    //   lat: feature.geometry.coordinates[1],
-    //   lon: feature.geometry.coordinates[0],
-    //   tags: {
-    //     ...feature.properties,
-    //     comment: message,
-    //   },
-    // });
-    const handleSend = async () => {
-      try {
-        const res = await fetch(
-          'https://hidrants.vercel.app/api/sendToTelegram',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              lat: clickedPosition ? clickedPosition[0] : 0,
-              lon: clickedPosition ? clickedPosition[1] : 0,
-              // tags: selectedFeature?.properties || {},
-              message,
-            }),
-          }
-        );
+    try {
+      await sendToTelegram({
+        lat: feature.geometry.coordinates[0],
+        lon: feature.geometry.coordinates[1],
+        tags: feature?.properties,
+        message,
+      });
 
-        if (!res.ok) throw new Error('Error enviant el missatge');
-
-        alert('Missatge enviat!');
-        setMessage(''); // buida el formulari
-      } catch (err) {
-        console.error('Error:', err);
-        alert('Error enviant el missatge');
-      }
-    };
-    await handleSend();
+      alert('Missatge enviat!');
+      setMessage('');
+    } catch (err) {
+      console.log(err);
+      alert('Error enviant el missatge');
+    }
   };
 
   useEffect(() => {
@@ -133,7 +108,6 @@ export default function App() {
       .then((data) => {
         const geojson = osm2geojson(data);
         setFeatures(geojson.features as OSMFeature[]);
-        // console.log('FEATURES: ', geojson.features as OSMFeature[]);
       });
   }, []);
 

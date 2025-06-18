@@ -29,6 +29,7 @@ ${tags ? '📝 <b>Comentari del node:</b>' : '🗺️ <b>Nova entrada OSM:</b>'}
 📍 Coord: ${lat}, ${lon}
 💬 Missatge: ${message || '(cap)'}
 ${tags ? `🏷️ Tags: <pre>${JSON.stringify(tags, null, 2)}</pre>` : ''}
+${tags ? `https://www.openstreetmap.org/${tags.id}` : ''}
     `;
 
     const response = await fetch(

@@ -4,17 +4,22 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   if (req.method === 'OPTIONS') {
-    // Respond immediatament sense fer res més
     return res.status(200).end();
   }
 
-  // Aquí continua la lògica per POST, GET, etc.
-  if (req.method === 'POST') {
-    return res.status(200).json({ ok: true });
-  }
+  try {
+    if (req.method === 'POST') {
+      // Aquí pots accedir a req.body i fer accions reals
+      return res.status(200).json({ ok: true });
+    }
 
-  res.status(405).json({ error: 'Method Not Allowed' });
+    res.status(405).json({ error: 'Method Not Allowed' });
+  } catch (error) {
+    console.error('API error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 }
 
 // import type { VercelRequest, VercelResponse } from '@vercel/node';

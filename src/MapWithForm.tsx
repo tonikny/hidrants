@@ -62,45 +62,45 @@ export const NodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
   );
 };
 
-export const NodePopup = ({ feature }: { feature: Feature }) => {
-  const [message, setMessage] = useState('');
+// export const NodePopup = ({ feature }: { feature: Feature }) => {
+//   const [message, setMessage] = useState('');
 
-  const handleSend = async () => {
-    try {
-      await sendToTelegram({
-        lat: feature.geometry.coordinates[0],
-        lon: feature.geometry.coordinates[1],
-        tags: feature.properties,
-        message,
-      });
-      alert('Missatge enviat!');
-      setMessage('');
-    } catch (err) {
-      console.log(err);
-      alert('Error enviant el missatge');
-    }
-  };
+//   const handleSend = async () => {
+//     try {
+//       await sendToTelegram({
+//         lat: feature.geometry.coordinates[0],
+//         lon: feature.geometry.coordinates[1],
+//         tags: feature.properties,
+//         message,
+//       });
+//       alert('Missatge enviat!');
+//       setMessage('');
+//     } catch (err) {
+//       console.log(err);
+//       alert('Error enviant el missatge');
+//     }
+//   };
 
-  return (
-    <div>
-      <strong>ID:</strong> {feature.id}
-      <br />
-      {Object.entries(feature.properties).map(([key, value]) => (
-        <div key={key}>
-          <strong>{key}:</strong> {value}
-        </div>
-      ))}
-      <textarea
-        placeholder="Comentari"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        rows={2}
-        style={{ width: '100%', marginTop: '0.5rem' }}
-      />
-      <button onClick={handleSend}>Enviar</button>
-    </div>
-  );
-};
+//   return (
+//     <div>
+//       <strong>ID:</strong> {feature.id}
+//       <br />
+//       {Object.entries(feature.properties).map(([key, value]) => (
+//         <div key={key}>
+//           <strong>{key}:</strong> {value}
+//         </div>
+//       ))}
+//       <textarea
+//         placeholder="Comentari"
+//         value={message}
+//         onChange={(e) => setMessage(e.target.value)}
+//         rows={2}
+//         style={{ width: '100%', marginTop: '0.5rem' }}
+//       />
+//       <button onClick={handleSend}>Enviar</button>
+//     </div>
+//   );
+// };
 
 export const MapClickHandler = ({
   onClick,

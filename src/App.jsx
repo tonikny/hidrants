@@ -17,9 +17,13 @@ export default function App() {
 
   useEffect(() => {
     const query = `
-      [out:json];
-      node["emergency"="fire_hydrant"](around:1000,41.5474,1.7954); // Ex: nodes amb "amenity" prop a Barcelona
-      out body;
+      [out:json][timeout:60];
+      area(3600345695)->.searchArea;
+      (
+      node(area.searchArea)["emergency"="fire_hydrant"];
+      node(area.searchArea)["disused:emergency"="fire_hydrant"];
+      );
+      out center tags;
     `
     fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',

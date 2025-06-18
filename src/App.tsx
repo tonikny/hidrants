@@ -88,7 +88,7 @@ export default function App() {
     const handleSend = async () => {
       try {
         const res = await fetch(
-          'https://hidrants-ebs5.vercel.app/api/sendToTelegram',
+          'https://hidrants.vercel.app/api/sendToTelegram',
           {
             method: 'POST',
             headers: {

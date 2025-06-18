@@ -59,7 +59,7 @@ export const NodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
     const handleSend = async () => {
       try {
         const res = await fetch(
-          'https://hidrants-ebs5.vercel.app/api/sendToTelegram',
+          'https://hidrants.vercel.app/api/sendToTelegram',
           {
             method: 'POST',
             headers: {
@@ -137,7 +137,7 @@ export const NodePopup = ({ feature }: { feature: Feature }) => {
     // });
     try {
       const res = await fetch(
-        'https://hidrants-ebs5.vercel.app/api/sendToTelegram',
+        'https://hidrants.vercel.app/api/sendToTelegram',
         {
           method: 'POST',
           headers: {

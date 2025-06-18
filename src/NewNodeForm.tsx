@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { sendToTelegram } from './sendToTelegram';
+import { useMap, useMapEvents } from 'react-leaflet';
+import { LatLng } from 'leaflet';
 
 type NodeFormProps = {
   lat: number;
@@ -56,4 +58,65 @@ export const NewNodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
       </form>
     </div>
   );
+};
+
+// export const MapClickHandler = ({
+//   onClick,
+// }: {
+//   onClick: (latlng: LatLng) => void;
+// }) => {
+//   useMapEvents({
+//     click(e) {
+//       onClick(e.latlng);
+//     },
+//   });
+//   return null;
+// };
+
+export const MapClickHandler = ({
+  onClick,
+}: {
+  onClick: (latlng: L.LatLng) => void;
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    // Clic dret (contextmenu)
+    const handleContextMenu = (e: L.LeafletMouseEvent) => {
+      onClick(e.latlng);
+    };
+
+    // Pulsació llarga
+    let touchTimeout: NodeJS.Timeout;
+    let touchStartLatLng: LatLng | null = null;
+
+    const handleTouchStart = (e: any) => {
+      const touch = e.touches?.[0];
+      if (!touch) return;
+
+      const containerPoint = map.mouseEventToContainerPoint(touch);
+      const latlng = map.containerPointToLatLng(containerPoint);
+      touchStartLatLng = latlng;
+
+      touchTimeout = setTimeout(() => {
+        if (touchStartLatLng) onClick(touchStartLatLng);
+      }, 700); // 700ms → considera-ho una pulsació llarga
+    };
+
+    const handleTouchEnd = () => {
+      clearTimeout(touchTimeout);
+    };
+
+    map.on('contextmenu', handleContextMenu);
+    map.getContainer().addEventListener('touchstart', handleTouchStart);
+    map.getContainer().addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      map.off('contextmenu', handleContextMenu);
+      map.getContainer().removeEventListener('touchstart', handleTouchStart);
+      map.getContainer().removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [map, onClick]);
+
+  return null;
 };

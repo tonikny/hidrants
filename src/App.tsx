@@ -5,8 +5,8 @@ import 'leaflet/dist/leaflet.css';
 import osm2geojson from 'osm2geojson-lite';
 import getHydrantIcon from './icons';
 import { Legend } from './Legend';
-import { MapClickHandler, NodeWithForm, OSMFeature } from './NodeForm';
-import { NewNodeForm } from './NewNodeForm';
+import { NodeWithForm, OSMFeature } from './NodeForm';
+import { MapClickHandler, NewNodeForm } from './NewNodeForm';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;

@@ -1,6 +1,5 @@
-import { Popup, useMapEvents } from 'react-leaflet';
+import { Popup } from 'react-leaflet';
 import { useState } from 'react';
-import * as L from 'leaflet';
 import { sendToTelegram } from './sendToTelegram';
 import { Feature, Point } from 'geojson';
 
@@ -98,16 +97,4 @@ export const NodeWithForm = ({ feature }: { feature: OSMFeature }) => {
       <button onClick={() => handleSend(feature)}>Enviar</button>
     </Popup>
   );
-};
-export const MapClickHandler = ({
-  onClick,
-}: {
-  onClick: (latlng: L.LatLng) => void;
-}) => {
-  useMapEvents({
-    click(e) {
-      onClick(e.latlng);
-    },
-  });
-  return null;
 };

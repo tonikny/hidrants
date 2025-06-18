@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, LayersControl } from 'react-leaflet';
-import L, { LatLngExpression } from 'leaflet';
+import L, { LatLng, LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import osm2geojson from 'osm2geojson-lite';
 import getHydrantIcon from './icons';
@@ -25,9 +25,7 @@ const coords: LatLngExpression = [41.5474, 1.7954];
 
 export default function App() {
   const [features, setFeatures] = useState<OSMFeature[]>([]);
-  const [clickedPosition, setClickedPosition] = useState<
-    [number, number] | null
-  >(null);
+  const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
 
   useEffect(() => {
     const query = `
@@ -69,13 +67,15 @@ export default function App() {
           );
         })}
         <MapClickHandler
-          onClick={(latlng) => setClickedPosition([latlng.lat, latlng.lng])}
+          onClick={(latlng) =>
+            setClickedPosition(L.latLng(latlng.lat, latlng.lng))
+          }
         />
       </MapContainer>
       {clickedPosition && (
         <NewNodeForm
-          lat={clickedPosition[0]}
-          lon={clickedPosition[1]}
+          lat={clickedPosition.lat}
+          lon={clickedPosition.lng}
           onClose={() => setClickedPosition(null)}
         />
       )}

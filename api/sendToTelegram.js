@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
     const text = `
       ${tags ? '📝 Comentari del node:' : '🗺️ Nova entrada OSM:'}
       📍 Lat: ${lat}, Lon: ${lon}
-      ${tags ? '🏷️ Tags: ${JSON.stringify(tags, null, 2)}' : ''}
+      ${tags ? `🏷️ Tags: ${JSON.stringify(tags, null, 2)}` : null}
       💬 Missatge: ${message || '(cap)'}
     `;
 

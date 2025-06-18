@@ -1,23 +1,28 @@
-export default function handler(req, res) {
-  console.log('Funció cridada');
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    console.log('Mètode:', req.method);
-    if (req.method === 'OPTIONS') {
-      return res.status(204).end();
-    }
-
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
+    const data = req.body;
+    console.log('Dades rebudes:', data);
+    return res.status(200).json({ ok: true, data });
   } catch (error) {
-    console.error('Error capturat:', error);
-    return res.status(200).json({ ok: true, msg: 'Funció bàsica OK' });
+    console.error('Error:', error);
+    return res.status(500).json({ error: error.message || 'Error intern' });
   }
 }
+
 // export default async function handler(req, res) {
 //   // Permetre CORS
 //   res.setHeader('Access-Control-Allow-Origin', '*');

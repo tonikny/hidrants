@@ -18,7 +18,7 @@ export default function App() {
   useEffect(() => {
     const query = `
       [out:json];
-      node["amenity"](around:1000,41.387,2.170); // Ex: nodes amb "amenity" prop a Barcelona
+      node["emergency"="fire_hydrant"](around:1000,41.5474,1.7954); // Ex: nodes amb "amenity" prop a Barcelona
       out body;
     `
     fetch('https://overpass-api.de/api/interpreter', {

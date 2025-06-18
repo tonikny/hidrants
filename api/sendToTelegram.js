@@ -24,9 +24,10 @@ module.exports = async function handler(req, res) {
     }
 
     const text = `
-${tags ? '📝 *Comentari del node:*' : '🗺️ <b>Nova entrada OSM:</b>'}
-📍 Lat: ${lat}, Lon: ${lon}
-${tags ? `🏷️ Tags: ${JSON.stringify(tags, null, 2)}` : null}
+${tags ? '📝 <b>Comentari del node:</b>' : '🗺️ <b>Nova entrada OSM:</b>'}
+
+📍 Coord: ${lat}, ${lon}
+${tags ? `🏷️ Tags: <pre>${JSON.stringify(tags, null, 2)}</pre>` : null}
 💬 Missatge: ${message || '(cap)'}
     `;
 
@@ -35,7 +36,11 @@ ${tags ? `🏷️ Tags: ${JSON.stringify(tags, null, 2)}` : null}
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text }),
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text,
+          parse_mode: 'HTML',
+        }),
       }
     );
 

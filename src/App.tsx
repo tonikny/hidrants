@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, LayersControl } from 'react-leaflet';
-import L, { LatLng, LatLngExpression } from 'leaflet';
+import L, { latLng, LatLng } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import osm2geojson from 'osm2geojson-lite';
 import getHydrantIcon from './icons';
@@ -21,7 +21,7 @@ L.Icon.Default.mergeOptions({
 
 const { BaseLayer, Overlay } = LayersControl;
 
-const coords: LatLngExpression = [41.5474, 1.7954];
+const coords: LatLng = latLng(41.5474, 1.7954);
 
 export default function App() {
   const [features, setFeatures] = useState<OSMFeature[]>([]);
@@ -70,6 +70,7 @@ export default function App() {
           onClick={(latlng) =>
             setClickedPosition(L.latLng(latlng.lat, latlng.lng))
           }
+          onCancel={() => setClickedPosition(null)} // 👈 tanca el formulari
         />
       </MapContainer>
       {clickedPosition && (
@@ -79,6 +80,30 @@ export default function App() {
           onClose={() => setClickedPosition(null)}
         />
       )}
+      <button
+        onClick={() =>
+          alert(
+            'Per afegir un node manualment, fes una pulsació llarga o un clic dret en el mapa'
+          )
+        }
+        style={{
+          position: 'absolute',
+          bottom: '1rem',
+          left: '1rem',
+          background: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '50%',
+          width: '3rem',
+          height: '3rem',
+          fontSize: '1.5rem',
+          cursor: 'pointer',
+          zIndex: 1000,
+        }}
+        title="Afegir node manualment"
+      >
+        +
+      </button>
     </>
   );
 }

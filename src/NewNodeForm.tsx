@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { sendToTelegram } from './sendToTelegram';
-import { useMap, useMapEvents } from 'react-leaflet';
-import { LatLng } from 'leaflet';
+import { useMap } from 'react-leaflet';
+import { LatLng, point } from 'leaflet';
 
 type NodeFormProps = {
   lat: number;
@@ -28,9 +28,10 @@ export const NewNodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
     <div
       className="form-popup"
       style={{
-        position: 'absolute',
-        top: 20,
-        left: 20,
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
         background: '#fff',
         padding: '1rem',
         zIndex: 1000,
@@ -60,63 +61,64 @@ export const NewNodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
   );
 };
 
-// export const MapClickHandler = ({
-//   onClick,
-// }: {
-//   onClick: (latlng: LatLng) => void;
-// }) => {
-//   useMapEvents({
-//     click(e) {
-//       onClick(e.latlng);
-//     },
-//   });
-//   return null;
-// };
-
 export const MapClickHandler = ({
   onClick,
+  onCancel,
 }: {
   onClick: (latlng: L.LatLng) => void;
+  onCancel: () => void;
 }) => {
   const map = useMap();
 
   useEffect(() => {
-    // Clic dret (contextmenu)
+    // Clic dret
     const handleContextMenu = (e: L.LeafletMouseEvent) => {
       onClick(e.latlng);
+    };
+
+    // Clic esquerre
+    const handleClick = () => {
+      onCancel(); // tanca formulari
     };
 
     // Pulsació llarga
     let touchTimeout: NodeJS.Timeout;
     let touchStartLatLng: LatLng | null = null;
+    let cancelled = false;
 
-    const handleTouchStart = (e: any) => {
+    const handleTouchStart = (e: TouchEvent) => {
       const touch = e.touches?.[0];
       if (!touch) return;
 
-      const containerPoint = map.mouseEventToContainerPoint(touch);
-      const latlng = map.containerPointToLatLng(containerPoint);
+      const pointer = point(touch.clientX, touch.clientY);
+      const latlng = map.containerPointToLatLng(pointer);
       touchStartLatLng = latlng;
+      cancelled = false;
 
       touchTimeout = setTimeout(() => {
+        cancelled = true;
         if (touchStartLatLng) onClick(touchStartLatLng);
-      }, 700); // 700ms → considera-ho una pulsació llarga
+      }, 800);
     };
-
     const handleTouchEnd = () => {
       clearTimeout(touchTimeout);
+      if (!cancelled) {
+        onCancel(); // pulsació curta → tanca
+      }
     };
 
     map.on('contextmenu', handleContextMenu);
+    map.on('click', handleClick);
     map.getContainer().addEventListener('touchstart', handleTouchStart);
     map.getContainer().addEventListener('touchend', handleTouchEnd);
 
     return () => {
       map.off('contextmenu', handleContextMenu);
+      map.off('click', handleClick);
       map.getContainer().removeEventListener('touchstart', handleTouchStart);
       map.getContainer().removeEventListener('touchend', handleTouchEnd);
     };
-  }, [map, onClick]);
+  }, [map, onClick, onCancel]);
 
   return null;
 };

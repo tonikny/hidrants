@@ -12,12 +12,7 @@ import osm2geojson from 'osm2geojson-lite';
 import { Feature, Point } from 'geojson';
 import getHydrantIcon from './icons';
 import { Legend } from './Legend';
-import {
-  MapClickHandler,
-  NodeForm,
-  NodePopup,
-  sendToTelegram,
-} from './MapWithForm';
+import { MapClickHandler, NodeForm, NodePopup } from './MapWithForm';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -82,16 +77,42 @@ export default function App() {
   const [message, setMessage] = useState('');
 
   const handleSend = async (feature: OSMFeature) => {
-    await sendToTelegram({
-      lat: feature.geometry.coordinates[1],
-      lon: feature.geometry.coordinates[0],
-      tags: {
-        ...feature.properties,
-        comment: message,
-      },
-    });
-    alert('Missatge enviat!');
-    setMessage('');
+    // await sendToTelegram({
+    //   lat: feature.geometry.coordinates[1],
+    //   lon: feature.geometry.coordinates[0],
+    //   tags: {
+    //     ...feature.properties,
+    //     comment: message,
+    //   },
+    // });
+    const handleSend = async () => {
+      try {
+        const res = await fetch(
+          'https://hidrants-ebs5.vercel.app/api/sendToTelegram',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              lat: clickedPosition ? clickedPosition[0] : 0,
+              lon: clickedPosition ? clickedPosition[1] : 0,
+              // tags: selectedFeature?.properties || {},
+              message,
+            }),
+          }
+        );
+
+        if (!res.ok) throw new Error('Error enviant el missatge');
+
+        alert('Missatge enviat!');
+        setMessage(''); // buida el formulari
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Error enviant el missatge');
+      }
+    };
+    await handleSend();
   };
 
   useEffect(() => {

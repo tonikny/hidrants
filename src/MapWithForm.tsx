@@ -16,47 +16,75 @@ type NodeFormProps = {
   onClose: () => void;
 };
 
-export const sendToTelegram = async (formData: {
-  lat: number;
-  lon: number;
-  tags: Record<string, string>;
-}) => {
-  const token = 'TEU_TOKEN'; // ⬅️ Canvia-ho pel teu token
-  const chatId = 'TEU_CHAT_ID'; // ⬅️ Canvia-ho pel teu chat ID
+// export const sendToTelegram = async (formData: {
+//   lat: number;
+//   lon: number;
+//   tags: Record<string, string>;
+// }) => {
+//   const token = 'TEU_TOKEN'; // ⬅️ Canvia-ho pel teu token
+//   const chatId = 'TEU_CHAT_ID'; // ⬅️ Canvia-ho pel teu chat ID
 
-  const text = `
-🆕 Nova proposta o comentari OSM
-📍 ${formData.lat.toFixed(5)}, ${formData.lon.toFixed(5)}
-📝 Dades:
-${Object.entries(formData.tags)
-  .map(([k, v]) => `- ${k}: ${v}`)
-  .join('\n')}
-`;
+//   const text = `
+// 🆕 Nova proposta o comentari OSM
+// 📍 ${formData.lat.toFixed(5)}, ${formData.lon.toFixed(5)}
+// 📝 Dades:
+// ${Object.entries(formData.tags)
+//   .map(([k, v]) => `- ${k}: ${v}`)
+//   .join('\n')}
+// `;
 
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-    }),
-  });
-};
+//   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//     body: JSON.stringify({
+//       chat_id: chatId,
+//       text,
+//     }),
+//   });
+// };
 
 export const NodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await sendToTelegram({
-      lat,
-      lon,
-      tags: { message },
-    });
-    alert('Missatge enviat!');
-    onClose();
+    // await sendToTelegram({
+    //   lat,
+    //   lon,
+    //   tags: { message },
+    // });
+
+    const handleSend = async () => {
+      try {
+        const res = await fetch(
+          'https://hidrants-ebs5.vercel.app/api/sendToTelegram',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              lat,
+              lon,
+              // tags: selectedFeature?.properties || {},
+              message,
+            }),
+          }
+        );
+
+        if (!res.ok) throw new Error('Error enviant el missatge');
+
+        alert('Missatge enviat!');
+        setMessage(''); // buida el formulari
+        onClose();
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Error enviant el missatge');
+      }
+    };
+    await handleSend();
   };
 
   return (
@@ -99,16 +127,39 @@ export const NodePopup = ({ feature }: { feature: Feature }) => {
   const [message, setMessage] = useState('');
 
   const handleSend = async () => {
-    await sendToTelegram({
-      lat: feature.geometry.coordinates[1],
-      lon: feature.geometry.coordinates[0],
-      tags: {
-        ...feature.properties,
-        comment: message,
-      },
-    });
-    alert('Missatge enviat!');
-    setMessage('');
+    // await sendToTelegram({
+    //   lat: feature.geometry.coordinates[1],
+    //   lon: feature.geometry.coordinates[0],
+    //   tags: {
+    //     ...feature.properties,
+    //     comment: message,
+    //   },
+    // });
+    try {
+      const res = await fetch(
+        'https://hidrants-ebs5.vercel.app/api/sendToTelegram',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lat: feature.geometry.coordinates[0],
+            lon: feature.geometry.coordinates[1],
+            //   tags: selectedFeature?.properties || {},
+            message,
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error('Error enviant el missatge');
+
+      alert('Missatge enviat!');
+      setMessage(''); // buida el formulari
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Error enviant el missatge');
+    }
   };
 
   return (

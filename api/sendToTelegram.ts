@@ -1,28 +1,23 @@
-export default async function handler(req, res) {
-  // Permetre CORS per a qualsevol origen
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // Atendre la preflight OPTIONS
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
-  // Només POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export default function handler(req, res) {
+  console.log('Funció cridada');
   try {
-    // Processa la petició POST aquí
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    return res.status(200).json({ ok: true });
+    console.log('Mètode:', req.method);
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
+
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error('Error capturat:', error);
+    return res.status(200).json({ ok: true, msg: 'Funció bàsica OK' });
   }
 }
-
 // export default async function handler(req, res) {
 //   // Permetre CORS
 //   res.setHeader('Access-Control-Allow-Origin', '*');

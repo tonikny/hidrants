@@ -19,10 +19,10 @@ export function Legend() {
       const style = 'display: flex;align-items: center;gap:15px';
       div.innerHTML = `
         <h4>Hidrants</h4>
-        <div style="${style}"><img src="/icons/marker-icon-blue.png" /> Operatiu (revisat ${currentYear})</div>
-        <div style="${style}"><img src="/icons/marker-icon-grey.png" /> Operatiu (no revisat)</div>
-        <div style="${style}"><img src="/icons/marker-icon-red.png" /> Fora de servei (${currentYear})</div>
-        <div style="${style}"><img src="/icons/marker-icon-orange.png" /> Fora de servei (no revisat)</div>
+        <div style="${style}"><img src="/images/icons/marker-icon-blue.png" /> Operatiu (revisat ${currentYear})</div>
+        <div style="${style}"><img src="/images/icons/marker-icon-grey.png" /> Operatiu (no revisat)</div>
+        <div style="${style}"><img src="/images/icons/marker-icon-red.png" /> Fora de servei (${currentYear})</div>
+        <div style="${style}"><img src="/images/icons/marker-icon-orange.png" /> Fora de servei (no revisat)</div>
       `;
       return div;
     };

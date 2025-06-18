@@ -80,7 +80,7 @@ export default function App() {
       .then((data) => {
         const geojson = osm2geojson(data);
         setFeatures(geojson.features as OSMFeature[]);
-        console.log('FEATURES: ', geojson.features as OSMFeature[]);
+        // console.log('FEATURES: ', geojson.features as OSMFeature[]);
       });
   }, []);
 

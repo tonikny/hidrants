@@ -12,17 +12,18 @@ function getHydrantIcon(properties: Record<string, any>): L.Icon {
   // Ruta a les icones (Leaflet en porta una per defecte)
   let iconUrl = '';
 
-  if (isActive && isCurrentYear) iconUrl = '/icons/marker-icon-blue.png';
-  else if (isActive) iconUrl = '/icons/marker-icon-grey.png';
-  else if (isDisused && isCurrentYear) iconUrl = '/icons/marker-icon-red.png';
-  else iconUrl = '/icons/marker-icon-orange.png';
+  if (isActive && isCurrentYear) iconUrl = '/images/icons/marker-icon-blue.png';
+  else if (isActive) iconUrl = '/images/icons/marker-icon-grey.png';
+  else if (isDisused && isCurrentYear)
+    iconUrl = '/images/icons/marker-icon-red.png';
+  else iconUrl = '/images/icons/marker-icon-orange.png';
 
   return new L.Icon({
     iconUrl,
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
-    shadowUrl: '/icons/marker-shadow.png',
+    shadowUrl: '/images/icons/marker-shadow.png',
     shadowSize: [41, 41],
   });
 }

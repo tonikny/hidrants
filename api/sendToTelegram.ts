@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -20,7 +20,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     console.error('API error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-}
+};
 
 // import type { VercelRequest, VercelResponse } from '@vercel/node';
 

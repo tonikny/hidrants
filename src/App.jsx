@@ -37,7 +37,7 @@ export default function App() {
   }, [])
 
   return (
-    <MapContainer center={[41.387, 2.170]} zoom={15} style={{ height: '100vh', width: '100%' }}>
+    <MapContainer center={[41.5474, 1.7954]} zoom={15} style={{ height: '100vh', width: '100%' }}>
       <TileLayer
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution="© OpenStreetMap contributors"

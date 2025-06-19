@@ -8,6 +8,9 @@ import { Legend } from './Legend';
 import { NodeWithForm, OSMFeature } from './NodeForm';
 import { MapClickHandler, NewNodeForm } from './NewNodeForm';
 import { ToastContainer, toast } from 'react-toastify';
+import { LegendModal } from './LegendModal';
+import { NewNodeButton } from './NewNodeButton';
+import { NewNodeModal } from './NewNodeModal';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -53,7 +56,7 @@ export default function App() {
     <>
       <MapContainer center={coords} zoom={14} style={{ height: '100vh' }}>
         <Layers />
-        <Legend />
+        {/* <Legend /> */}
         {features.map((feature) => {
           const coords = feature.geometry.coordinates;
           const props = feature.properties;
@@ -81,7 +84,7 @@ export default function App() {
           onClose={() => setClickedPosition(null)}
         />
       )}
-      <button
+      {/* <button
         onClick={() =>
           toast.info(
             'Per afegir un node manualment, fes una pulsació llarga o un clic dret en el mapa'
@@ -104,8 +107,13 @@ export default function App() {
         title="Afegir node manualment"
       >
         +
-      </button>
-      <ToastContainer position="top-right" autoClose={3000} />
+      </button> */}
+      {/* <NewNodeModal message='Per afegir un node manualment, fes una pulsació llarga o un clic dret en el mapa'/> */}
+      <NewNodeButton />
+      {/* <NewNodeModal /> */}
+
+      <LegendModal />
+      <ToastContainer position="top-center" autoClose={3000} />
     </>
   );
 }

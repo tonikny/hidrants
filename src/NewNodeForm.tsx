@@ -144,6 +144,8 @@ export const MapClickHandler = ({
 
   useEffect(() => {
     const handleContextMenu = (e: L.LeafletMouseEvent) => {
+      if (hasOpenedRef.current) return; // evita duplicat
+      hasOpenedRef.current = true;
       onClick(e.latlng);
     };
 
@@ -155,7 +157,7 @@ export const MapClickHandler = ({
     let touchStartLatLng: LatLng | null = null;
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length > 1) return; // ⛔ ignora gestos amb més d’un dit
+      if (e.touches.length > 1) return; // ignora gestos amb més d’un dit
 
       const touch = e.touches[0];
       const pointer = point(touch.clientX, touch.clientY);
@@ -163,6 +165,7 @@ export const MapClickHandler = ({
       touchStartLatLng = latlng;
 
       touchTimeout = setTimeout(() => {
+        if (hasOpenedRef.current) return;
         hasOpenedRef.current = true;
         onClick(latlng);
       }, 800);

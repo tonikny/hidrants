@@ -248,6 +248,12 @@ export const MapClickHandler = ({
   const hasOpenedRef = useRef(false);
 
   useEffect(() => {
+    if (!isActive) {
+      hasOpenedRef.current = false;
+    }
+  }, [isActive]);
+
+  useEffect(() => {
     const handleContextMenu = (e: L.LeafletMouseEvent) => {
       if (isActive) return;
       if (hasOpenedRef.current) return;

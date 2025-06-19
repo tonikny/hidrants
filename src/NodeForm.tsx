@@ -2,6 +2,7 @@ import { Popup } from 'react-leaflet';
 import { useState } from 'react';
 import { sendToTelegram } from './sendToTelegram';
 import { Feature, Point } from 'geojson';
+import { toast } from 'react-toastify';
 
 export interface OSMFeature extends Feature {
   id: string;
@@ -9,6 +10,9 @@ export interface OSMFeature extends Feature {
 
   geometry: Point;
 }
+type NodeFormProps = {
+  feature: OSMFeature;
+};
 
 const posicioHidrants = (key: string) => {
   switch (key) {
@@ -40,7 +44,7 @@ const estatHidrants = (props: Record<string, string>) => {
 
 const diametreHidrant = 'Diametre';
 
-export const NodeWithForm = ({ feature }: { feature: OSMFeature }) => {
+export const NodeWithForm = ({ feature }: NodeFormProps) => {
   const [message, setMessage] = useState('');
 
   const id = String(feature.id).split('/')[1];
@@ -66,11 +70,11 @@ export const NodeWithForm = ({ feature }: { feature: OSMFeature }) => {
         message,
       });
 
-      alert('Missatge enviat!');
+      toast.success('Missatge enviat!');
       setMessage('');
     } catch (err) {
       console.log(err);
-      alert('Error enviant el missatge');
+      toast.error('Error enviant el missatge');
     }
   };
   return (

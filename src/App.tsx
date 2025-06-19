@@ -7,6 +7,7 @@ import getHydrantIcon from './icons';
 import { Legend } from './Legend';
 import { NodeWithForm, OSMFeature } from './NodeForm';
 import { MapClickHandler, NewNodeForm } from './NewNodeForm';
+import { ToastContainer, toast } from 'react-toastify';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -82,7 +83,7 @@ export default function App() {
       )}
       <button
         onClick={() =>
-          alert(
+          toast.info(
             'Per afegir un node manualment, fes una pulsació llarga o un clic dret en el mapa'
           )
         }
@@ -104,6 +105,7 @@ export default function App() {
       >
         +
       </button>
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 }

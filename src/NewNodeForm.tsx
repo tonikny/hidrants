@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { sendToTelegram } from './sendToTelegram';
 import { useMap } from 'react-leaflet';
 import { LatLng, point } from 'leaflet';
+import { toast } from 'react-toastify';
 
 type NodeFormProps = {
   lat: number;
@@ -16,12 +17,12 @@ export const NewNodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
     e.preventDefault();
     try {
       await sendToTelegram({ lat, lon, message });
-      alert('Missatge enviat!');
+      toast.success('Missatge enviat!');
       setMessage('');
       onClose();
     } catch (err) {
       console.log(err);
-      alert('Error enviant el missatge');
+      toast.error('Error enviant el missatge');
     }
   };
   return (

@@ -1,37 +1,69 @@
 import { Marker, useMap } from 'react-leaflet';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { toast } from 'react-toastify';
 
 export function LocateButton({ style }: { style?: React.CSSProperties }) {
   const map = useMap();
+  const [tracking, setTracking] = useState(false);
   const [position, setPosition] = useState<L.LatLng | null>(null);
+  const watchIdRef = useRef<number | null>(null);
 
-  const locateUser = () => {
-    if (!navigator.geolocation) {
-      toast.error('El teu navegador no suporta geolocalització');
-      return;
+  useEffect(() => {
+    if (tracking) {
+      if (!navigator.geolocation) {
+        toast.error('El teu navegador no suporta geolocalització');
+        setTracking(false);
+        return;
+      }
+
+      toast.info('Seguiment de la posició activat');
+
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+          setPosition(latlng);
+          map.setView(latlng);
+        },
+        () => {
+          toast.error("No s'ha pogut obtenir la teva posició");
+          setTracking(false);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 10000,
+          timeout: 10000,
+        }
+      );
+    } else {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+        toast.info('Seguiment de la posició desactivat');
+      }
+      setPosition(null);
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const latlng = L.latLng(latitude, longitude);
-        setPosition(latlng);
-        map.setView(latlng, 16); // centra i fa zoom
-      },
-      () => {
-        toast.error("No s'ha pogut obtenir la teva posició");
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
       }
-    );
-  };
+    };
+  }, [tracking, map]);
 
   return (
     <>
       <button
-        onClick={locateUser}
-        style={style}
-        title="Centra el mapa a la teva posició"
+        onClick={() => setTracking((prev) => !prev)}
+        style={{
+          ...style,
+          backgroundColor: tracking ? '#28a745' : '#007bff',
+        }}
+        title={
+          tracking
+            ? 'Desactiva el seguiment de la teva posició'
+            : 'Activa el seguiment de la teva posició'
+        }
       >
         📍
       </button>

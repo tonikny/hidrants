@@ -4,13 +4,12 @@ import L, { latLng, LatLng } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import osm2geojson from 'osm2geojson-lite';
 import getHydrantIcon from './icons';
-import { Legend } from './Legend';
 import { NodeWithForm, OSMFeature } from './NodeForm';
 import { MapClickHandler, NewNodeForm } from './NewNodeForm';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import { LegendModal } from './LegendModal';
 import { NewNodeButton } from './NewNodeButton';
-import { NewNodeModal } from './NewNodeModal';
+import { LocateButton } from './LocateButton';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -56,7 +55,6 @@ export default function App() {
     <>
       <MapContainer center={coords} zoom={14} style={{ height: '100vh' }}>
         <Layers />
-        {/* <Legend /> */}
         {features.map((feature) => {
           const coords = feature.geometry.coordinates;
           const props = feature.properties;
@@ -72,46 +70,35 @@ export default function App() {
         })}
         <MapClickHandler
           onClick={(latlng) =>
-            setClickedPosition(L.latLng(latlng.lat, latlng.lng))
+            setClickedPosition(latLng(latlng.lat, latlng.lng))
           }
-          onCancel={() => setClickedPosition(null)} // 👈 tanca el formulari
+          onCancel={() => setClickedPosition(null)}
         />
+        {clickedPosition && (
+          <Marker
+            position={clickedPosition}
+            icon={L.icon({
+              iconUrl: '/images/icons/marker-icon-green.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [0, -41],
+            })}
+          />
+        )}
+        <LocateButton />
       </MapContainer>
       {clickedPosition && (
         <NewNodeForm
           lat={clickedPosition.lat}
           lon={clickedPosition.lng}
-          onClose={() => setClickedPosition(null)}
+          onClose={() => {
+            setClickedPosition(null);
+          }}
+          setNewNodeLatLng={setClickedPosition}
         />
       )}
-      {/* <button
-        onClick={() =>
-          toast.info(
-            'Per afegir un node manualment, fes una pulsació llarga o un clic dret en el mapa'
-          )
-        }
-        style={{
-          position: 'absolute',
-          bottom: '1rem',
-          left: '1rem',
-          background: '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '50%',
-          width: '3rem',
-          height: '3rem',
-          fontSize: '1.5rem',
-          cursor: 'pointer',
-          zIndex: 1000,
-        }}
-        title="Afegir node manualment"
-      >
-        +
-      </button> */}
-      {/* <NewNodeModal message='Per afegir un node manualment, fes una pulsació llarga o un clic dret en el mapa'/> */}
-      <NewNodeButton />
-      {/* <NewNodeModal /> */}
 
+      <NewNodeButton />
       <LegendModal />
       <ToastContainer position="top-center" autoClose={3000} />
     </>

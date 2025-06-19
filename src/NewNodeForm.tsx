@@ -8,9 +8,15 @@ type NodeFormProps = {
   lat: number;
   lon: number;
   onClose: () => void;
+  setNewNodeLatLng: (latlng: LatLng | null) => void;
 };
 
-export const NewNodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
+export const NewNodeForm = ({
+  lat,
+  lon,
+  onClose,
+  setNewNodeLatLng,
+}: NodeFormProps) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,6 +26,7 @@ export const NewNodeForm = ({ lat, lon, onClose }: NodeFormProps) => {
       toast.success('Missatge enviat!');
       setMessage('');
       onClose();
+      setNewNodeLatLng(null);
     } catch (err) {
       console.log(err);
       toast.error('Error enviant el missatge');

@@ -36,7 +36,7 @@ export function LocateButton({
           setAccuracy(accuracy);
 
           if (firstUpdateRef.current) {
-            map.setView(latlng, map.getZoom()); // No canviar zoom, només centrar
+            map.setView(latlng, 17); // Zoom només al primer cop
             firstUpdateRef.current = false;
           }
           // No moure el mapa a cada actualització per no molestar

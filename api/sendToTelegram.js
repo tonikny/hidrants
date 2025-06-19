@@ -24,12 +24,12 @@ module.exports = async function handler(req, res) {
     }
 
     const text = `
-${tags ? '📝 <b>Comentari del node:</b>' : '🗺️ <b>Nova entrada OSM:</b>'}
+${tags?.id ? '📝 <b>Comentari del node:</b>' : '🗺️ <b>Nova entrada OSM:</b>'}
 
-📍 Coord: ${lat}, ${lon}
+📍 Coord: <pre>${lat}, ${lon}</pre>
 💬 Missatge: ${message || '(cap)'}
 ${tags ? `🏷️ Tags: <pre>${JSON.stringify(tags, null, 2)}</pre>` : ''}
-${tags ? `https://www.openstreetmap.org/${tags.id}` : ''}
+${tags?.id ? `https://www.openstreetmap.org/${tags.id}` : ''}
     `;
 
     const response = await fetch(

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export function FullscreenButton({ targetId }: { targetId: string }) {
+export function FullscreenButton({ targetId }: Readonly<{ targetId: string }>) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import L from 'leaflet';
 import { toast } from 'react-toastify';
 
-export function LocateButton() {
+export function LocateButton({ style }: { style?: React.CSSProperties }) {
   const map = useMap();
   const [position, setPosition] = useState<L.LatLng | null>(null);
 
@@ -30,20 +30,7 @@ export function LocateButton() {
     <>
       <button
         onClick={locateUser}
-        style={{
-          position: 'absolute',
-          bottom: '5rem',
-          left: '1rem',
-          background: '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '50%',
-          width: '3rem',
-          height: '3rem',
-          fontSize: '1.5rem',
-          cursor: 'pointer',
-          zIndex: 1000,
-        }}
+        style={style}
         title="Centra el mapa a la teva posició"
       >
         📍

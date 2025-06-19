@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export function LegendModal() {
+export function LegendModal({ style }: { style?: React.CSSProperties }) {
   const [open, setOpen] = useState(false);
   const currentYear = new Date().getFullYear();
   const styles = { display: 'flex', alignItems: 'center', gap: '15px' };
@@ -8,24 +8,7 @@ export function LegendModal() {
   return (
     <>
       {/* Botó d'informació */}
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          position: 'absolute',
-          bottom: '9rem',
-          left: '1rem',
-          background: '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '50%',
-          width: '3rem',
-          height: '3rem',
-          fontSize: '1.5rem',
-          cursor: 'pointer',
-          zIndex: 1000,
-        }}
-        title="Llegenda"
-      >
+      <button onClick={() => setOpen(true)} style={style} title="Llegenda">
         i
       </button>
 

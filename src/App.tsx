@@ -10,6 +10,7 @@ import { ToastContainer } from 'react-toastify';
 import { LegendModal } from './LegendModal';
 import { NewNodeButton } from './NewNodeButton';
 import { LocateButton } from './LocateButton';
+import { Layers } from './Layers';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,8 +22,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
-
-const { BaseLayer, Overlay } = LayersControl;
 
 const coords: LatLng = latLng(41.5474, 1.7954);
 
@@ -50,6 +49,18 @@ export default function App() {
         setFeatures(geojson.features as OSMFeature[]);
       });
   }, []);
+
+  const floatingButtonStyle: React.CSSProperties = {
+    background: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '50%',
+    width: '3rem',
+    height: '3rem',
+    fontSize: '1.5rem',
+    cursor: 'pointer',
+    zIndex: 1000,
+  };
 
   return (
     <>
@@ -85,7 +96,14 @@ export default function App() {
             })}
           />
         )}
-        <LocateButton />
+        <LocateButton
+          style={{
+            position: 'fixed',
+            bottom: '9rem',
+            left: '1rem',
+            ...floatingButtonStyle,
+          }}
+        />
       </MapContainer>
       {clickedPosition && (
         <NewNodeForm
@@ -98,37 +116,23 @@ export default function App() {
         />
       )}
 
-      <NewNodeButton />
-      <LegendModal />
+      <LegendModal
+        style={{
+          position: 'fixed',
+          bottom: '5rem',
+          left: '1rem',
+          ...floatingButtonStyle,
+        }}
+      />
+      <NewNodeButton
+        style={{
+          position: 'fixed',
+          bottom: '1rem',
+          left: '1rem',
+          ...floatingButtonStyle,
+        }}
+      />
       <ToastContainer position="top-center" autoClose={3000} />
     </>
   );
 }
-
-const Layers = () => (
-  <LayersControl position="topright">
-    <BaseLayer checked name="OpenStreetMap">
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-    </BaseLayer>
-
-    <BaseLayer name="OpenTopoMap">
-      <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" />
-    </BaseLayer>
-
-    <BaseLayer name="Raster IGN">
-      <TileLayer
-        url="https://tms-mapa-raster.ign.es/1.0.0/mapa-raster/{z}/{x}/{-y}.jpeg"
-        attribution="&copy; Instituto Geográfico Nacional de España"
-      />
-    </BaseLayer>
-    <BaseLayer name="Ortoimagen IGN">
-      <TileLayer
-        url="https://tms-pnoa-ma.idee.es/1.0.0/pnoa-ma/{z}/{x}/{-y}.jpeg"
-        attribution="&copy; Instituto Geográfico Nacional de España"
-      />
-    </BaseLayer>
-  </LayersControl>
-);

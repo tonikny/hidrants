@@ -101,7 +101,7 @@ export default function App() {
           <Marker
             position={clickedPosition}
             icon={L.icon({
-              iconUrl: '/images/icons/marker-icon-green.png',
+              iconUrl: '/images/icons/marker-icon-gold.png',
               iconSize: [25, 41],
               iconAnchor: [12, 41],
               popupAnchor: [0, -41],
@@ -146,7 +146,7 @@ export default function App() {
           ...floatingButtonStyle,
         }}
       />
-      <ToastContainer position="top-center" autoClose={3000} />
+      <ToastContainer position="top-center" autoClose={3000} theme="colored" />
     </div>
   );
 }

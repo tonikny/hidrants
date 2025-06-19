@@ -1,11 +1,11 @@
-import { useState } from 'react';
+// import { useState } from 'react';
 // import { NewNodeModal } from './NewNodeModal';
 import { toast } from 'react-toastify';
 
 export function NewNodeButton({
   style,
 }: Readonly<{ style?: React.CSSProperties }>) {
-  const [message, setMessage] = useState<string | null>(null);
+  //   const [message, setMessage] = useState<string | null>(null);
 
   return (
     <>

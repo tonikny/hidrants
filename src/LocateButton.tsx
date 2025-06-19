@@ -108,6 +108,7 @@ export function LocateButton({
               radius={accuracy}
               pathOptions={{
                 color: '#3388ff',
+                opacity: 0.2,
                 fillColor: '#3388ff',
                 fillOpacity: 0.2,
               }}

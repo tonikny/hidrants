@@ -75,13 +75,13 @@ export const NewNodeForm = ({
         tags,
         message,
       });
-      toast.success('Missatge enviat!');
+      toast.success('Dades enviades!');
       setMessage('');
       onClose();
       setNewNodeLatLng(null);
     } catch (err) {
       console.log(err);
-      toast.error('Error enviant el missatge');
+      toast.error('Error enviant les dades');
     }
   };
 
@@ -95,7 +95,6 @@ export const NewNodeForm = ({
 
   const selectStyle: React.CSSProperties = {
     ...inputStyle,
-    appearance: 'none',
     backgroundColor: 'white',
   };
 
@@ -155,7 +154,7 @@ export const NewNodeForm = ({
             textAlign: 'center',
           }}
         >
-          📍 Nova proposta de node
+          📍 Nou hidrant
         </h2>
 
         <div
@@ -166,21 +165,24 @@ export const NewNodeForm = ({
             marginBottom: '0.5rem',
           }}
         >
-          Coordenades:{' '}
           <strong>
-            {lat.toFixed(5)}, {lon.toFixed(5)}
+            [ {lat.toFixed(5)}, {lon.toFixed(5)} ]
           </strong>
         </div>
 
         {/* Línia 1: Tipus - Posició - Diàmetre */}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic' }}>
           <label style={{ flex: 1, fontSize: '0.8rem' }}>
             Tipus:
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
               style={selectStyle}
-            />
+            >
+              <option value=""></option>
+              <option value="columna">Columna</option>
+              <option value="subterrani">Subterrani</option>
+            </select>
           </label>
           <label style={{ flex: 1, fontSize: '0.8rem' }}>
             Posició:
@@ -188,7 +190,12 @@ export const NewNodeForm = ({
               value={position}
               onChange={(e) => setPosition(e.target.value)}
               style={selectStyle}
-            />
+            >
+              <option value=""></option>
+              <option value="calçada">Calçada</option>
+              <option value="vorera">Vorera</option>
+              <option value="verd">Verd</option>
+            </select>
           </label>
           <label style={{ flex: 1, fontSize: '0.8rem' }}>
             Diàmetre:
@@ -196,12 +203,19 @@ export const NewNodeForm = ({
               value={diameter}
               onChange={(e) => setDiameter(e.target.value)}
               style={selectStyle}
-            />
+            >
+              <option value=""></option>
+              <option value="100">100</option>
+              <option value="70">70</option>
+              <option value="45">45</option>
+            </select>
           </label>
         </div>
 
         {/* Línia 2: Carrer (100%) */}
-        <label style={{ fontSize: '0.8rem', width: '100%' }}>
+        <label
+          style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic' }}
+        >
           Carrer:
           <input
             type="text"
@@ -212,7 +226,7 @@ export const NewNodeForm = ({
         </label>
 
         {/* Línia 3: Número (1/3) i Urbanització (2/3) */}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic' }}>
           <label style={{ flex: 1, fontSize: '0.8rem' }}>
             Número:
             <input
@@ -228,12 +242,19 @@ export const NewNodeForm = ({
               value={urbanizatio}
               onChange={(e) => setUrbanizatio(e.target.value)}
               style={selectStyle}
-            />
+            >
+              <option value=""></option>
+              <option value="urb1">Urb1</option>
+              <option value="urb2">Urb2</option>
+              <option value="urb3">Urb3</option>
+            </select>
           </label>
         </div>
 
         {/* Línia 4: Comentari (100%) */}
-        <label style={{ fontSize: '0.8rem', width: '100%' }}>
+        <label
+          style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic' }}
+        >
           Comentari:
           <textarea
             value={message}

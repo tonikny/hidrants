@@ -88,119 +88,140 @@ export const NewNodeForm = ({
     <div
       className="form-popup"
       style={{
-        position: 'absolute',
-        bottom: '1rem',
-        right: '1rem',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: '#ffffff',
         padding: '1rem',
-        borderRadius: '10px',
+        borderRadius: '12px',
         boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
         zIndex: 2000,
-        width: '92vw',
-        maxWidth: '320px',
+        width: '95%',
+        maxWidth: '380px',
+        maxHeight: '80vh',
+        overflowY: 'auto',
         fontFamily: 'sans-serif',
       }}
     >
       <form
         onSubmit={handleSubmit}
-        style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+        }}
       >
-        <h2 style={{ margin: 0, fontSize: '1.25rem', textAlign: 'center' }}>
+        <h2
+          style={{
+            fontSize: '1.1rem',
+            textAlign: 'center',
+            marginBottom: '0.5rem',
+          }}
+        >
           📍 Nova proposta de node
         </h2>
-        <div style={{ fontSize: '0.9rem', color: '#555' }}>
+
+        <div
+          style={{ fontSize: '0.85rem', color: '#555', textAlign: 'center' }}
+        >
           Coordenades:{' '}
           <strong>
             {lat.toFixed(5)}, {lon.toFixed(5)}
           </strong>
         </div>
 
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Tipus:
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="columna">Columna</option>
-            <option value="subterrani">Subterrani</option>
-          </select>
-        </label>
+        {/* Inputs agrupats per files dobles */}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+            Tipus:
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              style={selectStyle}
+            >
+              <option value=""></option>
+              <option value="columna">Columna</option>
+              <option value="subterrani">Subterrani</option>
+            </select>
+          </label>
+          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+            Posició:
+            <select
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              style={selectStyle}
+            >
+              <option value=""></option>
+              <option value="calçada">Calçada</option>
+              <option value="vorera">Vorera</option>
+              <option value="verd">Verd</option>
+            </select>
+          </label>
+        </div>
 
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Posició:
-          <select
-            value={position}
-            onChange={(e) => setPosition(e.target.value)}
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="calçada">Calçada</option>
-            <option value="vorera">Vorera</option>
-            <option value="verd">Verd</option>
-          </select>
-        </label>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+            Diàmetre:
+            <select
+              value={diameter}
+              onChange={(e) => setDiameter(e.target.value)}
+              style={selectStyle}
+            >
+              <option value=""></option>
+              <option value="100">100</option>
+              <option value="70">70</option>
+              <option value="45">45</option>
+            </select>
+          </label>
+          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+            Número:
+            <input
+              type="text"
+              value={num}
+              onChange={(e) => setNum(e.target.value)}
+              style={inputStyle}
+            />
+          </label>
+        </div>
 
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Diàmetre:
-          <select
-            value={diameter}
-            onChange={(e) => setDiameter(e.target.value)}
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="100">100</option>
-            <option value="70">70</option>
-            <option value="45">45</option>
-          </select>
-        </label>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+            Urbanització:
+            <select
+              value={urbanizatio}
+              onChange={(e) => setUrbanizatio(e.target.value)}
+              style={selectStyle}
+            >
+              <option value=""></option>
+              <option value="urb1">Urb1</option>
+              <option value="urb2">Urb2</option>
+              <option value="urb3">Urb3</option>
+            </select>
+          </label>
+          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+            Carrer:
+            <input
+              type="text"
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              style={inputStyle}
+            />
+          </label>
+        </div>
 
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Carrer:
-          <input
-            type="text"
-            value={street}
-            onChange={(e) => setStreet(e.target.value)}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Número:
-          <input
-            type="text"
-            min={0}
-            value={num}
-            onChange={(e) => setNum(e.target.value)}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Urbanització:
-          <select
-            value={urbanizatio}
-            onChange={(e) => setUrbanizatio(e.target.value)}
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="urb1">Urb1</option>
-            <option value="urb2">Urb2</option>
-            <option value="urb3">Urb3</option>
-          </select>
-        </label>
-
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
+        {/* Comentari en una sola fila */}
+        <label style={{ fontSize: '0.85rem' }}>
           Comentari:
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            rows={3}
+            rows={2}
             style={{ ...inputStyle, resize: 'vertical' }}
           />
         </label>
 
+        {/* Botons */}
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <button type="submit" style={primaryButtonStyle}>
             Enviar

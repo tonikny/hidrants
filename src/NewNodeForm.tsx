@@ -95,10 +95,17 @@ export const MapClickHandler = ({
       touchStartLatLng = latlng;
       hasFired = false;
 
+      //   touchTimeout = setTimeout(() => {
+      //     hasFired = true;
+      //     if (touchStartLatLng) onClick(touchStartLatLng);
+      //   }, 800); // pulsació llarga
+
       touchTimeout = setTimeout(() => {
         hasFired = true;
-        if (touchStartLatLng) onClick(touchStartLatLng);
-      }, 800); // pulsació llarga
+        requestAnimationFrame(() => {
+          if (touchStartLatLng) onClick(touchStartLatLng);
+        });
+      }, 800);
     };
 
     const handleTouchEnd = () => {

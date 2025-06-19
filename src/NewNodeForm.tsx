@@ -88,17 +88,16 @@ export const NewNodeForm = ({
     <div
       className="form-popup"
       style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        backgroundColor: '#ffffff',
-        padding: '1.5rem',
-        borderRadius: '12px',
+        position: 'absolute',
+        bottom: '1rem',
+        right: '1rem',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        padding: '1rem',
+        borderRadius: '10px',
         boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-        zIndex: 1000,
-        width: '90%',
-        maxWidth: '400px',
+        zIndex: 2000,
+        width: '92vw',
+        maxWidth: '320px',
         fontFamily: 'sans-serif',
       }}
     >

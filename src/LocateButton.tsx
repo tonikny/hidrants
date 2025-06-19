@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { toast } from 'react-toastify';
 
-export function LocateButton({ style }: { style?: React.CSSProperties }) {
+export function LocateButton({
+  style,
+}: Readonly<{ style?: React.CSSProperties }>) {
   const map = useMap();
   const [tracking, setTracking] = useState(false);
   const [position, setPosition] = useState<L.LatLng | null>(null);

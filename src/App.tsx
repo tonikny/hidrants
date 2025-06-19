@@ -89,6 +89,7 @@ export default function App() {
             setClickedPosition(null);
             setShowNewForm(false);
           }}
+          isActive={!!clickedPosition}
         />
         {clickedPosition && showNewForm && (
           <Marker

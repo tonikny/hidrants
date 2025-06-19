@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { NewNodeModal } from './NewNodeModal';
 
-export function NewNodeButton({ style }: { style?: React.CSSProperties }) {
+export function NewNodeButton({
+  style,
+}: Readonly<{ style?: React.CSSProperties }>) {
   const [message, setMessage] = useState<string | null>(null);
 
   return (

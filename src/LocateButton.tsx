@@ -18,7 +18,7 @@ export function LocateButton({ style }: { style?: React.CSSProperties }) {
         return;
       }
 
-      toast.info('Seguiment de la posició activat');
+      toast.success('Seguiment de la posició activat');
 
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {

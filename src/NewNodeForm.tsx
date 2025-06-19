@@ -69,6 +69,69 @@ export const NewNodeForm = ({
   );
 };
 
+// export const MapClickHandler = ({
+//   onClick,
+//   onCancel,
+// }: {
+//   onClick: (latlng: L.LatLng) => void;
+//   onCancel: () => void;
+// }) => {
+//   const map = useMap();
+//   const hasOpenedRef = useRef(false);
+
+//   useEffect(() => {
+//     // Clic dret
+//     const handleContextMenu = (e: L.LeafletMouseEvent) => {
+//       onClick(e.latlng);
+//     };
+
+//     // Clic esquerre
+//     const handleClick = () => {
+//       onCancel(); // tanca formulari
+//     };
+
+//     let touchTimeout: NodeJS.Timeout;
+//     let touchStartLatLng: LatLng | null = null;
+//     let hasFired = false;
+
+//     const handleTouchStart = (e: TouchEvent) => {
+//       const touch = e.touches?.[0];
+//       if (!touch) return;
+
+//       const pointer = point(touch.clientX, touch.clientY);
+//       const latlng = map.containerPointToLatLng(pointer);
+//       touchStartLatLng = latlng;
+
+//       touchTimeout = setTimeout(() => {
+//         hasOpenedRef.current = true;
+//         onClick(touchStartLatLng!);
+//       }, 800);
+//     };
+
+//     const handleTouchEnd = () => {
+//       clearTimeout(touchTimeout);
+//       if (!hasOpenedRef.current) {
+//         onCancel();
+//       }
+//       // Reiniciar el flag per propera interacció
+//       hasOpenedRef.current = false;
+//     };
+
+//     map.on('contextmenu', handleContextMenu);
+//     map.on('click', handleClick);
+//     map.getContainer().addEventListener('touchstart', handleTouchStart);
+//     map.getContainer().addEventListener('touchend', handleTouchEnd);
+
+//     return () => {
+//       map.off('contextmenu', handleContextMenu);
+//       map.off('click', handleClick);
+//       map.getContainer().removeEventListener('touchstart', handleTouchStart);
+//       map.getContainer().removeEventListener('touchend', handleTouchEnd);
+//     };
+//   }, [map, onClick, onCancel]);
+
+//   return null;
+// };
 export const MapClickHandler = ({
   onClick,
   onCancel,
@@ -80,47 +143,35 @@ export const MapClickHandler = ({
   const hasOpenedRef = useRef(false);
 
   useEffect(() => {
-    // Clic dret
     const handleContextMenu = (e: L.LeafletMouseEvent) => {
       onClick(e.latlng);
     };
 
-    // Clic esquerre
     const handleClick = () => {
-      onCancel(); // tanca formulari
+      onCancel(); // tanca formulari si clic normal
     };
 
     let touchTimeout: NodeJS.Timeout;
     let touchStartLatLng: LatLng | null = null;
-    let hasFired = false;
 
     const handleTouchStart = (e: TouchEvent) => {
-      const touch = e.touches?.[0];
-      if (!touch) return;
+      if (e.touches.length > 1) return; // ⛔ ignora gestos amb més d’un dit
 
+      const touch = e.touches[0];
       const pointer = point(touch.clientX, touch.clientY);
       const latlng = map.containerPointToLatLng(pointer);
       touchStartLatLng = latlng;
-      hasFired = false;
-
-      //   touchTimeout = setTimeout(() => {
-      //     hasFired = true;
-      //     if (touchStartLatLng) onClick(touchStartLatLng);
-      //   }, 800); // pulsació llarga
-      // };
-
-      // const handleTouchEnd = () => {
-      //   clearTimeout(touchTimeout);
-      //   if (!hasFired) {
-      //     onCancel(); // només si no s’ha obert ja el form
-      //   }
-      // };
 
       touchTimeout = setTimeout(() => {
-        hasFired = true;
         hasOpenedRef.current = true;
-        onClick(touchStartLatLng!);
+        onClick(latlng);
       }, 800);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        clearTimeout(touchTimeout); // ⛔ cancel·la si es fa gest multi-touch (zoom)
+      }
     };
 
     const handleTouchEnd = () => {
@@ -128,46 +179,22 @@ export const MapClickHandler = ({
       if (!hasOpenedRef.current) {
         onCancel();
       }
-      // Reiniciar el flag per propera interacció
       hasOpenedRef.current = false;
     };
 
-    // Pulsació llarga
-    // let touchTimeout: NodeJS.Timeout;
-    // let touchStartLatLng: LatLng | null = null;
-    // let cancelled = false;
-
-    // const handleTouchStart = (e: TouchEvent) => {
-    //   const touch = e.touches?.[0];
-    //   if (!touch) return;
-
-    //   const pointer = point(touch.clientX, touch.clientY);
-    //   const latlng = map.containerPointToLatLng(pointer);
-    //   touchStartLatLng = latlng;
-    //   cancelled = false;
-
-    //   touchTimeout = setTimeout(() => {
-    //     cancelled = true;
-    //     if (touchStartLatLng) onClick(touchStartLatLng);
-    //   }, 800);
-    // };
-    // const handleTouchEnd = () => {
-    //   clearTimeout(touchTimeout);
-    //   if (!cancelled) {
-    //     onCancel(); // pulsació curta → tanca
-    //   }
-    // };
-
+    const container = map.getContainer();
     map.on('contextmenu', handleContextMenu);
     map.on('click', handleClick);
-    map.getContainer().addEventListener('touchstart', handleTouchStart);
-    map.getContainer().addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchstart', handleTouchStart);
+    container.addEventListener('touchmove', handleTouchMove);
+    container.addEventListener('touchend', handleTouchEnd);
 
     return () => {
       map.off('contextmenu', handleContextMenu);
       map.off('click', handleClick);
-      map.getContainer().removeEventListener('touchstart', handleTouchStart);
-      map.getContainer().removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
     };
   }, [map, onClick, onCancel]);
 

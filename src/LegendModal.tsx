@@ -3,6 +3,7 @@ import { useState } from 'react';
 export function LegendModal() {
   const [open, setOpen] = useState(false);
   const currentYear = new Date().getFullYear();
+  const styles = { display: 'flex', alignItems: 'center', gap: '15px' };
 
   return (
     <>
@@ -51,7 +52,6 @@ export function LegendModal() {
           }}
         >
           <div
-            // onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
               opacity: '80%',
@@ -63,27 +63,23 @@ export function LegendModal() {
               textAlign: 'left',
             }}
           >
-            <h4>Llegenda dels hidrants</h4>
-            <ul
-              style={{ listStyle: 'none', paddingLeft: 0, lineHeight: '1.8' }}
-            >
-              <li>
-                <img src="/images/icons/marker-icon-blue.png" width={20} />{' '}
-                Operatiu (revisat {currentYear})
-              </li>
-              <li>
-                <img src="/images/icons/marker-icon-grey.png" width={20} />{' '}
-                Operatiu (no revisat)
-              </li>
-              <li>
-                <img src="/images/icons/marker-icon-red.png" width={20} /> Fora
-                de servei ({currentYear})
-              </li>
-              <li>
-                <img src="/images/icons/marker-icon-orange.png" width={20} />{' '}
-                Fora de servei (no revisat)
-              </li>
-            </ul>
+            <h4>Hidrants</h4>
+            <div style={styles}>
+              <img src="/images/icons/marker-icon-blue.png" /> Operatiu (revisat
+              ${currentYear})
+            </div>
+            <div style={styles}>
+              <img src="/images/icons/marker-icon-grey.png" /> Operatiu (no
+              revisat)
+            </div>
+            <div style={styles}>
+              <img src="/images/icons/marker-icon-red.png" /> Fora de servei ($
+              {currentYear})
+            </div>
+            <div style={styles}>
+              <img src="/images/icons/marker-icon-orange.png" /> Fora de servei
+              (no revisat)
+            </div>
           </div>
         </button>
       )}

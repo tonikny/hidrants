@@ -82,10 +82,9 @@ export const MapClickHandler = ({
       onCancel(); // tanca formulari
     };
 
-    // Pulsació llarga
     let touchTimeout: NodeJS.Timeout;
     let touchStartLatLng: LatLng | null = null;
-    let cancelled = false;
+    let hasFired = false;
 
     const handleTouchStart = (e: TouchEvent) => {
       const touch = e.touches?.[0];
@@ -94,19 +93,45 @@ export const MapClickHandler = ({
       const pointer = point(touch.clientX, touch.clientY);
       const latlng = map.containerPointToLatLng(pointer);
       touchStartLatLng = latlng;
-      cancelled = false;
+      hasFired = false;
 
       touchTimeout = setTimeout(() => {
-        cancelled = true;
+        hasFired = true;
         if (touchStartLatLng) onClick(touchStartLatLng);
-      }, 800);
+      }, 800); // pulsació llarga
     };
+
     const handleTouchEnd = () => {
       clearTimeout(touchTimeout);
-      if (!cancelled) {
-        onCancel(); // pulsació curta → tanca
+      if (!hasFired) {
+        onCancel(); // només si no s’ha obert ja el form
       }
     };
+    // Pulsació llarga
+    // let touchTimeout: NodeJS.Timeout;
+    // let touchStartLatLng: LatLng | null = null;
+    // let cancelled = false;
+
+    // const handleTouchStart = (e: TouchEvent) => {
+    //   const touch = e.touches?.[0];
+    //   if (!touch) return;
+
+    //   const pointer = point(touch.clientX, touch.clientY);
+    //   const latlng = map.containerPointToLatLng(pointer);
+    //   touchStartLatLng = latlng;
+    //   cancelled = false;
+
+    //   touchTimeout = setTimeout(() => {
+    //     cancelled = true;
+    //     if (touchStartLatLng) onClick(touchStartLatLng);
+    //   }, 800);
+    // };
+    // const handleTouchEnd = () => {
+    //   clearTimeout(touchTimeout);
+    //   if (!cancelled) {
+    //     onCancel(); // pulsació curta → tanca
+    //   }
+    // };
 
     map.on('contextmenu', handleContextMenu);
     map.on('click', handleClick);

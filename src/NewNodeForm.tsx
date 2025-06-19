@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { sendToTelegram } from './sendToTelegram';
 import { useMap } from 'react-leaflet';
 import { LatLng, point } from 'leaflet';
@@ -70,6 +70,7 @@ export const MapClickHandler = ({
   onCancel: () => void;
 }) => {
   const map = useMap();
+  const hasOpenedRef = useRef(false);
 
   useEffect(() => {
     // Clic dret
@@ -99,21 +100,31 @@ export const MapClickHandler = ({
       //     hasFired = true;
       //     if (touchStartLatLng) onClick(touchStartLatLng);
       //   }, 800); // pulsació llarga
+      // };
+
+      // const handleTouchEnd = () => {
+      //   clearTimeout(touchTimeout);
+      //   if (!hasFired) {
+      //     onCancel(); // només si no s’ha obert ja el form
+      //   }
+      // };
 
       touchTimeout = setTimeout(() => {
         hasFired = true;
-        requestAnimationFrame(() => {
-          if (touchStartLatLng) onClick(touchStartLatLng);
-        });
+        hasOpenedRef.current = true;
+        onClick(touchStartLatLng!);
       }, 800);
     };
 
     const handleTouchEnd = () => {
       clearTimeout(touchTimeout);
-      if (!hasFired) {
-        onCancel(); // només si no s’ha obert ja el form
+      if (!hasOpenedRef.current) {
+        onCancel();
       }
+      // Reiniciar el flag per propera interacció
+      hasOpenedRef.current = false;
     };
+
     // Pulsació llarga
     // let touchTimeout: NodeJS.Timeout;
     // let touchStartLatLng: LatLng | null = null;

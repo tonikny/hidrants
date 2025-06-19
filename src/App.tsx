@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, LayersControl } from 'react-leaflet';
+import { MapContainer, Marker } from 'react-leaflet';
 import L, { latLng, LatLng } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import osm2geojson from 'osm2geojson-lite';
@@ -28,6 +28,7 @@ const coords: LatLng = latLng(41.5474, 1.7954);
 export default function App() {
   const [features, setFeatures] = useState<OSMFeature[]>([]);
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
+  const [showNewForm, setShowNewForm] = useState(false);
 
   useEffect(() => {
     const query = `
@@ -80,12 +81,16 @@ export default function App() {
           );
         })}
         <MapClickHandler
-          onClick={(latlng) =>
-            setClickedPosition(latLng(latlng.lat, latlng.lng))
-          }
-          onCancel={() => setClickedPosition(null)}
+          onClick={(latlng) => {
+            setClickedPosition(latlng);
+            setShowNewForm(true);
+          }}
+          onCancel={() => {
+            setClickedPosition(null);
+            setShowNewForm(false);
+          }}
         />
-        {clickedPosition && (
+        {clickedPosition && showNewForm && (
           <Marker
             position={clickedPosition}
             icon={L.icon({
@@ -105,7 +110,7 @@ export default function App() {
           }}
         />
       </MapContainer>
-      {clickedPosition && (
+      {clickedPosition && showNewForm && (
         <NewNodeForm
           lat={clickedPosition.lat}
           lon={clickedPosition.lng}

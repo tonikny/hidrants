@@ -5,12 +5,17 @@ import { toast } from 'react-toastify';
 
 export function LocateButton({
   style,
-}: Readonly<{ style?: React.CSSProperties }>) {
+  onEdit,
+}: Readonly<{
+  style?: React.CSSProperties;
+  onEdit?: (latlng: L.LatLng) => void;
+}>) {
   const map = useMap();
   const [tracking, setTracking] = useState(false);
   const [position, setPosition] = useState<L.LatLng | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  const firstUpdateRef = useRef(true);
 
   useEffect(() => {
     if (tracking) {
@@ -21,6 +26,7 @@ export function LocateButton({
       }
 
       toast.success('Seguiment de la posició activat');
+      firstUpdateRef.current = true;
 
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
@@ -28,7 +34,12 @@ export function LocateButton({
           const latlng = L.latLng(latitude, longitude);
           setPosition(latlng);
           setAccuracy(accuracy);
-          map.setView(latlng);
+
+          if (firstUpdateRef.current) {
+            map.setView(latlng, map.getZoom()); // No canviar zoom, només centrar
+            firstUpdateRef.current = false;
+          }
+          // No moure el mapa a cada actualització per no molestar
         },
         () => {
           toast.error("No s'ha pogut obtenir la teva posició");
@@ -53,6 +64,7 @@ export function LocateButton({
     return () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
       }
     };
   }, [tracking, map]);
@@ -84,6 +96,11 @@ export function LocateButton({
               iconAnchor: [12, 41],
               popupAnchor: [0, -41],
             })}
+            eventHandlers={{
+              click: () => {
+                if (onEdit) onEdit(position);
+              },
+            }}
           />
           {accuracy && (
             <Circle

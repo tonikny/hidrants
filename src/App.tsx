@@ -30,6 +30,11 @@ export default function App() {
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
 
+  const openFormAtPosition = (latlng: L.LatLng) => {
+    setClickedPosition(latlng);
+    setShowNewForm(true);
+  };
+
   useEffect(() => {
     const query = `
       [out:json][timeout:60];
@@ -109,6 +114,7 @@ export default function App() {
             left: '1rem',
             ...floatingButtonStyle,
           }}
+          onEdit={openFormAtPosition}
         />
       </MapContainer>
       {clickedPosition && showNewForm && (

@@ -84,46 +84,87 @@ export const NewNodeForm = ({
       toast.error('Error enviant el missatge');
     }
   };
+
+  const inputStyle: React.CSSProperties = {
+    padding: '4px 0 4px 0',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    fontSize: '0.85rem',
+    width: '100%',
+  };
+
+  const selectStyle: React.CSSProperties = {
+    ...inputStyle,
+    appearance: 'none',
+    backgroundColor: 'white',
+  };
+
+  const primaryButtonStyle: React.CSSProperties = {
+    backgroundColor: '#007bff',
+    color: 'white',
+    padding: '12px 12px',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+  };
+
+  const secondaryButtonStyle: React.CSSProperties = {
+    backgroundColor: '#e0e0e0',
+    color: '#333',
+    padding: '12px 12px',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+  };
+
+  const popupContainerStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '10%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: 'white',
+    padding: '0',
+    borderRadius: '10px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    width: 'min(60vw, 300px)',
+    maxHeight: '80vh',
+    overflowY: 'auto',
+    zIndex: 1000,
+    fontFamily: '"Helvetica Neue", Arial, Helvetica, sans-serif',
+  };
+
   return (
-    <div
-      className="form-popup"
-      style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        backgroundColor: '#ffffff',
-        padding: '1rem',
-        borderRadius: '12px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-        zIndex: 2000,
-        width: '95%',
-        maxWidth: '380px',
-        maxHeight: '80vh',
-        overflowY: 'auto',
-        fontFamily: 'sans-serif',
-      }}
-    >
+    <div style={popupContainerStyle}>
       <form
         onSubmit={handleSubmit}
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.75rem',
+          //   gap: '0.75rem',
+          padding: '0.5rem 1rem',
+          //   minWidth: '340px',
         }}
       >
         <h2
           style={{
-            fontSize: '1.1rem',
+            margin: 0,
+            fontSize: '1rem',
+            fontWeight: 600,
             textAlign: 'center',
-            marginBottom: '0.5rem',
           }}
         >
           📍 Nova proposta de node
         </h2>
 
         <div
-          style={{ fontSize: '0.85rem', color: '#555', textAlign: 'center' }}
+          style={{
+            fontSize: '0.8rem',
+            color: '#555',
+            textAlign: 'center',
+            marginBottom: '0.5rem',
+          }}
         >
           Coordenades:{' '}
           <strong>
@@ -131,50 +172,48 @@ export const NewNodeForm = ({
           </strong>
         </div>
 
-        {/* Inputs agrupats per files dobles */}
+        {/* Línia 1: Tipus - Posició - Diàmetre */}
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+          <label style={{ flex: 1, fontSize: '0.8rem' }}>
             Tipus:
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
               style={selectStyle}
-            >
-              <option value=""></option>
-              <option value="columna">Columna</option>
-              <option value="subterrani">Subterrani</option>
-            </select>
+            />
           </label>
-          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+          <label style={{ flex: 1, fontSize: '0.8rem' }}>
             Posició:
             <select
               value={position}
               onChange={(e) => setPosition(e.target.value)}
               style={selectStyle}
-            >
-              <option value=""></option>
-              <option value="calçada">Calçada</option>
-              <option value="vorera">Vorera</option>
-              <option value="verd">Verd</option>
-            </select>
+            />
           </label>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+          <label style={{ flex: 1, fontSize: '0.8rem' }}>
             Diàmetre:
             <select
               value={diameter}
               onChange={(e) => setDiameter(e.target.value)}
               style={selectStyle}
-            >
-              <option value=""></option>
-              <option value="100">100</option>
-              <option value="70">70</option>
-              <option value="45">45</option>
-            </select>
+            />
           </label>
-          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+        </div>
+
+        {/* Línia 2: Carrer (100%) */}
+        <label style={{ fontSize: '0.8rem', width: '100%' }}>
+          Carrer:
+          <input
+            type="text"
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+            style={{ ...inputStyle, width: '100%' }}
+          />
+        </label>
+
+        {/* Línia 3: Número (1/3) i Urbanització (2/3) */}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <label style={{ flex: 1, fontSize: '0.8rem' }}>
             Número:
             <input
               type="text"
@@ -183,50 +222,44 @@ export const NewNodeForm = ({
               style={inputStyle}
             />
           </label>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <label style={{ flex: 1, fontSize: '0.85rem' }}>
+          <label style={{ flex: 2, fontSize: '0.8rem' }}>
             Urbanització:
             <select
               value={urbanizatio}
               onChange={(e) => setUrbanizatio(e.target.value)}
               style={selectStyle}
-            >
-              <option value=""></option>
-              <option value="urb1">Urb1</option>
-              <option value="urb2">Urb2</option>
-              <option value="urb3">Urb3</option>
-            </select>
-          </label>
-          <label style={{ flex: 1, fontSize: '0.85rem' }}>
-            Carrer:
-            <input
-              type="text"
-              value={street}
-              onChange={(e) => setStreet(e.target.value)}
-              style={inputStyle}
             />
           </label>
         </div>
 
-        {/* Comentari en una sola fila */}
-        <label style={{ fontSize: '0.85rem' }}>
+        {/* Línia 4: Comentari (100%) */}
+        <label style={{ fontSize: '0.8rem', width: '100%' }}>
           Comentari:
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={2}
-            style={{ ...inputStyle, resize: 'vertical' }}
+            style={{ ...inputStyle, width: '100%', resize: 'vertical' }}
           />
         </label>
 
         {/* Botons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <button type="submit" style={primaryButtonStyle}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+            marginTop: '0.2rem',
+          }}
+        >
+          <button type="submit" style={{ ...primaryButtonStyle, flex: 1 }}>
             Enviar
           </button>
-          <button type="button" onClick={onClose} style={secondaryButtonStyle}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ ...secondaryButtonStyle, flex: 1 }}
+          >
             Cancel·la
           </button>
         </div>

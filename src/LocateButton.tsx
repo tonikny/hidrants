@@ -30,20 +30,6 @@ export function LocateButton() {
     <>
       <button
         onClick={locateUser}
-        // style={{
-        //   position: 'absolute',
-        //   bottom: '1rem',
-        //   right: '1rem',
-        //   background: '#28a745',
-        //   color: 'white',
-        //   border: 'none',
-        //   borderRadius: '50%',
-        //   width: '3rem',
-        //   height: '3rem',
-        //   fontSize: '1.5rem',
-        //   cursor: 'pointer',
-        //   zIndex: 1000,
-        // }}
         style={{
           position: 'absolute',
           bottom: '5rem',

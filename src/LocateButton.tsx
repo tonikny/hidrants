@@ -1,4 +1,4 @@
-import { Marker, useMap } from 'react-leaflet';
+import { Marker, Circle, useMap } from 'react-leaflet';
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { toast } from 'react-toastify';
@@ -7,6 +7,7 @@ export function LocateButton({ style }: { style?: React.CSSProperties }) {
   const map = useMap();
   const [tracking, setTracking] = useState(false);
   const [position, setPosition] = useState<L.LatLng | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -21,8 +22,10 @@ export function LocateButton({ style }: { style?: React.CSSProperties }) {
 
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
-          const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+          const { latitude, longitude, accuracy } = pos.coords;
+          const latlng = L.latLng(latitude, longitude);
           setPosition(latlng);
+          setAccuracy(accuracy);
           map.setView(latlng);
         },
         () => {
@@ -42,6 +45,7 @@ export function LocateButton({ style }: { style?: React.CSSProperties }) {
         toast.info('Seguiment de la posició desactivat');
       }
       setPosition(null);
+      setAccuracy(null);
     }
 
     return () => {
@@ -69,15 +73,28 @@ export function LocateButton({ style }: { style?: React.CSSProperties }) {
       </button>
 
       {position && (
-        <Marker
-          position={position}
-          icon={L.icon({
-            iconUrl: '/images/icons/marker-icon-green.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [0, -41],
-          })}
-        />
+        <>
+          <Marker
+            position={position}
+            icon={L.icon({
+              iconUrl: '/images/icons/marker-icon-green.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [0, -41],
+            })}
+          />
+          {accuracy && (
+            <Circle
+              center={position}
+              radius={accuracy}
+              pathOptions={{
+                color: '#3388ff',
+                fillColor: '#3388ff',
+                fillOpacity: 0.2,
+              }}
+            />
+          )}
+        </>
       )}
     </>
   );

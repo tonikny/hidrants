@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { NewNodeModal } from './NewNodeModal';
+// import { NewNodeModal } from './NewNodeModal';
+import { toast } from 'react-toastify';
 
 export function NewNodeButton({
   style,
@@ -10,19 +11,23 @@ export function NewNodeButton({
     <>
       <button
         onClick={() =>
-          setMessage(
+          toast.info(
             'Per afegir un node manualment, fes una pulsació llarga o un clic dret en el mapa'
           )
         }
+        //   setMessage(
+        //     'Per afegir un node manualment, fes una pulsació llarga o un clic dret en el mapa'
+        //   )
+        // }
         style={style}
         title="Afegir node manualment"
       >
         +
       </button>
 
-      {message && (
+      {/* {message && (
         <NewNodeModal message={message} onClose={() => setMessage(null)} />
-      )}
+      )} */}
     </>
   );
 }

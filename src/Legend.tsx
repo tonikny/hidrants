@@ -22,6 +22,7 @@ export function Legend() {
       div.style.borderRadius = '8px'; // Més amable visualment
       div.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
       div.style.margin = '0.5rem'; // Espai respecte a la vora
+      div.style.padding = '0.5rem 1rem';
 
       const style = 'display: flex;align-items: center;gap:15px';
       div.innerHTML = `

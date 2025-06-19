@@ -35,35 +35,21 @@ export function LegendModal() {
           onClick={() => setOpen(false)}
           aria-label="Tanca la llegenda"
           style={{
-            position: 'absolute',
-            bottom: '5rem',
-            left: '1rem',
-            background: '#007bff',
-            color: 'white',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'transparent',
             border: 'none',
-            borderRadius: '50%',
-            width: '3rem',
-            height: '3rem',
-            fontSize: '1.5rem',
+            padding: 0,
+            margin: 0,
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             cursor: 'pointer',
-            zIndex: 1000,
           }}
-          //   style={{
-          //     position: 'fixed',
-          //     top: 0,
-          //     left: 0,
-          //     right: 0,
-          //     bottom: 0,
-          //     background: 'transparent',
-          //     border: 'none',
-          //     padding: 0,
-          //     margin: 0,
-          //     zIndex: 2000,
-          //     display: 'flex',
-          //     alignItems: 'center',
-          //     justifyContent: 'center',
-          //     cursor: 'pointer',
-          //   }}
         >
           <div
             style={{

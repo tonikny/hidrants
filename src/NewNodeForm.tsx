@@ -322,13 +322,19 @@ export const MapClickHandler = ({
 
     let touchTimeout: NodeJS.Timeout;
     let touchStartLatLng: L.LatLng | null = null;
+    let touchStartPoint: L.Point | null = null;
+    const TOUCH_MOVE_THRESHOLD = 10;
 
     const handleTouchStart = (e: TouchEvent) => {
       if (isActive) return;
       if (e.touches.length > 1) return;
+
       const touch = e.touches[0];
-      const pointer = point(touch.clientX, touch.clientY);
-      const latlng = map.containerPointToLatLng(pointer);
+      const point = pointFromTouch(touch);
+      const latlng = map.containerPointToLatLng(point);
+
+      touchStartLatLng = latlng;
+      touchStartPoint = point;
 
       touchTimeout = setTimeout(() => {
         if (hasOpenedRef.current) return;
@@ -340,16 +346,33 @@ export const MapClickHandler = ({
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 1) {
         clearTimeout(touchTimeout);
+        return;
+      }
+      if (!touchStartPoint) return;
+
+      const touch = e.touches[0];
+      const currentPoint = pointFromTouch(touch);
+
+      const dx = currentPoint.x - touchStartPoint.x;
+      const dy = currentPoint.y - touchStartPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > TOUCH_MOVE_THRESHOLD) {
+        clearTimeout(touchTimeout); // cancel·la si el dit es mou massa
       }
     };
 
     const handleTouchEnd = () => {
       clearTimeout(touchTimeout);
       if (!hasOpenedRef.current && !isActive) {
-        // Protegeix tancament si actiu
         onCancel();
       }
       hasOpenedRef.current = false;
+    };
+
+    // Helper per convertir touch a Leaflet point
+    const pointFromTouch = (touch: Touch) => {
+      return point(touch.clientX, touch.clientY);
     };
 
     const handleMoveStart = () => {

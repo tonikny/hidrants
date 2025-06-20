@@ -12,6 +12,7 @@ import { NewNodeButton } from './NewNodeButton';
 import { LocateButton } from './LocateButton';
 import { Layers } from './Layers';
 import { FullscreenButton } from './FullscreenButton';
+import { ZoomDisplay } from './ZoomDisplay';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -73,6 +74,7 @@ export default function App() {
     <div id="map-container">
       <MapContainer center={coords} zoom={14} style={{ height: '100vh' }}>
         <Layers />
+        <ZoomDisplay />
         {features.map((feature) => {
           const coords = feature.geometry.coordinates;
           const props = feature.properties;

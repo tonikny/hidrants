@@ -14,9 +14,11 @@ export const Layers = () => (
     </BaseLayer>
 
     <BaseLayer name="OpenTopoMap">
-      <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" />
-      maxZoom={17}
-      maxNativeZoom={17}
+      <TileLayer
+        url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+        maxZoom={17}
+        maxNativeZoom={17}
+      />
     </BaseLayer>
 
     <BaseLayer name="Raster IGN">

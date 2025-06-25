@@ -29,8 +29,14 @@ export function LocateButton({
 
   useEffect(() => {
     if (tracking) {
-      if (!navigator.geolocation) {
-        toast.error('El teu navegador no suporta geolocalització');
+      const geolocation = navigator.geolocation;
+      console.log('navigator.geolocation:', navigator.geolocation);
+      if (
+        !geolocation ||
+        typeof geolocation !== 'object' ||
+        typeof geolocation.watchPosition !== 'function'
+      ) {
+        toast.error('Geolocalització no disponible al teu navegador');
         setTracking(false);
         return;
       }

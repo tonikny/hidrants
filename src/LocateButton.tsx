@@ -18,6 +18,16 @@ export function LocateButton({
   const firstUpdateRef = useRef(true);
 
   useEffect(() => {
+    const onError = (e: L.ErrorEvent) => {
+      toast.error('Permís de localització denegat o no disponible');
+    };
+    map.on('locationerror', onError);
+    return () => {
+      map.off('locationerror', onError);
+    };
+  }, [map]);
+
+  useEffect(() => {
     if (tracking) {
       if (!navigator.geolocation) {
         toast.error('El teu navegador no suporta geolocalització');

@@ -3,43 +3,19 @@ import { sendToTelegram } from './sendToTelegram';
 import { useMap } from 'react-leaflet';
 import { LatLng, point } from 'leaflet';
 import { toast } from 'react-toastify';
+import {
+  inputStyle,
+  popupContainerStyle,
+  primaryButtonStyle,
+  secondaryButtonStyle,
+  selectStyle,
+} from './styles/📁 formStyles';
 
 type NodeFormProps = {
   lat: number;
   lon: number;
   onClose: () => void;
   setNewNodeLatLng: (latlng: LatLng | null) => void;
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: '0.5rem',
-  fontSize: '0.9rem',
-  borderRadius: '6px',
-  border: '1px solid #ccc',
-};
-
-const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  backgroundColor: '#f9f9f9',
-};
-
-const primaryButtonStyle: React.CSSProperties = {
-  backgroundColor: '#007bff',
-  color: 'white',
-  border: 'none',
-  padding: '0.5rem 1rem',
-  borderRadius: '6px',
-  cursor: 'pointer',
-  fontWeight: 'bold',
-};
-
-const secondaryButtonStyle: React.CSSProperties = {
-  backgroundColor: '#ccc',
-  color: '#333',
-  border: 'none',
-  padding: '0.5rem 1rem',
-  borderRadius: '6px',
-  cursor: 'pointer',
 };
 
 export const NewNodeForm = ({
@@ -83,55 +59,6 @@ export const NewNodeForm = ({
       console.log(err);
       toast.error('Error enviant les dades');
     }
-  };
-
-  const inputStyle: React.CSSProperties = {
-    padding: '4px 0 4px 0',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    fontSize: '0.85rem',
-    width: '100%',
-  };
-
-  const selectStyle: React.CSSProperties = {
-    ...inputStyle,
-    backgroundColor: 'white',
-  };
-
-  const primaryButtonStyle: React.CSSProperties = {
-    backgroundColor: '#007bff',
-    color: 'white',
-    padding: '12px 12px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  };
-
-  const secondaryButtonStyle: React.CSSProperties = {
-    backgroundColor: '#e0e0e0',
-    color: '#333',
-    padding: '12px 12px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  };
-
-  const popupContainerStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '10%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: 'white',
-    padding: '0',
-    borderRadius: '10px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    width: 'min(60vw, 300px)',
-    maxHeight: '80vh',
-    overflowY: 'auto',
-    zIndex: 1000,
-    fontFamily: '"Helvetica Neue", Arial, Helvetica, sans-serif',
   };
 
   return (

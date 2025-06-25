@@ -36,10 +36,12 @@ export function LocateButton({
           setAccuracy(accuracy);
 
           if (firstUpdateRef.current) {
-            map.setView(latlng, 17); // Zoom només al primer cop
+            map.setView(latlng, 17);
+            setTimeout(() => {
+              map.invalidateSize(); // força recalcul de dimensions
+            }, 100); // petit delay perquè el DOM s’hagi renderitzat
             firstUpdateRef.current = false;
           }
-          // No moure el mapa a cada actualització per no molestar
         },
         () => {
           toast.error("No s'ha pogut obtenir la teva posició");

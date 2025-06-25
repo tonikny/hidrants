@@ -13,6 +13,7 @@ import { LocateButton } from './LocateButton';
 import { Layers } from './Layers';
 import { FullscreenButton } from './FullscreenButton';
 import { ZoomDisplay } from './ZoomDisplay';
+import { CoordinateModal } from './CoordinateModal';
 
 // Fix per les icones de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -31,6 +32,7 @@ export default function App() {
   const [features, setFeatures] = useState<OSMFeature[]>([]);
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
+  const [showCoordModal, setShowCoordModal] = useState(false);
 
   const openFormAtPosition = (latlng: L.LatLng) => {
     setClickedPosition(latlng);
@@ -151,7 +153,20 @@ export default function App() {
           left: '1rem',
           ...floatingButtonStyle,
         }}
+        onClick={() => setShowCoordModal(true)}
       />
+      {showCoordModal && (
+        <CoordinateModal
+          onClose={() => setShowCoordModal(false)}
+          onConfirm={(lat, lon) => {
+            const latlng = L.latLng(lat, lon);
+            setClickedPosition(latlng);
+            setShowNewForm(true);
+            setShowCoordModal(false);
+          }}
+        />
+      )}
+
       <ToastContainer position="top-center" autoClose={3000} theme="colored" />
     </div>
   );

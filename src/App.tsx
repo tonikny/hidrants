@@ -72,7 +72,11 @@ export default function App() {
 
   return (
     <div id="map-container">
-      <MapContainer center={coords} zoom={14} style={{ height: '100dvh' }}>
+      <MapContainer
+        center={coords}
+        zoom={14}
+        style={{ height: '100%', width: '100%' }}
+      >
         <Layers />
         <ZoomDisplay />
         {features.map((feature) => {

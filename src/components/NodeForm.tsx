@@ -1,15 +1,9 @@
 import { Popup } from 'react-leaflet';
 import { useState } from 'react';
-import { sendToTelegram } from './sendToTelegram';
-import { Feature, Point } from 'geojson';
+import { sendToTelegram } from '../sendToTelegram';
 import { toast } from 'react-toastify';
+import { OSMFeature } from '../hooks/useHidrantData';
 
-export interface OSMFeature extends Feature {
-  id: string;
-  properties: Record<string, string>;
-
-  geometry: Point;
-}
 type NodeFormProps = {
   feature: OSMFeature;
 };

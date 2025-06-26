@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { sendToTelegram } from './sendToTelegram';
+import { sendToTelegram } from '../sendToTelegram';
 import { useMap } from 'react-leaflet';
 import { LatLng, point } from 'leaflet';
 import { toast } from 'react-toastify';
@@ -9,7 +9,7 @@ import {
   primaryButtonStyle,
   secondaryButtonStyle,
   selectStyle,
-} from './styles/formStyles';
+} from '../styles/uiStyles';
 
 type NodeFormProps = {
   lat: number;
@@ -100,7 +100,7 @@ export const NewNodeForm = ({
         {/* Línia 1: Tipus - Posició - Diàmetre */}
         <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic' }}>
           <label style={{ flex: 1, fontSize: '0.8rem' }}>
-            Tipus:
+            Tipus:{' '}
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
@@ -112,7 +112,7 @@ export const NewNodeForm = ({
             </select>
           </label>
           <label style={{ flex: 1, fontSize: '0.8rem' }}>
-            Posició:
+            Posició:{' '}
             <select
               value={position}
               onChange={(e) => setPosition(e.target.value)}
@@ -125,7 +125,7 @@ export const NewNodeForm = ({
             </select>
           </label>
           <label style={{ flex: 1, fontSize: '0.8rem' }}>
-            Diàmetre:
+            Diàmetre:{' '}
             <select
               value={diameter}
               onChange={(e) => setDiameter(e.target.value)}
@@ -143,7 +143,7 @@ export const NewNodeForm = ({
         <label
           style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic' }}
         >
-          Carrer:
+          Carrer:{' '}
           <input
             type="text"
             value={street}
@@ -155,7 +155,7 @@ export const NewNodeForm = ({
         {/* Línia 3: Número (1/3) i Urbanització (2/3) */}
         <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic' }}>
           <label style={{ flex: 1, fontSize: '0.8rem' }}>
-            Número:
+            Número:{' '}
             <input
               type="text"
               value={num}
@@ -164,7 +164,7 @@ export const NewNodeForm = ({
             />
           </label>
           <label style={{ flex: 2, fontSize: '0.8rem' }}>
-            Urbanització:
+            Urbanització:{' '}
             <select
               value={urbanizatio}
               onChange={(e) => setUrbanizatio(e.target.value)}
@@ -182,7 +182,7 @@ export const NewNodeForm = ({
         <label
           style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic' }}
         >
-          Comentari:
+          Comentari:{' '}
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -247,8 +247,7 @@ export const MapClickHandler = ({
       onCancel();
     };
 
-    let touchTimeout: NodeJS.Timeout;
-    let touchStartLatLng: L.LatLng | null = null;
+    let touchTimeout: number;
     let touchStartPoint: L.Point | null = null;
     const TOUCH_MOVE_THRESHOLD = 10;
 
@@ -260,7 +259,6 @@ export const MapClickHandler = ({
       const point = pointFromTouch(touch);
       const latlng = map.containerPointToLatLng(point);
 
-      touchStartLatLng = latlng;
       touchStartPoint = point;
 
       touchTimeout = setTimeout(() => {

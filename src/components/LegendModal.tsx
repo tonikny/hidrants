@@ -49,14 +49,14 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
             <h4>Hidrants</h4>
             <div style={styles}>
               <img src="/images/icons/marker-icon-blue.png" /> Operatiu (revisat
-              ${currentYear})
+              {currentYear})
             </div>
             <div style={styles}>
               <img src="/images/icons/marker-icon-grey.png" /> Operatiu (no
               revisat)
             </div>
             <div style={styles}>
-              <img src="/images/icons/marker-icon-red.png" /> Fora de servei ($
+              <img src="/images/icons/marker-icon-red.png" /> Fora de servei (
               {currentYear})
             </div>
             <div style={styles}>

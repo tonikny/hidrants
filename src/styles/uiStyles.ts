@@ -1,4 +1,17 @@
-// formStyles.ts
+export const floatingButtonStyle: React.CSSProperties = {
+  background: '#007bff',
+  color: 'white',
+  border: 'none',
+  borderRadius: '50%',
+  width: '3rem',
+  height: '3rem',
+  fontSize: '1.5rem',
+  cursor: 'pointer',
+  zIndex: 1000,
+  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+};
+
+// formStyles
 
 export const inputStyle: React.CSSProperties = {
   padding: '4px 0',

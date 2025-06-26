@@ -4,7 +4,7 @@ import {
   popupContainerStyle,
   primaryButtonStyle,
   secondaryButtonStyle,
-} from './styles/📁 formStyles';
+} from './styles/formStyles';
 import { text } from 'stream/consumers';
 
 type CoordinateModalProps = {

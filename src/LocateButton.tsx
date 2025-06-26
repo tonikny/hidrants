@@ -18,22 +18,12 @@ export function LocateButton({
   const firstUpdateRef = useRef(true);
 
   useEffect(() => {
-    const onError = (e: L.ErrorEvent) => {
-      toast.error('Permís de localització denegat o no disponible');
-    };
-    map.on('locationerror', onError);
-    return () => {
-      map.off('locationerror', onError);
-    };
-  }, [map]);
-
-  useEffect(() => {
     if (tracking) {
       const geolocation = navigator.geolocation;
-      console.log('navigator.geolocation:', navigator.geolocation);
       if (
         !geolocation ||
         typeof geolocation !== 'object' ||
+        Object.keys(geolocation).length === 0 ||
         typeof geolocation.watchPosition !== 'function'
       ) {
         toast.error('Geolocalització no disponible al teu navegador');

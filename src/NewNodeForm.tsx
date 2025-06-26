@@ -9,7 +9,7 @@ import {
   primaryButtonStyle,
   secondaryButtonStyle,
   selectStyle,
-} from './styles/📁 formStyles';
+} from './styles/formStyles';
 
 type NodeFormProps = {
   lat: number;

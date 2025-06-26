@@ -21,12 +21,12 @@ export const ZoomDisplay = () => {
     <div
       style={{
         position: 'absolute',
-        bottom: 10,
-        right: 10,
+        bottom: 20,
+        right: 0,
         background: 'white',
-        padding: '4px 8px',
+        padding: '2px 4px',
         borderRadius: '4px',
-        fontSize: '0.9rem',
+        fontSize: '0.7rem',
         zIndex: 1000,
       }}
     >

@@ -50,9 +50,9 @@ export const NodeWithForm = ({ feature }: NodeFormProps) => {
     Tipus: tipusHidrants(props['fire_hydrant:type']),
     Posició: posicioHidrants(props['fire_hydrant:position']),
     Diametre: props['fire_hydrant:diameter'] ?? 'Desconegut',
-    Adreça: `${props['addr:street']} ${props['addr:housenumber'] ?? ''} (${
-      props['addr:neighbourhood'] ?? ''
-    })`,
+    Adreça: `${props['addr:street'] ?? ''} ${props['addr:housenumber'] ?? ''} ${
+      props['addr:neighbourhood'] ? '(' + props['addr:neighbourhood'] + ')' : ''
+    }`,
   };
 
   const handleSend = async (feature: OSMFeature) => {
@@ -77,7 +77,7 @@ export const NodeWithForm = ({ feature }: NodeFormProps) => {
       <br />
       {Object.entries(translatedTags).map(([key, value]) => (
         <div key={key}>
-          <strong>{key}:</strong>
+          <strong>{key}: </strong>
           {typeof value === 'string' || typeof value === 'number'
             ? value
             : JSON.stringify(value)}

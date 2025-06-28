@@ -13,6 +13,7 @@ import { CoordinateModal } from './CoordinateModal';
 import getHydrantIcon from './icons';
 import { useHydrantData } from '../hooks/useHidrantData';
 import { floatingButtonStyle } from '../styles/uiStyles';
+import MaskedAreaMap from './MaskedAreaMap';
 
 // delete (L.Icon.Default.prototype as any)._getIconUrl;
 // L.Icon.Default.mergeOptions({
@@ -28,6 +29,8 @@ const INITIAL_POSITION: LatLng = latLng(
   parseFloat(import.meta.env.VITE_INITIAL_LAT ?? '0'),
   parseFloat(import.meta.env.VITE_INITIAL_LNG ?? '0')
 );
+
+const OSM_AREA_ID = import.meta.env.VITE_OSM_AREA_ID;
 
 export function LeafletMap() {
   const features = useHydrantData();
@@ -92,6 +95,7 @@ export function LeafletMap() {
           }}
           onEdit={openFormAtPosition}
         />
+        <MaskedAreaMap areaId={345695} />
       </MapContainer>
 
       <FullscreenButton targetId="map-container" />

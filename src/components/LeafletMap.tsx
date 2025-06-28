@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MapContainer, Marker } from 'react-leaflet';
+import { useState, useEffect } from 'react';
+import { MapContainer, Marker, useMap } from 'react-leaflet';
 import L, { latLng, LatLng } from 'leaflet';
 import { NodeWithForm } from './NodeForm';
 import { MapClickHandler, NewNodeForm } from './NewNodeForm';
@@ -15,22 +15,25 @@ import { useHydrantData } from '../hooks/useHidrantData';
 import { floatingButtonStyle } from '../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
 
-// delete (L.Icon.Default.prototype as any)._getIconUrl;
-// L.Icon.Default.mergeOptions({
-//   iconRetinaUrl:
-//     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-//   iconUrl:
-//     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-//   shadowUrl:
-//     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-// });
-
 const INITIAL_POSITION: LatLng = latLng(
   parseFloat(import.meta.env.VITE_INITIAL_LAT ?? '0'),
   parseFloat(import.meta.env.VITE_INITIAL_LNG ?? '0')
 );
 
 const OSM_AREA_ID = import.meta.env.VITE_OSM_AREA_ID;
+
+// ✅ Component funcional que força el redibuix del mapa després de muntar-se
+function FixMapSize() {
+  const map = useMap();
+
+  useEffect(() => {
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+  }, [map]);
+
+  return null;
+}
 
 export function LeafletMap() {
   const features = useHydrantData();
@@ -45,11 +48,9 @@ export function LeafletMap() {
 
   return (
     <>
-      <MapContainer
-        center={INITIAL_POSITION}
-        zoom={14}
-        style={{ height: '100%', width: '100%' }}
-      >
+      <MapContainer center={INITIAL_POSITION} zoom={14} className="leaflet-map">
+        <FixMapSize />
+        <MaskedAreaMap areaId={OSM_AREA_ID} />
         <Layers />
         <ZoomDisplay />
         {features.map((feature) => {
@@ -95,7 +96,6 @@ export function LeafletMap() {
           }}
           onEdit={openFormAtPosition}
         />
-        <MaskedAreaMap areaId={345695} />
       </MapContainer>
 
       <FullscreenButton targetId="map-container" />

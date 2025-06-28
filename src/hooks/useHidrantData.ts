@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import osm2geojson from 'osm2geojson-lite';
 import { Feature, Point } from 'geojson';
 
-const OSM_AREA_ID = import.meta.env.VITE_OSM_AREA_ID;
+const OSM_AREA_ID = 3600000000 + Number(import.meta.env.VITE_OSM_AREA_ID);
 const OVERPASS_URL =
   import.meta.env.VITE_OVERPASS_URL ??
   'https://overpass-api.de/api/interpreter';

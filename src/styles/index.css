@@ -8,7 +8,13 @@ body,
 }
 
 #map-container {
-  height: 100dvh;
+  height: 100vh;
+  max-height: 100svh; /* Compatibilitat amb navegadors moderns */
   width: 100%;
   overflow: hidden;
+}
+
+.leaflet-map {
+  height: 100%;
+  width: 100%;
 }

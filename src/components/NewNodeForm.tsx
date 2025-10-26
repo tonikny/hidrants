@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { sendToTelegram } from '../sendToTelegram';
+import { sendToTelegram } from '../utils/sendToTelegram';
 import { useMap } from 'react-leaflet';
 import { LatLng, point } from 'leaflet';
 import { toast } from 'react-toastify';

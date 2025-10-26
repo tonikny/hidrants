@@ -1,11 +1,14 @@
 import { Popup } from 'react-leaflet';
 import { useState } from 'react';
-import { sendToTelegram } from '../sendToTelegram';
+import { sendToTelegram } from '../utils/sendToTelegram';
 import { toast } from 'react-toastify';
 import { OSMFeature } from '../hooks/useHidrantData';
+import { openInNativeMaps } from '../utils/geoMaps';
 
 type NodeFormProps = {
   feature: OSMFeature;
+  showRoute: boolean;
+  setShowRoute: (value: boolean) => void;
 };
 
 const posicioHidrants = (key: string) => {
@@ -38,7 +41,11 @@ const estatHidrants = (props: Record<string, string>) => {
 
 const diametreHidrant = 'Diametre';
 
-export const NodeWithForm = ({ feature }: NodeFormProps) => {
+export const NodeWithForm = ({
+  feature,
+  showRoute,
+  setShowRoute,
+}: NodeFormProps) => {
   const [message, setMessage] = useState('');
 
   const id = String(feature.id).split('/')[1];
@@ -55,11 +62,16 @@ export const NodeWithForm = ({ feature }: NodeFormProps) => {
     }`,
   };
 
+  const poi = {
+    lat: feature.geometry.coordinates[1],
+    lng: feature.geometry.coordinates[0],
+  };
+
   const handleSend = async (feature: OSMFeature) => {
     try {
       await sendToTelegram({
-        lat: feature.geometry.coordinates[0],
-        lon: feature.geometry.coordinates[1],
+        lat: poi.lat,
+        lon: poi.lng,
         tags: feature?.properties,
         message,
       });
@@ -70,6 +82,14 @@ export const NodeWithForm = ({ feature }: NodeFormProps) => {
       console.log(err);
       toast.error('Error enviant el missatge');
     }
+  };
+
+  const handleShowRoute = () => {
+    setShowRoute(!showRoute);
+  };
+
+  const handleOpenMaps = () => {
+    openInNativeMaps(poi.lat, poi.lng, 'Destinació');
   };
   return (
     <Popup>
@@ -85,6 +105,32 @@ export const NodeWithForm = ({ feature }: NodeFormProps) => {
       ))}
       <strong>Info: </strong>
       <a href={`https://www.openstreetmap.org/node/${id}`}>Veure en OSM</a>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <button
+          onClick={handleShowRoute}
+          // style={{
+          //   background: '#3498db',
+          //   color: 'white',
+          //   border: 'none',
+          //   borderRadius: '6px',
+          //   padding: '5px 10px',
+          // }}
+        >
+          {showRoute ? 'Tanca la ruta' : 'Veure ruta'}
+        </button>
+        <button
+          onClick={handleOpenMaps}
+          // style={{
+          //   background: '#3498db',
+          //   color: 'white',
+          //   border: 'none',
+          //   borderRadius: '6px',
+          //   padding: '5px 10px',
+          // }}
+        >
+          Obrir a l’app de mapes
+        </button>
+      </div>
       <textarea
         placeholder="Comentari"
         value={message}

@@ -10,14 +10,15 @@ import { Layers } from './Layers';
 import { FullscreenButton } from './FullscreenButton';
 import { ZoomDisplay } from './ZoomDisplay';
 import { CoordinateModal } from './CoordinateModal';
-import getHydrantIcon from './icons';
+import getHydrantIcon from '../utils/icons';
 import { useHydrantData } from '../hooks/useHidrantData';
 import { floatingButtonStyle } from '../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
+import { RouteLayer } from './RouteLayer';
 
 const INITIAL_POSITION: LatLng = latLng(
-  parseFloat(import.meta.env.VITE_INITIAL_LAT ?? '0'),
-  parseFloat(import.meta.env.VITE_INITIAL_LNG ?? '0')
+  Number.parseFloat(import.meta.env.VITE_INITIAL_LAT ?? '0'),
+  Number.parseFloat(import.meta.env.VITE_INITIAL_LNG ?? '0')
 );
 
 const OSM_AREA_ID = import.meta.env.VITE_OSM_AREA_ID;
@@ -40,6 +41,9 @@ export function LeafletMap() {
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCoordModal, setShowCoordModal] = useState(false);
+  const [position, setPosition] = useState<LatLng | null>(null);
+  const [poi, setPoi] = useState<LatLng | null>(null);
+  const [showRoute, setShowRoute] = useState(false);
 
   const openFormAtPosition = (latlng: L.LatLng) => {
     setClickedPosition(latlng);
@@ -60,8 +64,17 @@ export function LeafletMap() {
               key={feature.id}
               position={[coords[1], coords[0]]}
               icon={getHydrantIcon(feature.properties)}
+              eventHandlers={{
+                click: () => {
+                  setPoi(latLng(coords[1], coords[0]));
+                },
+              }}
             >
-              <NodeWithForm feature={feature} />
+              <NodeWithForm
+                feature={feature}
+                showRoute={showRoute}
+                setShowRoute={setShowRoute}
+              />
             </Marker>
           );
         })}
@@ -87,6 +100,9 @@ export function LeafletMap() {
             })}
           />
         )}
+        {poi && position && showRoute && (
+          <RouteLayer from={position} to={poi} />
+        )}
         <LocateButton
           style={{
             position: 'fixed',
@@ -95,6 +111,7 @@ export function LeafletMap() {
             ...floatingButtonStyle,
           }}
           onEdit={openFormAtPosition}
+          setPosition={setPosition}
         />
       </MapContainer>
 

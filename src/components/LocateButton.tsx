@@ -5,13 +5,15 @@ import { useGeolocationTracking } from '../hooks/useGeolocationTracking';
 export function LocateButton({
   style,
   onEdit,
+  setPosition,
 }: Readonly<{
   style?: React.CSSProperties;
   onEdit?: (latlng: L.LatLng) => void;
+  setPosition: (latlng: L.LatLng | null) => void;
 }>) {
   const { tracking, setTracking, position, accuracy } =
     useGeolocationTracking(onEdit);
-
+  setPosition(position ?? null);
   return (
     <>
       <button

@@ -22,15 +22,20 @@ module.exports = async function handler(req, res) {
         const { query } = req.body;
 
         if (!query) {
-            res.status(400).json({ error: 'Missing Overpass query' });
+            res.status(400).json({ error: 'Missing query' });
             return;
         }
 
         const response = await fetch(
             OVERPASS_URL,
             {
-                method: "POST",
-                body: "data=" + encodeURIComponent(query),
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=UTF-8',
+                    'Accept': '*/*',
+                    'User-Agent': 'curl/8.0',
+                },
+                body: query.trim(),
             }
         );
 
@@ -44,12 +49,12 @@ module.exports = async function handler(req, res) {
             return;
         }
 
-        // Overpass retorna JSON string
+        // Overpass retorna JSON com a string
         res.setHeader('Content-Type', 'application/json');
         res.status(200).send(text);
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({
-            error: error.message || 'Unexpected error',
+            error: err.message || 'Unexpected error',
         });
     }
 };

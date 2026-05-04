@@ -11,7 +11,7 @@ export interface OSMFeature extends Feature {
   geometry: Point;
 }
 
-export function useHydrantData(): OSMFeature[] {
+export function useHydrantData() {
   const [features, setFeatures] = useState<OSMFeature[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,14 +22,14 @@ export function useHydrantData(): OSMFeature[] {
       setError(null);
 
       const query = `
-        [out:json][timeout:60];
-        area(${OSM_AREA_ID})->.searchArea;
-        (
-          node(area.searchArea)["emergency"="fire_hydrant"];
-          node(area.searchArea)["disused:emergency"="fire_hydrant"];
-        );
-        out center tags;
-      `;
+[out:json][timeout:60];
+area(${OSM_AREA_ID})->.searchArea;
+(
+  node(area.searchArea)["emergency"="fire_hydrant"];
+  node(area.searchArea)["disused:emergency"="fire_hydrant"];
+);
+out center tags;
+      `.trim();
 
       try {
         const response = await fetch(API_URL, {
@@ -42,7 +42,7 @@ export function useHydrantData(): OSMFeature[] {
 
         if (!response.ok) {
           const errText = await response.text();
-          throw new Error(`API error: ${errText}`);
+          throw new Error(errText || `API error ${response.status}`);
         }
 
         const json = await response.json();
@@ -51,7 +51,7 @@ export function useHydrantData(): OSMFeature[] {
 
         setFeatures(geojson.features as OSMFeature[]);
       } catch (err: any) {
-        setError(err.message || 'Unknown error');
+        setError(err?.message || 'Unknown error');
       } finally {
         setLoading(false);
       }
@@ -60,5 +60,5 @@ export function useHydrantData(): OSMFeature[] {
     fetchHydrants();
   }, []);
 
-  return features;
+  return { features, loading, error };
 }

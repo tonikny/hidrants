@@ -8,67 +8,83 @@ type Props = {
   areaId: number; // Exemple: 3600305221 (OSM relation ID)
 };
 
+const API_URL =
+  import.meta.env.VITE_OVERPASS_PROXY_URL ?? '/api/overpass';
+
 export default function MaskedAreaMap({ areaId }: Props) {
   const map = useMap();
-  const [mask, setMask] = useState<Feature<Polygon | MultiPolygon> | null>(
-    null
-  );
+  const [mask, setMask] =
+    useState<Feature<Polygon | MultiPolygon> | null>(null);
 
   useEffect(() => {
     const fetchAndMaskArea = async () => {
-      const overpassQuery = `
-        [out:json][timeout:25];
-        relation(${areaId});
-        (._; >;);
-        out body;
-      `;
+      try {
+        const query = `
+[out:json][timeout:25];
+relation(${areaId});
+(._;>;);
+out body;
+        `.trim();
 
-      const response = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body: overpassQuery,
-      });
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query }),
+        });
 
-      const data = await response.json();
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(errText || `API error ${response.status}`);
+        }
 
-      // Convertim Overpass JSON → GeoJSON
-      const geojson = osmtogeojson(data);
+        const data = await response.json();
 
-      // Busquem la relació convertida en Polygon o MultiPolygon
-      const areaFeature = geojson.features.find(
-        (f) =>
-          (f.geometry.type === 'Polygon' ||
-            f.geometry.type === 'MultiPolygon') &&
-          f.properties?.type === 'boundary'
-      ) as Feature<Polygon | MultiPolygon> | undefined;
+        const geojson = osmtogeojson(data);
 
-      if (!areaFeature) {
-        console.warn("No s'ha pogut reconstruir la geometria de la relació");
-        return;
-      }
+        const areaFeature = geojson.features.find(
+          (f: any) =>
+            (f.geometry.type === 'Polygon' ||
+              f.geometry.type === 'MultiPolygon') &&
+            f.properties?.type === 'boundary'
+        ) as Feature<Polygon | MultiPolygon> | undefined;
+
+        if (!areaFeature) {
+          console.warn(
+            "No s'ha pogut reconstruir la geometria de la relació"
+          );
+          return;
+        }
 
       // Polygon del món sencer (per fer màscara)
-      const world = turf.polygon([
-        [
-          [-180, -90],
-          [180, -90],
-          [180, 90],
-          [-180, 90],
-          [-180, -90],
-        ],
-      ]);
+        const world = turf.polygon([
+          [
+            [-180, -90],
+            [180, -90],
+            [180, 90],
+            [-180, 90],
+            [-180, -90],
+          ],
+        ]);
 
       // Calculem la màscara restant
-      const collection = turf.featureCollection([world, areaFeature]);
-      const masked = turf.difference(collection);
+        const collection = turf.featureCollection([world, areaFeature]);
+        const masked = turf.difference(collection);
 
-      if (masked) {
-        setMask(masked as Feature<Polygon | MultiPolygon>);
-        const bbox = turf.bbox(areaFeature);
-        const bounds: [[number, number], [number, number]] = [
-          [bbox[1], bbox[0]],
-          [bbox[3], bbox[2]],
-        ];
-        map.fitBounds(bounds);
+        if (masked) {
+          setMask(masked as Feature<Polygon | MultiPolygon>);
+
+          const bbox = turf.bbox(areaFeature);
+          const bounds: [[number, number], [number, number]] = [
+            [bbox[1], bbox[0]],
+            [bbox[3], bbox[2]],
+          ];
+
+          map.fitBounds(bounds);
+        }
+      } catch (err) {
+        console.error('Error loading masked area:', err);
       }
     };
 

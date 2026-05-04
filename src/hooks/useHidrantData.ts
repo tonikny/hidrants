@@ -60,5 +60,5 @@ out center tags;
     fetchHydrants();
   }, []);
 
-  return { features, loading, error };
+  return features;
 }

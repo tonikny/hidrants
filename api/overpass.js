@@ -29,12 +29,8 @@ module.exports = async function handler(req, res) {
         const response = await fetch(
             OVERPASS_URL,
             {
-                method: 'POST',
-                headers: {
-                    // evita headers que poden provocar 406
-                    'Content-Type': 'text/plain;charset=UTF-8',
-                },
-                body: query,
+                method: "POST",
+                body: "data=" + encodeURIComponent(query),
             }
         );
 

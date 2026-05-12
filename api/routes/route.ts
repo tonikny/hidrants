@@ -21,7 +21,10 @@
 //     res.status(500).json({ error: 'Server error' });
 //   }
 // }
-export default async function handler(req, res) {
+
+import type { ApiHandler } from '../types.ts';
+
+const handler: ApiHandler = async (req, res) => {
   try {
     const { from, to } = req.query;
     const apiKey = process.env.GRAPHHOPPER_API_KEY;
@@ -52,4 +55,6 @@ export default async function handler(req, res) {
     console.error('Routing error:', err);
     res.status(500).json({ error: 'Server error' });
   }
-}
+};
+
+export default handler;

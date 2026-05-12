@@ -8,13 +8,14 @@ type Props = {
   areaId: number; // Exemple: 3600305221 (OSM relation ID)
 };
 
-const API_URL =
-  import.meta.env.VITE_OVERPASS_PROXY_URL ?? '/api/overpass';
+const API_URL = import.meta.env.VITE_API_URL ?? '/api';
+const API_OVERPASS_URL = API_URL + '/overpass';
 
 export default function MaskedAreaMap({ areaId }: Props) {
   const map = useMap();
-  const [mask, setMask] =
-    useState<Feature<Polygon | MultiPolygon> | null>(null);
+  const [mask, setMask] = useState<Feature<Polygon | MultiPolygon> | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchAndMaskArea = async () => {
@@ -26,7 +27,7 @@ relation(${areaId});
 out body;
         `.trim();
 
-        const response = await fetch(API_URL, {
+        const response = await fetch(API_OVERPASS_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -51,13 +52,11 @@ out body;
         ) as Feature<Polygon | MultiPolygon> | undefined;
 
         if (!areaFeature) {
-          console.warn(
-            "No s'ha pogut reconstruir la geometria de la relació"
-          );
+          console.warn("No s'ha pogut reconstruir la geometria de la relació");
           return;
         }
 
-      // Polygon del món sencer (per fer màscara)
+        // Polygon del món sencer (per fer màscara)
         const world = turf.polygon([
           [
             [-180, -90],
@@ -68,7 +67,7 @@ out body;
           ],
         ]);
 
-      // Calculem la màscara restant
+        // Calculem la màscara restant
         const collection = turf.featureCollection([world, areaFeature]);
         const masked = turf.difference(collection);
 

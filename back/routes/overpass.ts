@@ -1,4 +1,4 @@
-import type { ApiHandler } from '../types.ts';
+import type { ApiHandler } from '../types.js';
 
 const handler: ApiHandler = async (req, res) => {
   const OVERPASS_API_URL =

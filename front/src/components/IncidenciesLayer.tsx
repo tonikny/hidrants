@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LayersControl, GeoJSON } from 'react-leaflet';
-import L from 'leaflet';
+import L, { type LatLng } from 'leaflet';
+import type { Feature } from 'geojson';
 
 const { BaseLayer, Overlay } = LayersControl;
 
@@ -30,7 +31,9 @@ export default function IncedenciesLayer({
         <Overlay checked={active} name="Incidències">
           <GeoJSON
             data={geojson}
-            pointToLayer={(feature, latlng) => L.marker(latlng, { icon })}
+            pointToLayer={(feature: Feature, latlng: LatLng) =>
+              L.marker(latlng, { icon })
+            }
           />
         </Overlay>
       ) : null}

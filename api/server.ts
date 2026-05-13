@@ -1,5 +1,6 @@
 import Fastify, { FastifyReply, FastifyRequest } from 'fastify';
 
+import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
@@ -9,6 +10,10 @@ import type { ApiHandler, ApiRequest, ApiResponse } from './types.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({
+  path: path.resolve(__dirname, '../.env'),
+});
 
 const app = Fastify({
   logger: true,

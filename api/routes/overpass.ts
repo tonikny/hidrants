@@ -1,10 +1,8 @@
 import type { ApiHandler } from '../types.ts';
 
 const handler: ApiHandler = async (req, res) => {
-  //   const OVERPASS_URL =
-  //     process.env.OVERPASS_URL || 'https://overpass.kumi.systems/api/interpreter'; //'https://overpass-api.de/api/interpreter';
-  const OVERPASS_URL =
-    process.env.OVERPASS_URL || 'https://overpass-api.de/api/interpreter';
+  const OVERPASS_API_URL =
+    process.env.OVERPASS_URL || 'https://overpass.kumi.systems/api/interpreter';
 
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,14 +21,12 @@ const handler: ApiHandler = async (req, res) => {
 
   try {
     const { query } = req.body;
-    // console.log('body', req.body);
-
     if (!query) {
       res.status(400).json({ error: 'Missing query' });
       return;
     }
 
-    const response = await fetch(OVERPASS_URL, {
+    const response = await fetch(OVERPASS_API_URL, {
       method: 'POST',
       headers: {
         // 'Content-Type': 'text/plain;charset=UTF-8',

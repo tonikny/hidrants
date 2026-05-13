@@ -6,6 +6,7 @@ ADF 278 Els Hostalets de Pierola
 
 - React
 - Leaflet amb mapes OSM
+- Backend amb Fastify
 - Markers per a hidrants amb popup d'informació
 - Enviament per Telegram de comentaris o nous hidrants
 - Pantalla completa
@@ -15,15 +16,16 @@ ADF 278 Els Hostalets de Pierola
 ## TODO:
 
 - Rutes amb graphhopper
-- Menú lateral
-  - canvi població
-  - filtre poi
-  - botons actuals
-  - altres pàgines
+- Canvi població
 - Mapa offline/cache
 - Multipàgina
 - Usuaris/autentificació?
 - Incidències
 - Notificacions (Knock?)
 - Bd dades locals?
+- Menú lateral
+  - canvi població
+  - filtre poi
+  - botons actuals
+  - altres pàgines
 - Migrar a NextJS/RSC?

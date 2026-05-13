@@ -1,4 +1,5 @@
 import { LayersControl, TileLayer } from 'react-leaflet';
+import IncedenciesLayer from './IncidenciesLayer';
 
 const { BaseLayer, Overlay } = LayersControl;
 
@@ -16,6 +17,7 @@ export const Layers = () => (
     <BaseLayer name="OpenTopoMap">
       <TileLayer
         url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         maxZoom={17}
         maxNativeZoom={17}
       />
@@ -37,5 +39,6 @@ export const Layers = () => (
         maxNativeZoom={18}
       />
     </BaseLayer>
+    {/* <IncedenciesLayer active /> */}
   </LayersControl>
 );

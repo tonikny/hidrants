@@ -8,6 +8,8 @@ import { ApiHandler, ApiRequest } from './types.js';
 
 dotenv.config();
 
+const BASE_DOMAIN_URL = process.env.BASE_DOMAIN_URL || 'localhost';
+
 const app = Fastify({
   logger: { level: process.env.FASTIFY_LOGLEVEL || 'info' },
 });
@@ -75,9 +77,16 @@ function wrap(handler: ApiHandler) {
 app.addHook('preHandler', async (request) => {
   const host = request.headers.host || '';
 
-  // barcelona.xxx.no-ip.org → "barcelona"
-  const municipi = host.split('.')[0];
+  let municipi = '';
 
+  if (host.endsWith(BASE_DOMAIN_URL)) {
+    const sub = host.replace(`.${BASE_DOMAIN_URL}`, '');
+
+    // si no hi ha subdomini real → buit
+    if (sub && sub !== host) {
+      municipi = sub;
+    }
+  }
   (request as any).municipi = municipi;
   console.log(`👀 municipi: ${municipi}`);
 });

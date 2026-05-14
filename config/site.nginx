@@ -1,5 +1,5 @@
 server {
-    server_name hidrants.hopto.org;
+    server_name ~^(?<municipi>.+)\.hidrants\.hopto\.org$;
 
     root /var/www/app/front/dist;
     index index.html;

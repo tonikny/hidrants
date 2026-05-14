@@ -40,22 +40,6 @@ function createRes(reply: FastifyReply) {
   };
 }
 
-// /**
-//  * Tipus API
-//  */
-// type ApiRequest = {
-//   method: string;
-//   query: any;
-//   body: any;
-//   headers: any;
-//   params: any;
-//   url: string;
-// };
-
-// type ApiResponse = ReturnType<typeof createRes>;
-
-// type ApiHandler = (req: ApiRequest, res: ApiResponse) => Promise<void> | void;
-
 /**
  * Wrapper per adaptar handlers a Fastify
  */
@@ -68,6 +52,7 @@ function wrap(handler: ApiHandler) {
       headers: request.headers,
       params: request.params,
       url: request.url,
+      municipi: (request as any).municipi,
     };
 
     const res = createRes(reply);
@@ -83,6 +68,19 @@ function wrap(handler: ApiHandler) {
     }
   };
 }
+
+/**
+ * 👇 MIDDLEWARE GLOBAL (EXTRACCIÓ SUBDOMINI)
+ */
+app.addHook('preHandler', async (request) => {
+  const host = request.headers.host || '';
+
+  // barcelona.xxx.no-ip.org → "barcelona"
+  const municipi = host.split('.')[0];
+
+  (request as any).municipi = municipi;
+  console.log(`👀 municipi: ${municipi}`);
+});
 
 /**
  * RUTES

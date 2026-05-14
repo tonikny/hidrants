@@ -5,6 +5,7 @@ export type ApiRequest = {
   headers?: any;
   params?: any;
   url?: string;
+  municipi?: string;
 };
 
 export type ApiResponse = {

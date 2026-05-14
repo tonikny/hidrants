@@ -1,6 +1,8 @@
 {
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix front\" \"npm run dev --prefix back\"",
+    "update:municipis": "npm run update:municipis --prefix back",
+    "predeploy": "npm run update:municipis && npm run build",
     "build": "npm run build --prefix front && npm run build --prefix back",
     "start": "npm run start --prefix back"
   },

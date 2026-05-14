@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
 import { GeoJSON, useMap } from 'react-leaflet';
 import * as turf from '@turf/turf';
-import osmtogeojson from 'osmtogeojson';
+import slug from 'slug';
 import type { Feature, Polygon, MultiPolygon } from 'geojson';
 
-type Props = {
-  areaId: number; // Exemple: 3600305221 (OSM relation ID)
-};
+const MUNICIPI = import.meta.env.VITE_MUNICIPI ?? '';
 
-const API_URL = import.meta.env.VITE_API_URL ?? '/api';
-const API_OVERPASS_URL = API_URL + '/overpass';
-
-export default function MaskedAreaMap({ areaId }: Props) {
+export default function MaskedAreaMap() {
   const map = useMap();
   const [mask, setMask] = useState<Feature<Polygon | MultiPolygon> | null>(
     null
@@ -20,43 +15,22 @@ export default function MaskedAreaMap({ areaId }: Props) {
   useEffect(() => {
     const fetchAndMaskArea = async () => {
       try {
-        const query = `
-[out:json][timeout:25];
-relation(${areaId});
-(._;>;);
-out body;
-        `.trim();
-
-        const response = await fetch(API_OVERPASS_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query }),
-        });
+        const response = await fetch(
+          '/municipis/' + slug(MUNICIPI) + '.geojson'
+        );
 
         if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(errText || `API error ${response.status}`);
+          throw new Error(`API error ${response.status}`);
         }
 
-        const data = await response.json();
+        const geojson = await response.json();
 
-        const geojson = osmtogeojson(data);
+        const areaFeature = geojson.features[0] as
+          | Feature<Polygon | MultiPolygon>
+          | undefined;
 
-        const areaFeature = geojson.features.find(
-          (f: any) =>
-            (f.geometry.type === 'Polygon' ||
-              f.geometry.type === 'MultiPolygon') &&
-            f.properties?.type === 'boundary'
-        ) as Feature<Polygon | MultiPolygon> | undefined;
+        if (!areaFeature) return;
 
-        if (!areaFeature) {
-          console.warn("No s'ha pogut reconstruir la geometria de la relació");
-          return;
-        }
-
-        // Polygon del món sencer (per fer màscara)
         const world = turf.polygon([
           [
             [-180, -90],
@@ -66,21 +40,18 @@ out body;
             [-180, -90],
           ],
         ]);
-
-        // Calculem la màscara restant
         const collection = turf.featureCollection([world, areaFeature]);
         const masked = turf.difference(collection);
 
         if (masked) {
-          setMask(masked as Feature<Polygon | MultiPolygon>);
+          setMask(masked);
 
           const bbox = turf.bbox(areaFeature);
-          const bounds: [[number, number], [number, number]] = [
+
+          map.fitBounds([
             [bbox[1], bbox[0]],
             [bbox[3], bbox[2]],
-          ];
-
-          map.fitBounds(bounds);
+          ]);
         }
       } catch (err) {
         console.error('Error loading masked area:', err);
@@ -88,7 +59,7 @@ out body;
     };
 
     fetchAndMaskArea();
-  }, [areaId, map]);
+  }, [map]);
 
   return (
     <>

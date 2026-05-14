@@ -16,13 +16,6 @@ import { floatingButtonStyle } from '../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
 
-const INITIAL_POSITION: LatLng = latLng(
-  Number.parseFloat(import.meta.env.VITE_INITIAL_LAT ?? '0'),
-  Number.parseFloat(import.meta.env.VITE_INITIAL_LNG ?? '0')
-);
-
-const OSM_AREA_ID = import.meta.env.VITE_OSM_AREA_ID;
-
 // ✅ Component funcional que força el redibuix del mapa després de muntar-se
 function FixMapSize() {
   const map = useMap();
@@ -52,9 +45,9 @@ export function LeafletMap() {
 
   return (
     <>
-      <MapContainer center={INITIAL_POSITION} zoom={14} className="leaflet-map">
+      <MapContainer zoom={14} className="leaflet-map">
         <FixMapSize />
-        <MaskedAreaMap areaId={OSM_AREA_ID} />
+        <MaskedAreaMap />
         <Layers />
         <ZoomDisplay />
         {features.map((feature) => {

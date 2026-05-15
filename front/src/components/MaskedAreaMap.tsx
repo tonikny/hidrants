@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react';
 import { GeoJSON, useMap } from 'react-leaflet';
 import * as turf from '@turf/turf';
-import slug from 'slug';
 import type { Feature, Polygon, MultiPolygon } from 'geojson';
-
-const MUNICIPI = import.meta.env.VITE_MUNICIPI ?? '';
+import { useMunicipi } from '../contexts/MunicipiContext';
 
 export default function MaskedAreaMap() {
+  const { municipi } = useMunicipi();
   const map = useMap();
   const [mask, setMask] = useState<Feature<Polygon | MultiPolygon> | null>(
     null
   );
 
   useEffect(() => {
+    if (!municipi) return;
+
     const fetchAndMaskArea = async () => {
       try {
         const response = await fetch(
-          '/municipis/' + slug(MUNICIPI) + '.geojson'
+          '/municipis/' + municipi.slug + '.geojson'
         );
 
         if (!response.ok) {
@@ -46,12 +47,20 @@ export default function MaskedAreaMap() {
         if (masked) {
           setMask(masked);
 
-          const bbox = turf.bbox(areaFeature);
-
-          map.fitBounds([
-            [bbox[1], bbox[0]],
-            [bbox[3], bbox[2]],
-          ]);
+          // Si tenim el bbox al context, l'utilitzem (ordre: [minlat, minlon, maxlat, maxlon])
+          if (municipi.bbox) {
+            map.fitBounds([
+              [municipi.bbox[0], municipi.bbox[1]],
+              [municipi.bbox[2], municipi.bbox[3]],
+            ]);
+          } else {
+            // Si no, el calculem (turf.bbox retorna [minlon, minlat, maxlon, maxlat])
+            const bbox = turf.bbox(areaFeature);
+            map.fitBounds([
+              [bbox[1], bbox[0]],
+              [bbox[3], bbox[2]],
+            ]);
+          }
         }
       } catch (err) {
         console.error('Error loading masked area:', err);
@@ -59,7 +68,9 @@ export default function MaskedAreaMap() {
     };
 
     fetchAndMaskArea();
-  }, [map]);
+  }, [map, municipi]);
+
+  if (!municipi) return null;
 
   return (
     <>

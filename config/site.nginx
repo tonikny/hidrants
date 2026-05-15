@@ -1,3 +1,9 @@
+# Cache per a l'API d'Overpass (7 dies de persistència)
+proxy_cache_path /var/cache/nginx/overpass levels=1:2 keys_zone=overpass_cache:10m max_size=1g inactive=7d use_temp_path=off;
+
+# Cache per a les Tiles (30 dies de persistència)
+proxy_cache_path /var/cache/nginx/tiles levels=1:2 keys_zone=tiles_cache:10m max_size=5g inactive=30d use_temp_path=off;
+
 server {
     server_name ~^(?<municipi>.+)\.hidrants\.hopto\.org$;
 
@@ -15,6 +21,53 @@ server {
 
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # CACHE OVERPASS
+    location /api/overpass {
+        proxy_pass http://localhost:3033/api/overpass;
+
+        proxy_cache overpass_cache;
+        proxy_cache_methods POST;
+        proxy_cache_key "$host$request_uri|$request_body";
+        proxy_cache_valid 200 7d;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        add_header X-Cache-Status $upstream_cache_status;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # PROXY TILES CON CACHE
+    location /tiles/osm/ {
+        proxy_pass https://tile.openstreetmap.org/;
+        proxy_cache tiles_cache;
+        proxy_cache_valid 200 30d;
+        proxy_cache_use_stale error timeout updating;
+        add_header X-Cache-Status $upstream_cache_status;
+        proxy_set_header User-Agent "HidrantsADF/1.0";
+    }
+
+    location /tiles/opentopo/ {
+        proxy_pass https://tile.opentopomap.org/;
+        proxy_cache tiles_cache;
+        proxy_cache_valid 200 30d;
+        proxy_cache_use_stale error timeout updating;
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+
+    location /tiles/ign-raster/ {
+        proxy_pass https://tms-mapa-raster.ign.es/1.0.0/mapa-raster/;
+        proxy_cache tiles_cache;
+        proxy_cache_valid 200 30d;
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+
+    location /tiles/ign-orto/ {
+        proxy_pass https://tms-pnoa-ma.idee.es/1.0.0/pnoa-ma/;
+        proxy_cache tiles_cache;
+        proxy_cache_valid 200 30d;
+        add_header X-Cache-Status $upstream_cache_status;
     }
 
 

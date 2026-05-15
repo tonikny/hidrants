@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, Marker, useMap } from 'react-leaflet';
+import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { latLng, LatLng } from 'leaflet';
 import { NodeWithForm } from './NodeForm';
 import { MapClickHandler, NewNodeForm } from './NewNodeForm';
@@ -15,6 +15,35 @@ import { useHydrantData } from '../hooks/useHidrantData';
 import { floatingButtonStyle } from '../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
+import { useMunicipi } from '../contexts/MunicipiContext';
+
+// ✅ Component per escoltar canvis al mapa i informar al pare
+function MapStateListener({
+  onStateChange,
+}: {
+  onStateChange: (bounds: [number, number, number, number], zoom: number) => void;
+}) {
+  const map = useMapEvents({
+    moveend: () => {
+      const b = map.getBounds();
+      onStateChange(
+        [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
+        map.getZoom()
+      );
+    },
+  });
+
+  // Inicialitzem l'estat en muntar-se
+  useEffect(() => {
+    const b = map.getBounds();
+    onStateChange(
+      [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
+      map.getZoom()
+    );
+  }, []);
+
+  return null;
+}
 
 // ✅ Component funcional que força el redibuix del mapa després de muntar-se
 function FixMapSize() {
@@ -30,7 +59,10 @@ function FixMapSize() {
 }
 
 export function LeafletMap() {
-  const features = useHydrantData();
+  const { municipi, isLoading } = useMunicipi();
+  const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null);
+  const [mapZoom, setMapZoom] = useState<number>(14);
+  const features = useHydrantData(mapBounds, mapZoom);
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCoordModal, setShowCoordModal] = useState(false);
@@ -43,10 +75,24 @@ export function LeafletMap() {
     setShowNewForm(true);
   };
 
+  if (isLoading) {
+    return <div className="loading">Carregant dades del municipi...</div>;
+  }
+
   return (
     <>
-      <MapContainer zoom={14} className="leaflet-map">
+      <MapContainer
+        center={municipi?.center || [41.56, 1.72]}
+        zoom={municipi ? 14 : 11}
+        className="leaflet-map"
+      >
         <FixMapSize />
+        <MapStateListener
+          onStateChange={(bounds, zoom) => {
+            setMapBounds(bounds);
+            setMapZoom(zoom);
+          }}
+        />
         <MaskedAreaMap />
         <Layers />
         <ZoomDisplay />

@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { MUNICIPIS } from './municipis';
 
 async function fetchMunicipi(osmRelation: string) {
   const url =
@@ -32,13 +31,20 @@ async function fetchMunicipi(osmRelation: string) {
 }
 
 async function run() {
-  //   const outDir = path.join(process.cwd(), 'data/municipis');
-  const root = path.resolve(import.meta.dirname, '../..');
+  const root = path.resolve(import.meta.dirname, '../../..');
+  const catalogPath = path.join(root, 'back/data/municipis_catalog.json');
+  
+  if (!fs.existsSync(catalogPath)) {
+    console.error('❌ No s\'ha trobat el catàleg de municipis. Executa primer "npm run generate:municipis"');
+    process.exit(1);
+  }
+
+  const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
   const outDir = path.join(root, 'front/public/municipis');
 
   fs.mkdirSync(outDir, { recursive: true });
 
-  for (const municipi of MUNICIPIS) {
+  for (const municipi of catalog) {
     console.log(`⬇️ Updating ${municipi.slug}`);
 
     const result = await fetchMunicipi(municipi.osmRelation);

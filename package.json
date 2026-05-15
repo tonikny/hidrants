@@ -1,13 +1,14 @@
 {
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix front\" \"npm run dev --prefix back\"",
-    "update:municipis": "npm run update:municipis --prefix back",
+    "generate:municipis": "npm run generate:municipis --prefix back",
+    "update:boundaries": "npm run update:boundaries --prefix back",
     "build": "npm run build --prefix front && npm run build --prefix back",
     "start": "npm run start --prefix back",
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:restart": "pm2 restart api",
     "pm2:logs": "pm2 logs api",
-    "deploy": "git pull && npm install && npm install --prefix front && npm install --prefix back && npm run update:municipis && npm run build && (pm2 restart api || pm2 start ecosystem.config.js)"
+    "deploy": "git pull && npm install && npm install --prefix front && npm install --prefix back && npm run update:boundaries && npm run generate:municipis && npm run build && (pm2 restart api || pm2 start ecosystem.config.js)"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",

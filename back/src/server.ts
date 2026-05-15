@@ -72,23 +72,23 @@ function wrap(handler: ApiHandler) {
 }
 
 /**
- * 👇 MIDDLEWARE GLOBAL (EXTRACCIÓ SUBDOMINI)
+ * MIDDLEWARE GLOBAL (EXTRACCIÓ SUBDOMINI)
  */
 app.addHook('preHandler', async (request) => {
-  const host = request.headers.host || '';
+  const fullHost = request.headers.host || '';
+  const host = fullHost.split(':')[0]; // Gestiona "piera.localhost:5173" -> "piera.localhost"
 
   let municipi = '';
 
-  if (host.endsWith(BASE_DOMAIN_URL)) {
-    const sub = host.replace(`.${BASE_DOMAIN_URL}`, '');
-
-    // si no hi ha subdomini real → buit
-    if (sub && sub !== host) {
-      municipi = sub;
-    }
+  if (host.endsWith(BASE_DOMAIN_URL) && host !== BASE_DOMAIN_URL) {
+    // Extreu el subdomini correctament tant a local com a producció
+    municipi = host.replace(`.${BASE_DOMAIN_URL}`, '');
+    // Netegem el punt sobrant si n'hi ha (p.ex. "piera.localhost" -> "piera")
+    if (municipi.endsWith('.')) municipi = municipi.slice(0, -1);
   }
+
   (request as any).municipi = municipi;
-  console.log(`👀 municipi: ${municipi}`);
+  console.log(`👀 host: ${host} | municipi: ${municipi}`);
 });
 
 /**

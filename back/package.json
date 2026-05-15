@@ -1,10 +1,11 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "tsx watch server.ts",
+    "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc",
-    "update:municipis": "tsx scripts/updateBoundaries.ts"
+    "update:boundaries": "tsx src/scripts/updateBoundaries.ts",
+    "generate:municipis": "tsx src/scripts/generateMunicipis.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

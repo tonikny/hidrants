@@ -1,29 +1,43 @@
-# Cache per a l'API d'Overpass (7 dies de persistència)
+# 1. Definició de les zones de cache (Haurien d'estar al bloc 'http' de nginx.conf, però si el teu fitxer s'inclou dins del bloc http funcionaran aquí)
 proxy_cache_path /var/cache/nginx/overpass levels=1:2 keys_zone=overpass_cache:10m max_size=1g inactive=7d use_temp_path=off;
-
-# Cache per a les Tiles (30 dies de persistència)
 proxy_cache_path /var/cache/nginx/tiles levels=1:2 keys_zone=tiles_cache:10m max_size=5g inactive=30d use_temp_path=off;
 
+# 2. REDIRECCIÓ DE HTTP A HTTPS (Domini base i subdominis)
 server {
-    server_name ~^(?<municipi>.+)\.hidrants\.hopto\.org$;
+    listen 80;
+    server_name .hidrants.hopto.org; # El punt inicial inclou hidrants.hopto.org i *.hidrants.hopto.org
+    return 301 https://$host$request_uri;
+}
+
+# 3. BLOC SSL UNIFICAT (Domini base i municipis)
+server {
+    listen 443 ssl;
+    server_name hidrants.hopto.org ~^(?<municipi>.+)\.hidrants\.hopto\.org$;
 
     root /var/www/app/front/dist;
     index index.html;
+
+    # Certificats SSL (Gestionats per Certbot - Opció B Multi-domini)
+    ssl_certificate /etc/letsencrypt/live/hidrants.hopto.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/hidrants.hopto.org/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     # FRONTEND
     location / {
         try_files $uri /index.html;
     }
 
-    # API/BACKEND
+    # API / BACKEND (General)
     location /api/ {
         proxy_pass http://localhost:3033/api/;
-
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # CACHE OVERPASS
+    # CACHE OVERPASS (Mètode POST amb clau basada en el cos)
     location /api/overpass {
         proxy_pass http://localhost:3033/api/overpass;
 
@@ -32,13 +46,14 @@ server {
         proxy_cache_key "$host$request_uri|$request_body";
         proxy_cache_valid 200 7d;
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        
         add_header X-Cache-Status $upstream_cache_status;
 
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    # PROXY TILES CON CACHE
+    # PROXY TILES AMB CACHE
     location /tiles/osm/ {
         proxy_pass https://tile.openstreetmap.org/;
         proxy_cache tiles_cache;
@@ -69,24 +84,4 @@ server {
         proxy_cache_valid 200 30d;
         add_header X-Cache-Status $upstream_cache_status;
     }
-
-
-    listen 443 ssl; # managed by Certbot
-    ssl_certificate /etc/letsencrypt/live/hidrants.hopto.org/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/hidrants.hopto.org/privkey.pem; # managed by Certbot
-    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
-
-}
-server {
-    if ($host = hidrants.hopto.org) {
-        return 301 https://$host$request_uri;
-    } # managed by Certbot
-
-
-    server_name hidrants.hopto.org;
-    listen 80;
-    return 404; # managed by Certbot
-
-
 }

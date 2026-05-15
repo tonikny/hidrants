@@ -22,9 +22,9 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/slug": "^5.0.9",
-    "@vitejs/plugin-react": "^4.0.0",
+    "@vitejs/plugin-react": "^6.0.2",
     "typescript": "^5.8.3",
-    "vite": "^5.0.0",
-    "vite-plugin-mkcert": "^1.17.8"
+    "vite": "^8.0.13",
+    "vite-plugin-mkcert": "^2.0.0"
   }
 }

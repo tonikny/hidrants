@@ -5,6 +5,7 @@ import overpass from './routes/overpass.js';
 import sendToTelegram from './routes/sendToTelegram.js';
 import route from './routes/route.js';
 import municipi from './routes/municipi.js';
+import boundary from './routes/boundary.js';
 import { ApiHandler, ApiRequest } from './types.js';
 
 dotenv.config();
@@ -100,6 +101,7 @@ const routes = [
   { path: '/api/sendToTelegram', handler: sendToTelegram },
   { path: '/api/route', handler: route },
   { path: '/api/municipi', handler: municipi },
+  { path: '/api/municipi/boundary', handler: boundary },
 ];
 routes.forEach((r) => app.all(r.path, wrap(r.handler)));
 

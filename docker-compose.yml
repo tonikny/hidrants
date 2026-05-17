@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: hidrants-back
+    restart: unless-stopped
+    ports:
+      - "3034:3033"
+    env_file:
+      - ./back/.env
+    volumes:
+      - ./back/data:/app/data
+    networks:
+      - hidrants-net
+
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: hidrants-front
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - hidrants-net
+
+networks:
+  hidrants-net:
+    driver: bridge

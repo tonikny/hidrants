@@ -40,7 +40,7 @@ async function run() {
   }
 
   const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
-  const outDir = path.join(root, 'front/public/municipis');
+  const outDir = path.join(root, 'back/data/boundaries');
 
   fs.mkdirSync(outDir, { recursive: true });
 

@@ -16,9 +16,7 @@ export default function MaskedAreaMap() {
 
     const fetchAndMaskArea = async () => {
       try {
-        const response = await fetch(
-          '/municipis/' + municipi.slug + '.geojson'
-        );
+        const response = await fetch('/api/municipi/boundary');
 
         if (!response.ok) {
           throw new Error(`API error ${response.status}`);

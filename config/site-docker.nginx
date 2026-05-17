@@ -1,53 +1,67 @@
-# 1. Definició de les zones de cache (Manté la config actual)
+# 1. Definició de les zones de cache
+# Aquestes zones es guarden a /var/cache/nginx/ al host
 proxy_cache_path /var/cache/nginx/overpass levels=1:2 keys_zone=overpass_cache:10m max_size=1g inactive=7d use_temp_path=off;
 proxy_cache_path /var/cache/nginx/tiles levels=1:2 keys_zone=tiles_cache:10m max_size=5g inactive=30d use_temp_path=off;
 
 # 2. REDIRECCIÓ DE HTTP A HTTPS
 server {
     listen 80;
+    listen [::]:80;
     server_name .hidrants.hopto.org;
-    return 301 https://$host$request_uri;
+    
+    # Necessari per a les renovacions de Certbot
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 
 # 3. BLOC SSL UNIFICAT (Docker Proxy Mode)
 server {
     listen 443 ssl;
+    listen [::]:443 ssl;
     server_name hidrants.hopto.org ~^(?<municipi>.+)\.hidrants\.hopto\.org$;
 
-    # Certificats SSL (Gestionats pel Host)
+    # Certificats SSL (Gestionats pel Host amb Certbot)
     ssl_certificate /etc/letsencrypt/live/hidrants.hopto.org/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/hidrants.hopto.org/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
-    # CAPÇALERES DE SEGURETAT
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    # --- CAPÇALERES DE SEGURETAT ---
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.openstreetmap.org https://*.opentopomap.org https://*.idee.es; connect-src 'self' https://overpass-api.de;" always;
 
-    # FRONTEND (Ara via Docker)
+    # FRONTEND (Proxy al contenidor Docker)
     location / {
-        proxy_pass http://localhost:8080;
+        proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Timeout per a aplicacions React
+        proxy_read_timeout 90;
     }
 
-    # API / BACKEND (Docker a port 3034)
+    # API / BACKEND (Proxy al contenidor Docker port 3034)
     location /api/ {
-        proxy_pass http://localhost:3034/api/;
+        proxy_pass http://127.0.0.1:3034/api/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # CACHE OVERPASS (Proxy al contenidor Docker)
+    # CACHE OVERPASS (Proxy al contenidor Backend amb cache al host)
     location /api/overpass {
-        proxy_pass http://localhost:3034/api/overpass;
+        proxy_pass http://127.0.0.1:3034/api/overpass;
 
         proxy_cache overpass_cache;
         proxy_cache_methods POST;
@@ -61,7 +75,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    # PROXY TILES AMB CACHE (Es manté igual)
+    # PROXY TILES AMB CACHE (Gestionat pel host)
     location /tiles/osm/ {
         proxy_pass https://tile.openstreetmap.org/;
         proxy_cache tiles_cache;
@@ -71,5 +85,25 @@ server {
         proxy_set_header User-Agent "HidrantsADF/1.0";
     }
 
-    # ... la resta de rutes /tiles/ign-raster, etc. segueixen igual ...
+    location /tiles/opentopo/ {
+        proxy_pass https://tile.opentopomap.org/;
+        proxy_cache tiles_cache;
+        proxy_cache_valid 200 30d;
+        proxy_cache_use_stale error timeout updating;
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+
+    location /tiles/ign-raster/ {
+        proxy_pass https://tms-mapa-raster.ign.es/1.0.0/mapa-raster/;
+        proxy_cache tiles_cache;
+        proxy_cache_valid 200 30d;
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+
+    location /tiles/ign-orto/ {
+        proxy_pass https://tms-pnoa-ma.idee.es/1.0.0/pnoa-ma/;
+        proxy_cache tiles_cache;
+        proxy_cache_valid 200 30d;
+        add_header X-Cache-Status $upstream_cache_status;
+    }
 }

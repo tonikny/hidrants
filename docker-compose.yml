@@ -6,7 +6,7 @@ services:
     container_name: hidrants-back
     restart: unless-stopped
     ports:
-      - "3034:3033"
+      - "127.0.0.1:3034:3033"
     env_file:
       - ./back/.env
     volumes:
@@ -21,7 +21,7 @@ services:
     container_name: hidrants-front
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       - backend
     networks:

@@ -1,7 +1,35 @@
+# Dependències
 node_modules/
+
+# Entorn i Secrets
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Configuracions Reals (Host)
+config/*.nginx
+!config/*.example
+ecosystem.config.*
+
+# Dades Persistents i Catàlegs
+back/data/boundaries/
+back/data/municipis_catalog.json
+back/dist/
+front/dist/
+
+# IDEs i Logs
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Eines i Docs
 .vite/
-AGENTS.md
 .opencode/
 opencode.json
+AGENTS.md
 install_scripts/

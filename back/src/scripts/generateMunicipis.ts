@@ -57,9 +57,20 @@ async function fetchMunicipiData(name: string) {
 }
 
 async function run() {
-  const catalog = [];
   const outDir = path.resolve(import.meta.dirname, '../../data');
   const outFile = path.join(outDir, 'municipis_catalog.json');
+  
+  // Llegim el catàleg existent si existeix
+  let existingCatalog: any[] = [];
+  if (fs.existsSync(outFile)) {
+    try {
+      existingCatalog = JSON.parse(fs.readFileSync(outFile, 'utf-8'));
+    } catch (e) {
+      console.warn('⚠️ No s\'ha pogut llegir el catàleg existent, es començarà de zero.');
+    }
+  }
+
+  const catalog = [];
 
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
@@ -74,12 +85,26 @@ async function run() {
       if (data) {
         catalog.push(data);
         console.log(`✅ Trobat: ${data.name} (${data.osmRelation})`);
+      } else {
+        // Si no es troba però el teníem al catàleg vell, el mantenim
+        const oldData = existingCatalog.find(m => m.name === name || m.slug === slugify(name));
+        if (oldData) {
+          catalog.push(oldData);
+          console.warn(`⚠️ No s'ha trobat a Overpass, es manté valor antic per a: ${name}`);
+        }
       }
     } catch (error) {
-      console.error(`❌ Error buscant ${name}:`, error);
+      console.error(`❌ Error buscant ${name}:`, error instanceof Error ? error.message : error);
+      
+      // En cas d'error (p.ex. 429), busquem si el teníem al catàleg vell per no perdre'l
+      const oldData = existingCatalog.find(m => m.name === name || m.slug === slugify(name));
+      if (oldData) {
+        catalog.push(oldData);
+        console.warn(`⚠️ S'ha produït un error, es manté valor antic per a: ${name}`);
+      }
     }
-    // Petit retard per no saturar l'API
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Augmentem el retard per no saturar l'API d'Overpass (2 segons)
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
   fs.writeFileSync(outFile, JSON.stringify(catalog, null, 2));

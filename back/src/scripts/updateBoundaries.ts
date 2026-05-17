@@ -45,30 +45,38 @@ async function run() {
   fs.mkdirSync(outDir, { recursive: true });
 
   for (const municipi of catalog) {
+    const filePath = path.join(outDir, `${municipi.slug}.geojson`);
     console.log(`⬇️ Updating ${municipi.slug}`);
 
-    const result = await fetchMunicipi(municipi.osmRelation);
+    try {
+      const result = await fetchMunicipi(municipi.osmRelation);
 
-    const geojson = {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          properties: {
-            slug: municipi.slug,
-            osmRelation: municipi.osmRelation,
-            name: result.display_name,
+      const geojson = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {
+              slug: municipi.slug,
+              osmRelation: municipi.osmRelation,
+              name: result.display_name,
+            },
+            geometry: result.geojson,
           },
-          geometry: result.geojson,
-        },
-      ],
-    };
+        ],
+      };
 
-    const filePath = path.join(outDir, `${municipi.slug}.geojson`);
-
-    fs.writeFileSync(filePath, JSON.stringify(geojson));
-
-    console.log(`✅ Saved ${municipi.slug}`);
+      fs.writeFileSync(filePath, JSON.stringify(geojson));
+      console.log(`✅ Saved ${municipi.slug}`);
+    } catch (error) {
+      console.error(`❌ Error updating ${municipi.slug}:`, error instanceof Error ? error.message : error);
+      if (fs.existsSync(filePath)) {
+        console.warn(`⚠️ Es manté el fitxer GeoJSON existent per a: ${municipi.slug}`);
+      }
+    }
+    
+    // Retard per respectar l'ús de Nominatim (1 segon per petició)
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 }
 

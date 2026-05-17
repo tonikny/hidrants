@@ -1,0 +1,12 @@
+# ------------------------------------------------------------------------------
+# HIDRANTS - Security Tasks (Cron)
+# ------------------------------------------------------------------------------
+
+# Cada dia a les 07:30 - Informe de logs a Telegram
+30 7 * * * root /bin/bash /var/www/hidrants/scripts/logwatch-to-telegram.sh
+
+# Cada diumenge a les 04:00 - Auditoria de Lynis (guarda informe al host)
+0 4 * * 0 root /usr/bin/lynis audit system --quick > /var/log/lynis-report.log
+
+# Cada dia a les 03:00 - Actualització de la llista de bloqueig de CrowdSec
+0 3 * * * root /usr/bin/cscli hub update && /usr/bin/cscli hub upgrade && /usr/bin/systemctl reload crowdsec

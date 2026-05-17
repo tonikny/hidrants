@@ -5,9 +5,6 @@
     "update:boundaries": "npm run update:boundaries --prefix back",
     "build": "npm run build --prefix front && npm run build --prefix back",
     "start": "npm run start --prefix back",
-    "pm2:start": "pm2 start ecosystem.config.js",
-    "pm2:restart": "pm2 restart api",
-    "pm2:logs": "pm2 logs api",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:build": "docker compose build",
@@ -16,7 +13,6 @@
     "deploy": "git pull && npm install && npm run update:boundaries && npm run generate:municipis && docker compose up -d --build && docker image prune -f"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0",
-    "pm2": "^7.0.1"
+    "concurrently": "^9.0.0"
   }
 }

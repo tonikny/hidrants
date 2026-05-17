@@ -1,6 +1,7 @@
 import { Marker, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import { useGeolocationTracking } from '../hooks/useGeolocationTracking';
+import { use, useEffect } from 'react';
 
 export function LocateButton({
   style,
@@ -13,7 +14,9 @@ export function LocateButton({
 }>) {
   const { tracking, setTracking, position, accuracy } =
     useGeolocationTracking(onEdit);
-  setPosition(position ?? null);
+  useEffect(() => {
+    if (position) setPosition(position ?? null);
+  }, [position]);
   return (
     <>
       <button

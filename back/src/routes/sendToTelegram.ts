@@ -1,4 +1,6 @@
-module.exports = async function handler(req, res) {
+import type { ApiHandler } from '../types.ts';
+
+const handler: ApiHandler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -53,6 +55,10 @@ ${tags?.id ? `https://www.openstreetmap.org/${tags.id}` : ''}
 
     res.status(200).json({ ok: true });
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Unexpected error' });
+    res
+      .status(500)
+      .json({ error: (error as Error).message || 'Unexpected error' });
   }
 };
+
+export default handler;

@@ -1,3 +1,7 @@
-/node_modules
+node_modules/
 .env
-.vercel
+.vite/
+AGENTS.md
+.opencode/
+opencode.json
+install_scripts/

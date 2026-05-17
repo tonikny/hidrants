@@ -1,30 +1,17 @@
 {
-  "name": "hidrants",
-  "version": "1.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@turf/turf": "^7.2.0",
-    "leaflet": "^1.9.4",
-    "osm2geojson-lite": "^1.1.2",
-    "osmtogeojson": "^3.0.0-beta.5",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-leaflet": "^4.2.1",
-    "react-toastify": "^11.0.5"
+    "dev": "concurrently \"npm run dev --prefix front\" \"npm run dev --prefix back\"",
+    "generate:municipis": "npm run generate:municipis --prefix back",
+    "update:boundaries": "npm run update:boundaries --prefix back",
+    "build": "npm run build --prefix front && npm run build --prefix back",
+    "start": "npm run start --prefix back",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:restart": "pm2 restart api",
+    "pm2:logs": "pm2 logs api",
+    "deploy": "git pull && npm install && npm install --prefix front && npm install --prefix back && npm run update:boundaries && npm run generate:municipis && npm run build && (pm2 restart api || pm2 start ecosystem.config.cjs)"
   },
   "devDependencies": {
-    "@types/leaflet": "^1.9.18",
-    "@types/node": "^24.0.4",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vercel/node": "^5.2.2",
-    "@vitejs/plugin-react": "^4.0.0",
-    "typescript": "^5.8.3",
-    "vite": "^5.0.0",
-    "vite-plugin-mkcert": "^1.17.8"
+    "concurrently": "^9.0.0",
+    "pm2": "^7.0.1"
   }
 }

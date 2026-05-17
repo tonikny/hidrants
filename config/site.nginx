@@ -1,11 +1,12 @@
-# 1. Definició de les zones de cache (Haurien d'estar al bloc 'http' de nginx.conf, però si el teu fitxer s'inclou dins del bloc http funcionaran aquí)
+# 1. Definició de les zones de cache
+# Aquestes zones es guarden a /var/cache/nginx/, creats pel script de sys_setup.
 proxy_cache_path /var/cache/nginx/overpass levels=1:2 keys_zone=overpass_cache:10m max_size=1g inactive=7d use_temp_path=off;
 proxy_cache_path /var/cache/nginx/tiles levels=1:2 keys_zone=tiles_cache:10m max_size=5g inactive=30d use_temp_path=off;
 
-# 2. REDIRECCIÓ DE HTTP A HTTPS (Domini base i subdominis)
+# 2. REDIRECCIÓ DE HTTP A HTTPS
 server {
     listen 80;
-    server_name .hidrants.hopto.org; # El punt inicial inclou hidrants.hopto.org i *.hidrants.hopto.org
+    server_name .hidrants.hopto.org;
     return 301 https://$host$request_uri;
 }
 
@@ -14,21 +15,30 @@ server {
     listen 443 ssl;
     server_name hidrants.hopto.org ~^(?<municipi>.+)\.hidrants\.hopto\.org$;
 
-    root /var/www/app/front/dist;
+    root /var/www/hidrants/front/dist;
     index index.html;
 
-    # Certificats SSL (Gestionats per Certbot - Opció B Multi-domini)
+    # Certificats SSL (Gestionats per Certbot - Script ssl_setup.sh)
+    # Certbot normalment apunta al directori del primer domini passat (-d)
     ssl_certificate /etc/letsencrypt/live/hidrants.hopto.org/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/hidrants.hopto.org/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # --- CAPÇALERES DE SEGURETAT ---
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    # CSP: Permetem scripts propis, estils d'unpkg (leaflet), imatges de tiles i connexió a l'API Overpass
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.openstreetmap.org https://*.opentopomap.org https://*.idee.es; connect-src 'self' https://overpass-api.de;" always;
 
     # FRONTEND
     location / {
         try_files $uri /index.html;
     }
 
-    # API / BACKEND (General)
+    # API / BACKEND
     location /api/ {
         proxy_pass http://localhost:3033/api/;
         proxy_set_header Host $host;
@@ -37,7 +47,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # CACHE OVERPASS (Mètode POST amb clau basada en el cos)
+    # CACHE OVERPASS
     location /api/overpass {
         proxy_pass http://localhost:3033/api/overpass;
 

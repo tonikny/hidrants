@@ -32,4 +32,4 @@ yarn-error.log*
 .opencode/
 opencode.json
 AGENTS.md
-install_scripts/
+scripts/

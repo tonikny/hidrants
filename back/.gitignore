@@ -1,0 +1,6 @@
+# node_modules/
+# dist/
+# .env
+
+# Dades Persistents i Catàlegs
+data/

@@ -48,9 +48,20 @@ export const NodeWithForm = ({
 }: NodeFormProps) => {
   const [message, setMessage] = useState('');
 
-  const id = String(feature.id).split('/')[1];
   const props = feature.properties;
+  
+  // ✅ Lògica per extreure l'ID de visualització:
+  // Si ve d'OSM pot ser "node/12345" o "osm-12345". Volem mostrar només "12345".
+  let displayId = String(feature.id);
+  let osmId = props.osm_id;
 
+  if (displayId.includes('/')) {
+    displayId = displayId.split('/')[1];
+  } else if (displayId.startsWith('osm-')) {
+    displayId = displayId.replace('osm-', '');
+  }
+
+  // ✅ Traduim les etiquetes d'OSM a noms llegibles en català.
   const translatedTags = {
     'Data de revisió': props['survey:date'],
     Estat: estatHidrants(props),
@@ -91,9 +102,31 @@ export const NodeWithForm = ({
   const handleOpenMaps = () => {
     openInNativeMaps(poi.lat, poi.lng, 'Destinació');
   };
+
+  const handleUpdateSurveyDate = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/hidrants/${feature.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          osm_tags: { ...props, 'survey:date': today }
+        }),
+      });
+
+      if (!response.ok) throw new Error('Error actualitzant dades');
+      
+      toast.success(`Revisió registrada: ${today}`);
+      // Donat que estem usant estats locals, caldria refrescar la llista
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err) {
+      toast.error('No s’ha pogut registrar la revisió');
+    }
+  };
+
   return (
     <Popup>
-      <strong>Id:</strong> {id}
+      <strong>Id:</strong> {displayId}
       <br />
       {Object.entries(translatedTags).map(([key, value]) => (
         <div key={key}>
@@ -103,36 +136,46 @@ export const NodeWithForm = ({
             : JSON.stringify(value)}
         </div>
       ))}
-      <strong>Info: </strong>
-      <a href={`https://www.openstreetmap.org/node/${id}`}>Veure en OSM</a>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <button
-          onClick={handleShowRoute}
-          // style={{
-          //   background: '#3498db',
-          //   color: 'white',
-          //   border: 'none',
-          //   borderRadius: '6px',
-          //   padding: '5px 10px',
-          // }}
+      {osmId && (
+        <>
+          <strong>Info: </strong>
+          <a
+            href={`https://www.openstreetmap.org/node/${osmId}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Veure en OSM
+          </a>
+        </>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
+          <button onClick={handleShowRoute} style={{ flex: 1, fontSize: '0.7rem' }}>
+            {showRoute ? 'Tanca ruta' : 'Ruta'}
+          </button>
+          <button onClick={handleOpenMaps} style={{ flex: 1, fontSize: '0.7rem' }}>
+            Mapes
+          </button>
+        </div>
+        
+        <button 
+          onClick={handleUpdateSurveyDate}
+          style={{ 
+            background: '#27ae60', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '4px', 
+            padding: '4px',
+            fontSize: '0.75rem',
+            cursor: 'pointer'
+          }}
         >
-          {showRoute ? 'Tanca la ruta' : 'Veure ruta'}
-        </button>
-        <button
-          onClick={handleOpenMaps}
-          // style={{
-          //   background: '#3498db',
-          //   color: 'white',
-          //   border: 'none',
-          //   borderRadius: '6px',
-          //   padding: '5px 10px',
-          // }}
-        >
-          Obrir a l’app de mapes
+          ✅ Registra revisió avui
         </button>
       </div>
+
       <textarea
-        placeholder="Comentari"
+        placeholder="Comentari per Telegram"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         rows={2}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { latLng, LatLng } from 'leaflet';
 import { NodeWithForm } from './NodeForm';
@@ -15,6 +15,7 @@ import { useHydrantData } from '../hooks/useHidrantData';
 import { floatingButtonStyle } from '../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
+import { SyncButton } from './SyncButton';
 import { useMunicipi } from '../contexts/MunicipiContext';
 
 // ✅ Component per escoltar canvis al mapa i informar al pare
@@ -62,8 +63,32 @@ export function LeafletMap() {
   const { municipi, isLoading } = useMunicipi();
   const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null);
   const [mapZoom, setMapZoom] = useState<number>(14);
-  const features = useHydrantData(mapBounds, mapZoom);
+
+  // ✅ Funció per gestionar els canvis d'estat del mapa amb prevenció de bucles infinits.
+  // Utilitzem useCallback per mantenir la referència de la funció estable.
+  const handleMapStateChange = useCallback((bounds: [number, number, number, number], zoom: number) => {
+    setMapBounds(prev => {
+      if (!prev) return bounds;
+      
+      // ✅ TOLERÀNCIA ANTI-BUCLE:
+      // Si el mapa es mou menys de 0.00001 graus (p.ex. per un "auto-pan" d'un Popup),
+      // ignorem el canvi per evitar que React entri en un bucle infinit de renderitzat.
+      const threshold = 0.00001;
+      const hasMovedSignificantly = 
+        Math.abs(prev[0] - bounds[0]) > threshold ||
+        Math.abs(prev[1] - bounds[1]) > threshold ||
+        Math.abs(prev[2] - bounds[2]) > threshold ||
+        Math.abs(prev[3] - bounds[3]) > threshold;
+
+      return hasMovedSignificantly ? bounds : prev;
+    });
+
+    setMapZoom(prev => prev === zoom ? prev : zoom);
+  }, []);
+
+  const { features, loading: loadingHidrants, error: hidrantsError } = useHydrantData(mapBounds, mapZoom);
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
+
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCoordModal, setShowCoordModal] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
@@ -88,10 +113,7 @@ export function LeafletMap() {
       >
         <FixMapSize />
         <MapStateListener
-          onStateChange={(bounds, zoom) => {
-            setMapBounds(bounds);
-            setMapZoom(zoom);
-          }}
+          onStateChange={handleMapStateChange}
         />
         <MaskedAreaMap />
         <Layers />
@@ -155,6 +177,57 @@ export function LeafletMap() {
       </MapContainer>
 
       <FullscreenButton targetId="map-container" />
+
+      {municipi && (
+        <SyncButton
+          style={{
+            position: 'fixed',
+            top: '1rem',
+            right: '1rem',
+            ...floatingButtonStyle,
+            background: 'white',
+            color: 'black',
+            width: '40px',
+            height: '40px',
+            fontSize: '1.2rem',
+          }}
+        />
+      )}
+
+      {loadingHidrants && (
+        <div style={{
+          position: 'fixed',
+          top: '1rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(255, 255, 255, 0.8)',
+          padding: '0.5rem 1rem',
+          borderRadius: '20px',
+          zIndex: 1000,
+          boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+          fontSize: '0.8rem',
+          pointerEvents: 'none'
+        }}>
+          Actualitzant hidrants...
+        </div>
+      )}
+
+      {hidrantsError && (
+        <div style={{
+          position: 'fixed',
+          top: '4rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(255, 0, 0, 0.8)',
+          color: 'white',
+          padding: '0.5rem 1rem',
+          borderRadius: '8px',
+          zIndex: 1000,
+          fontSize: '0.8rem'
+        }}>
+          Error: {hidrantsError}
+        </div>
+      )}
 
       {clickedPosition && showNewForm && (
         <NewNodeForm

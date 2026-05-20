@@ -1,15 +1,16 @@
-import Fastify, { FastifyReply, FastifyRequest } from 'fastify';
 import dotenv from 'dotenv';
+dotenv.config();
+
+import Fastify, { FastifyReply, FastifyRequest } from 'fastify';
 
 import overpass from './routes/overpass.js';
 import sendToTelegram from './routes/sendToTelegram.js';
 import route from './routes/route.js';
 import municipi from './routes/municipi.js';
 import boundary from './routes/boundary.js';
+import hidrants from './routes/hidrants.js';
 import { initDB } from './db/index.js';
 import { ApiHandler, ApiRequest } from './types.js';
-
-dotenv.config();
 
 // Inicialitzem la base de dades
 initDB();
@@ -102,6 +103,9 @@ app.addHook('preHandler', async (request) => {
  */
 const routes = [
   { path: '/api/overpass', handler: overpass },
+  { path: '/api/hidrants/sync', handler: hidrants },
+  { path: '/api/hidrants', handler: hidrants },
+  { path: '/api/hidrants/:id', handler: hidrants },
   { path: '/api/sendToTelegram', handler: sendToTelegram },
   { path: '/api/route', handler: route },
   { path: '/api/municipi', handler: municipi },

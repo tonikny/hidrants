@@ -10,6 +10,7 @@ export default function MaskedAreaMap() {
   const [mask, setMask] = useState<Feature<Polygon | MultiPolygon> | null>(
     null
   );
+  const [hasFittedBounds, setHasFittedBounds] = useState(false);
 
   useEffect(() => {
     if (!municipi) return;
@@ -45,19 +46,21 @@ export default function MaskedAreaMap() {
         if (masked) {
           setMask(masked);
 
-          // Si tenim el bbox al context, l'utilitzem (ordre: [minlat, minlon, maxlat, maxlon])
-          if (municipi.bbox) {
-            map.fitBounds([
-              [municipi.bbox[0], municipi.bbox[1]],
-              [municipi.bbox[2], municipi.bbox[3]],
-            ]);
-          } else {
-            // Si no, el calculem (turf.bbox retorna [minlon, minlat, maxlon, maxlat])
-            const bbox = turf.bbox(areaFeature);
-            map.fitBounds([
-              [bbox[1], bbox[0]],
-              [bbox[3], bbox[2]],
-            ]);
+          // Només ajustem el zoom la primera vegada
+          if (!hasFittedBounds) {
+            if (municipi.bbox) {
+              map.fitBounds([
+                [municipi.bbox[0], municipi.bbox[1]],
+                [municipi.bbox[2], municipi.bbox[3]],
+              ]);
+            } else {
+              const bbox = turf.bbox(areaFeature);
+              map.fitBounds([
+                [bbox[1], bbox[0]],
+                [bbox[3], bbox[2]],
+              ]);
+            }
+            setHasFittedBounds(true);
           }
         }
       } catch (err) {
@@ -66,7 +69,7 @@ export default function MaskedAreaMap() {
     };
 
     fetchAndMaskArea();
-  }, [map, municipi]);
+  }, [map, municipi, hasFittedBounds]);
 
   if (!municipi) return null;
 

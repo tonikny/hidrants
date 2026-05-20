@@ -103,23 +103,47 @@ export const NodeWithForm = ({
     openInNativeMaps(poi.lat, poi.lng, 'Destinació');
   };
 
-  const handleUpdateSurveyDate = async () => {
+  const handleUpdateSurveyDate = async (isOperative: boolean) => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      
+      // Filtrem camps interns de properties per quedar-nos només amb els tags d'OSM
+      const {
+        id: _id,
+        osm_id: _osm_id,
+        private_tags: _private_tags,
+        sync_status: _sync_status,
+        updated_at: _updated_at,
+        ...osmTags
+      } = props;
+
+      const newTags: Record<string, string> = { ...osmTags, 'survey:date': today };
+      
+      if (isOperative) {
+        newTags['emergency'] = 'fire_hydrant';
+        delete newTags['disused:emergency'];
+      } else {
+        newTags['disused:emergency'] = 'fire_hydrant';
+        delete newTags['emergency'];
+      }
+
       const response = await fetch(`/api/hidrants/${feature.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          osm_tags: { ...props, 'survey:date': today }
+          osm_tags: newTags
         }),
       });
 
       if (!response.ok) throw new Error('Error actualitzant dades');
       
-      toast.success(`Revisió registrada: ${today}`);
-      // Donat que estem usant estats locals, caldria refrescar la llista
+      const statusText = isOperative ? 'Operatiu' : 'Fora de servei';
+      toast.success(`Revisió registrada (${statusText}): ${today}`);
+      
+      // Refresquem per veure els canvis (el color de la icona canvia segons l'estat)
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
+      console.error(err);
       toast.error('No s’ha pogut registrar la revisió');
     }
   };
@@ -158,20 +182,36 @@ export const NodeWithForm = ({
           </button>
         </div>
         
-        <button 
-          onClick={handleUpdateSurveyDate}
-          style={{ 
-            background: '#27ae60', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px', 
-            padding: '4px',
-            fontSize: '0.75rem',
-            cursor: 'pointer'
-          }}
-        >
-          ✅ Registra revisió avui
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <button 
+            onClick={() => handleUpdateSurveyDate(true)}
+            style={{ 
+              background: '#27ae60', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              padding: '6px',
+              fontSize: '0.75rem',
+              cursor: 'pointer'
+            }}
+          >
+            ✅ Operatiu (Revisat avui)
+          </button>
+          <button 
+            onClick={() => handleUpdateSurveyDate(false)}
+            style={{ 
+              background: '#e74c3c', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              padding: '6px',
+              fontSize: '0.75rem',
+              cursor: 'pointer'
+            }}
+          >
+            ❌ Fora de servei (Revisat avui)
+          </button>
+        </div>
       </div>
 
       <textarea

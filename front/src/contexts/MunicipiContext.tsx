@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 
 export interface MunicipiData {
   name: string;
@@ -52,8 +52,10 @@ export const MunicipiProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [municipi]);
 
+  const value = useMemo(() => ({ municipi, isLoading, error }), [municipi, isLoading, error]);
+
   return (
-    <MunicipiContext.Provider value={{ municipi, isLoading, error }}>
+    <MunicipiContext.Provider value={value}>
       {children}
     </MunicipiContext.Provider>
   );

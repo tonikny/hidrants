@@ -4,11 +4,14 @@ import { Feature, Point } from 'geojson';
 import { useMunicipi } from '../contexts/MunicipiContext';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '/api';
-const API_OVERPASS_URL = API_URL + '/overpass';
+const API_HIDRANTS_URL = API_URL + '/hidrants';
 
 export interface OSMFeature extends Feature {
   id: string;
-  properties: Record<string, string>;
+  properties: Record<string, any> & {
+    private_tags?: Record<string, string>;
+    sync_status?: string;
+  };
   geometry: Point;
 }
 
@@ -25,59 +28,49 @@ export function useHydrantData(bounds?: [number, number, number, number] | null,
       return;
     }
 
-    // Si no hi ha municipi i no tenim bounds, no podem fer la consulta per BBOX
-    if (!municipi && !bounds) return;
-
     const fetchHydrants = async () => {
       setLoading(true);
       setError(null);
 
-      let query = '';
-
-      if (municipi) {
-        // Consulta per Àrea (Municipi)
-        const relationId = municipi.osmRelation.replace('R', '');
-        const areaId = 3600000000 + Number(relationId);
-        query = `
-          [out:json][timeout:60];
-          area(${areaId})->.searchArea;
-          (
-            node(area.searchArea)["emergency"="fire_hydrant"];
-            node(area.searchArea)["disused:emergency"="fire_hydrant"];
-          );
-          out center tags;
-        `.trim();
-      } else if (bounds) {
-        // Consulta per BBOX (Vista general)
-        const [s, w, n, e] = bounds;
-        query = `
-          [out:json][timeout:30];
-          (
-            node(${s},${w},${n},${e})["emergency"="fire_hydrant"];
-            node(${s},${w},${n},${e})["disused:emergency"="fire_hydrant"];
-          );
-          out center tags;
-        `.trim();
-      }
-
-      if (!query) return;
-
       try {
-        const response = await fetch(API_OVERPASS_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query }),
-        });
+        let url = API_HIDRANTS_URL;
+        
+        // Si tenim municipi, l'API del backend ja l'identifica pel subdomini,
+        // però si volguéssim passar bounds ho faríem per query string.
+        if (!municipi && bounds) {
+          // Per ara mantenim la consulta a /overpass per a vistes generals sense municipi
+          // o podríem implementar /api/hidrants?bbox=...
+          const [s, w, n, e] = bounds;
+          const query = `
+            [out:json][timeout:30];
+            (
+              node(${s},${w},${n},${e})["emergency"="fire_hydrant"];
+              node(${s},${w},${n},${e})["disused:emergency"="fire_hydrant"];
+            );
+            out center tags;
+          `.trim();
+          
+          const response = await fetch(API_URL + '/overpass', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query }),
+          });
+          
+          if (!response.ok) throw new Error(`Overpass error ${response.status}`);
+          const json = await response.json();
+          const geojson = osm2geojson(json);
+          setFeatures(geojson.features as OSMFeature[]);
+          return;
+        }
+
+        const response = await fetch(url);
 
         if (!response.ok) {
           const errText = await response.text();
           throw new Error(errText || `API error ${response.status}`);
         }
 
-        const json = await response.json();
-        const geojson = osm2geojson(json);
+        const geojson = await response.json();
         setFeatures(geojson.features as OSMFeature[]);
       } catch (err: any) {
         setError(err?.message || 'Unknown error');
@@ -86,10 +79,10 @@ export function useHydrantData(bounds?: [number, number, number, number] | null,
       }
     };
 
-    // Debounce per evitar saturar l'API si l'usuari mou el mapa ràpidament
+    // Debounce
     const timeout = setTimeout(fetchHydrants, 500);
     return () => clearTimeout(timeout);
   }, [municipi, bounds, zoom]);
 
-  return features;
+  return { features, loading, error };
 }

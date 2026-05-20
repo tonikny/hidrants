@@ -1,0 +1,30 @@
+{
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "update:boundaries": "tsx src/scripts/updateBoundaries.ts",
+    "generate:municipis": "tsx src/scripts/generateMunicipis.ts",
+    "create:user": "tsx src/scripts/createUser.ts"
+  },
+  "dependencies": {
+    "@fastify/jwt": "^10.1.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.10.0",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.0.0",
+    "slug": "^11.0.1",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^25.8.0",
+    "@types/slug": "^5.0.9",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^6.0.3"
+  }
+}

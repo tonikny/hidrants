@@ -1,0 +1,30 @@
+{
+  "name": "hidrants",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@turf/turf": "^7.2.0",
+    "leaflet": "^1.9.4",
+    "osm2geojson-lite": "^2.0.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-leaflet": "^5.0.0",
+    "react-toastify": "^11.1.0",
+    "slug": "^11.0.1"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^25.8.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/slug": "^5.0.9",
+    "@vitejs/plugin-react": "^6.0.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.13",
+    "vite-plugin-mkcert": "^2.0.0"
+  }
+}

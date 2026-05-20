@@ -48,7 +48,7 @@ export const NodeWithForm = ({
   setShowRoute,
 }: NodeFormProps) => {
   const [message, setMessage] = useState('');
-  const { token } = useAuth();
+  const { user, token } = useAuth();
 
   const props = feature.properties;
   
@@ -187,36 +187,38 @@ export const NodeWithForm = ({
           </button>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <button 
-            onClick={() => handleUpdateSurveyDate(true)}
-            style={{ 
-              background: '#27ae60', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              padding: '6px',
-              fontSize: '0.75rem',
-              cursor: 'pointer'
-            }}
-          >
-            ✅ Operatiu (Revisat avui)
-          </button>
-          <button 
-            onClick={() => handleUpdateSurveyDate(false)}
-            style={{ 
-              background: '#e74c3c', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              padding: '6px',
-              fontSize: '0.75rem',
-              cursor: 'pointer'
-            }}
-          >
-            ❌ Fora de servei (Revisat avui)
-          </button>
-        </div>
+        {user && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            <button 
+              onClick={() => handleUpdateSurveyDate(true)}
+              style={{ 
+                background: '#27ae60', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                padding: '6px',
+                fontSize: '0.75rem',
+                cursor: 'pointer'
+              }}
+            >
+              ✅ Operatiu (Revisat avui)
+            </button>
+            <button 
+              onClick={() => handleUpdateSurveyDate(false)}
+              style={{ 
+                background: '#e74c3c', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                padding: '6px',
+                fontSize: '0.75rem',
+                cursor: 'pointer'
+              }}
+            >
+              ❌ Fora de servei (Revisat avui)
+            </button>
+          </div>
+        )}
       </div>
 
       <textarea

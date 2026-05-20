@@ -17,6 +17,8 @@ import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
 import { SyncButton } from './SyncButton';
 import { useMunicipi } from '../contexts/MunicipiContext';
+import { useAuth } from '../contexts/AuthContext';
+import { Login } from './Login';
 
 // ✅ Component per escoltar canvis al mapa i informar al pare
 function MapStateListener({
@@ -41,7 +43,7 @@ function MapStateListener({
       [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
       map.getZoom()
     );
-  }, []);
+  }, [map, onStateChange]);
 
   return null;
 }
@@ -61,18 +63,13 @@ function FixMapSize() {
 
 export function LeafletMap() {
   const { municipi, isLoading } = useMunicipi();
+  const { user, logout } = useAuth();
   const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null);
   const [mapZoom, setMapZoom] = useState<number>(14);
 
-  // ✅ Funció per gestionar els canvis d'estat del mapa amb prevenció de bucles infinits.
-  // Utilitzem useCallback per mantenir la referència de la funció estable.
   const handleMapStateChange = useCallback((bounds: [number, number, number, number], zoom: number) => {
     setMapBounds(prev => {
       if (!prev) return bounds;
-      
-      // ✅ TOLERÀNCIA ANTI-BUCLE:
-      // Si el mapa es mou menys de 0.00001 graus (p.ex. per un "auto-pan" d'un Popup),
-      // ignorem el canvi per evitar que React entri en un bucle infinit de renderitzat.
       const threshold = 0.00001;
       const hasMovedSignificantly = 
         Math.abs(prev[0] - bounds[0]) > threshold ||
@@ -91,11 +88,13 @@ export function LeafletMap() {
 
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCoordModal, setShowCoordModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
   const [poi, setPoi] = useState<LatLng | null>(null);
   const [showRoute, setShowRoute] = useState(false);
 
   const openFormAtPosition = (latlng: L.LatLng) => {
+    if (!user) return;
     setClickedPosition(latlng);
     setShowNewForm(true);
   };
@@ -139,17 +138,19 @@ export function LeafletMap() {
             </Marker>
           );
         })}
-        <MapClickHandler
-          onClick={(latlng) => {
-            setClickedPosition(latlng);
-            setShowNewForm(true);
-          }}
-          onCancel={() => {
-            setClickedPosition(null);
-            setShowNewForm(false);
-          }}
-          isActive={!!clickedPosition}
-        />
+        {user && (
+          <MapClickHandler
+            onClick={(latlng) => {
+              setClickedPosition(latlng);
+              setShowNewForm(true);
+            }}
+            onCancel={() => {
+              setClickedPosition(null);
+              setShowNewForm(false);
+            }}
+            isActive={!!clickedPosition}
+          />
+        )}
         {clickedPosition && showNewForm && (
           <Marker
             position={clickedPosition}
@@ -171,14 +172,14 @@ export function LeafletMap() {
             left: '1rem',
             ...floatingButtonStyle,
           }}
-          onEdit={openFormAtPosition}
+          onEdit={user ? openFormAtPosition : undefined}
           setPosition={setPosition}
         />
       </MapContainer>
 
       <FullscreenButton targetId="map-container" />
 
-      {municipi && (
+      {user && municipi && (
         <SyncButton
           style={{
             position: 'fixed',
@@ -192,6 +193,48 @@ export function LeafletMap() {
             fontSize: '1.2rem',
           }}
         />
+      )}
+
+      {/* Botó Login/Logout */}
+      <button
+        onClick={user ? logout : () => setShowLoginModal(true)}
+        style={{
+          position: 'fixed',
+          top: '1rem',
+          right: user ? '4.5rem' : '1rem',
+          ...floatingButtonStyle,
+          background: user ? '#e74c3c' : 'white',
+          color: user ? 'white' : 'black',
+          width: 'auto',
+          padding: '0 10px',
+          height: '40px',
+          fontSize: '0.8rem',
+          zIndex: 1000,
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}
+      >
+        {user ? `Surt (${user.username})` : '🔐'}
+      </button>
+
+      {showLoginModal && !user && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000
+        }} onClick={() => setShowLoginModal(false)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <Login />
+          </div>
+        </div>
       )}
 
       {loadingHidrants && (
@@ -229,7 +272,7 @@ export function LeafletMap() {
         </div>
       )}
 
-      {clickedPosition && showNewForm && (
+      {clickedPosition && showNewForm && user && (
         <NewNodeForm
           lat={clickedPosition.lat}
           lon={clickedPosition.lng}
@@ -246,15 +289,17 @@ export function LeafletMap() {
           ...floatingButtonStyle,
         }}
       />
-      <NewNodeButton
-        style={{
-          position: 'fixed',
-          bottom: '1rem',
-          left: '1rem',
-          ...floatingButtonStyle,
-        }}
-        onClick={() => setShowCoordModal(true)}
-      />
+      {user && (
+        <NewNodeButton
+          style={{
+            position: 'fixed',
+            bottom: '1rem',
+            left: '1rem',
+            ...floatingButtonStyle,
+          }}
+          onClick={() => setShowCoordModal(true)}
+        />
+      )}
       {showCoordModal && (
         <CoordinateModal
           onClose={() => setShowCoordModal(false)}

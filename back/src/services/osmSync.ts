@@ -2,26 +2,31 @@ import db from '../db/index.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { queryOverpass } from './overpass.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const OVERPASS_API_URL = process.env.OVERPASS_URL || 'https://overpass.kumi.systems/api/interpreter';
-
 /**
  * Sincronitza els hidrants d'un municipi des d'OpenStreetMap (Overpass)
+
  * a la base de dades local SQLite.
  */
 export async function syncMunicipiFromOSM(municipiSlug: string) {
   // 1. Obtenir info del municipi (relation ID) del catàleg
-  const catalogPath = path.resolve(__dirname, '../../data/municipis_catalog.json');
+  const catalogPath = path.resolve(
+    __dirname,
+    '../../data/municipis_catalog.json'
+  );
   if (!fs.existsSync(catalogPath)) {
-    throw new Error('Municipis catalog not found. Run generate:municipis first.');
+    throw new Error(
+      'Municipis catalog not found. Run generate:municipis first.'
+    );
   }
-  
+
   const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
   const municipiInfo = catalog.find((m: any) => m.slug === municipiSlug);
-  
+
   if (!municipiInfo) {
     throw new Error(`Municipi "${municipiSlug}" not found in catalog.`);
   }
@@ -39,32 +44,31 @@ export async function syncMunicipiFromOSM(municipiSlug: string) {
     out center tags;
   `.trim();
 
-  console.log(`[OSM Sync] Descarregant dades d'OSM per al municipi: ${municipiSlug}...`);
+  console.log(
+    `[OSM Sync] Descarregant dades d'OSM per al municipi: ${municipiSlug}...`
+  );
 
   try {
-    const response = await fetch(OVERPASS_API_URL, {
-      method: 'POST',
-      headers: {
-        'User-Agent': 'HidrantsADF/1.0 (dalecanya@gmail.com)',
-      },
-      body: query,
-    });
+    const result = await queryOverpass(query);
 
-    if (!response.ok) {
-      const text = await response.text();
+    if (!result.ok) {
       // ✅ Si l'API d'Overpass està saturada o dona timeout (504/429), no aturem el servidor.
       // Simplement continuem amb el que tinguem a la BD local.
-      if (response.status === 504 || response.status === 429) {
-        console.warn(`[OSM Sync] Error temporal d'Overpass (${response.status}). S'omet la sincronització per ara.`);
+      if (result.status === 504 || result.status === 429) {
+        console.warn(
+          `[OSM Sync] Error temporal d'Overpass (${result.status}). S'omet la sincronització per ara.`
+        );
         return 0;
       }
-      throw new Error(`Error de l'API Overpass (${response.status}): ${text}`);
+      throw new Error(`Error de l'API Overpass (${result.status}): ${result.error}`);
     }
 
-    const data = await response.json();
+    const data = result.data;
     const elements = data.elements || [];
 
-    console.log(`[OSM Sync] Rebuts ${elements.length} hidrants d'OSM per a ${municipiSlug}`);
+    console.log(
+      `[OSM Sync] Rebuts ${elements.length} hidrants d'OSM per a ${municipiSlug}`
+    );
 
     // 2. Actualitzar la base de dades en una transacció
     const syncTimestamp = new Date().toISOString();
@@ -95,7 +99,7 @@ export async function syncMunicipiFromOSM(municipiSlug: string) {
       }
 
       // 3. Gestionar eliminacions: esborrar nodes que eren SYNCED però ja no venen a la resposta d'OSM
-      const currentOsmIds = nodes.map(n => n.id);
+      const currentOsmIds = nodes.map((n) => n.id);
       if (currentOsmIds.length > 0) {
         // SQLite té un límit de paràmetres, així que si n'hi ha molts, ho fem per parts o amb una altra estratègia.
         // Per a hidrants municipals (solen ser < 500) això és segur.
@@ -109,15 +113,16 @@ export async function syncMunicipiFromOSM(municipiSlug: string) {
         deleteStale.run(municipiSlug, ...currentOsmIds);
       } else {
         // Si OSM no ha retornat res, esborrem tots els SYNCED d'aquest municipi
-        db.prepare(`DELETE FROM hidrants WHERE municipi = ? AND sync_status = 'SYNCED'`).run(municipiSlug);
+        db.prepare(
+          `DELETE FROM hidrants WHERE municipi = ? AND sync_status = 'SYNCED'`
+        ).run(municipiSlug);
       }
     });
 
     transaction(elements);
-    
+
     console.log(`[OSM Sync] Sincronització completada per a ${municipiSlug}`);
     return elements.length;
-
   } catch (error) {
     console.error(`[OSM Sync] Error sincronitzant ${municipiSlug}:`, error);
     throw error;

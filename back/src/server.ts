@@ -119,19 +119,16 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
  */
 app.addHook('preHandler', async (request) => {
   const fullHost = request.headers.host || '';
-  const host = fullHost.split(':')[0]; // Gestiona "piera.localhost:5173" -> "piera.localhost"
+  const host = fullHost.split(':')[0]; 
 
   let municipi = '';
 
   if (host.endsWith(BASE_DOMAIN_URL) && host !== BASE_DOMAIN_URL) {
-    // Extreu el subdomini correctament tant a local com a producció
     municipi = host.replace(`.${BASE_DOMAIN_URL}`, '');
-    // Netegem el punt sobrant si n'hi ha (p.ex. "piera.localhost" -> "piera")
     if (municipi.endsWith('.')) municipi = municipi.slice(0, -1);
   }
 
-  (request as any).municipi = municipi;
-  // console.log(`👀 host: ${host} | municipi: ${municipi}`);
+  (request as any).municipi = municipi || 'general'; // Default a 'general' si no hi ha subdomini
 });
 
 /**

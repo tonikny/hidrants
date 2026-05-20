@@ -16,12 +16,10 @@ export const login: ApiHandler = async (req, res) => {
     return res.status(400).json({ error: 'Falten credencials' });
   }
 
-  if (!municipi) {
-    return res.status(400).json({ error: 'Municipi no identificat' });
-  }
-
   try {
-    const user = db.prepare('SELECT * FROM users WHERE username = ? AND municipi = ?').get(username, municipi) as any;
+    // Intentem buscar l'usuari pel municipi actual (subdomini) o pel municipi 'general'
+    const targetMunicipi = municipi || 'general';
+    const user = db.prepare("SELECT * FROM users WHERE username = ? AND (municipi = ? OR municipi = 'general')").get(username, targetMunicipi) as any;
 
     if (!user || !bcrypt.compareSync(password, user.password_hash)) {
       return res.status(401).json({ error: 'Usuari o contrasenya incorrectes' });
@@ -56,8 +54,8 @@ export const login: ApiHandler = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('[Auth] Login error:', err);
-    res.status(500).json({ error: 'Error intern' });
+    console.error('[Auth] Login error details:', err);
+    res.status(500).json({ error: `Error intern: ${(err as Error).message}` });
   }
 };
 

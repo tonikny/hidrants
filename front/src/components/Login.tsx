@@ -40,9 +40,9 @@ export const Login: React.FC = () => {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      height: '100vh',
-      backgroundColor: '#f5f5f5',
-      padding: '20px'
+      padding: '10px',
+      width: '100%',
+      maxWidth: '400px'
     }}>
       <form onSubmit={handleSubmit} style={{
         backgroundColor: 'white',
@@ -50,15 +50,12 @@ export const Login: React.FC = () => {
         borderRadius: '8px',
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         width: '100%',
-        maxSize: '400px',
+        maxWidth: '400px',
         display: 'flex',
         flexDirection: 'column',
         gap: '15px'
       }}>
         <h2 style={{ textAlign: 'center', margin: '0 0 10px 0' }}>Accés Hidrants</h2>
-        <p style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
-          Municipi: <strong>{window.location.hostname.split('.')[0]}</strong>
-        </p>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <label htmlFor="username">Usuari</label>

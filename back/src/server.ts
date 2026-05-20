@@ -6,9 +6,13 @@ import sendToTelegram from './routes/sendToTelegram.js';
 import route from './routes/route.js';
 import municipi from './routes/municipi.js';
 import boundary from './routes/boundary.js';
+import { initDB } from './db/index.js';
 import { ApiHandler, ApiRequest } from './types.js';
 
 dotenv.config();
+
+// Inicialitzem la base de dades
+initDB();
 
 const BASE_DOMAIN_URL = process.env.BASE_DOMAIN_URL || 'localhost';
 
@@ -90,7 +94,7 @@ app.addHook('preHandler', async (request) => {
   }
 
   (request as any).municipi = municipi;
-  console.log(`👀 host: ${host} | municipi: ${municipi}`);
+  // console.log(`👀 host: ${host} | municipi: ${municipi}`);
 });
 
 /**

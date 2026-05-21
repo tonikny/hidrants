@@ -1,13 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import dotenv from 'dotenv';
 import slugify from 'slug';
 import { MUNICIPIS_NOMS } from './municipis.js';
+import { config } from '../config.js';
 
-dotenv.config();
-
-const OVERPASS_URL =
-  process.env.OVERPASS_URL || 'https://overpass-api.de/api/interpreter';
+const OVERPASS_URL = config.OVERPASS_URL;
 
 // ID de la relació de Catalunya (349053) + 3600000000 per a l'àrea d'Overpass
 const CATALUNYA_AREA_ID = '3600349053';

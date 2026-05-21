@@ -22,12 +22,13 @@
 //   }
 // }
 
-import type { ApiHandler } from '../types.ts';
+import type { ApiHandler } from '../types.js';
+import { config } from '../config.js';
 
 const handler: ApiHandler = async (req, res) => {
   try {
     const { from, to } = req.query;
-    const apiKey = process.env.GRAPHHOPPER_API_KEY;
+    const apiKey = config.GRAPHHOPPER_API_KEY;
 
     if (!from || !to) {
       return res

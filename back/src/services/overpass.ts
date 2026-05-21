@@ -1,5 +1,6 @@
-const OVERPASS_API_URL =
-  process.env.OVERPASS_URL || 'https://overpass.kumi.systems/api/interpreter';
+import { config } from '../config.js';
+
+const OVERPASS_API_URL = config.OVERPASS_URL;
 
 /**
  * Execute a query against the Overpass API

@@ -1,4 +1,5 @@
-import type { ApiHandler } from '../types.ts';
+import type { ApiHandler } from '../types.js';
+import { config } from '../config.js';
 
 const handler: ApiHandler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,8 +18,8 @@ const handler: ApiHandler = async (req, res) => {
 
   try {
     const { lat, lon, tags, message } = req.body;
-    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+    const TELEGRAM_BOT_TOKEN = config.TELEGRAM_BOT_TOKEN;
+    const TELEGRAM_CHAT_ID = config.TELEGRAM_CHAT_ID;
 
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
       res.status(500).json({ error: 'Missing environment variables' });

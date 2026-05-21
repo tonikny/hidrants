@@ -1,6 +1,22 @@
 import { HidrantsService } from '../services/hidrantsService.js';
 import type { ApiHandler } from '../types.js';
 import { BadRequestError } from '../errors.js';
+import { z } from 'zod';
+
+const createSchema = z.object({
+  lat: z.number(),
+  lon: z.number(),
+  osm_tags: z.any().optional(),
+  private_tags: z.any().optional()
+});
+
+const updateSchema = z.object({
+  id: z.string().optional(),
+  lat: z.number().optional(),
+  lon: z.number().optional(),
+  osm_tags: z.any().optional(),
+  private_tags: z.any().optional()
+});
 
 const handler: ApiHandler = async (req, res) => {
   const { method, municipi, url } = req;
@@ -25,15 +41,25 @@ const handler: ApiHandler = async (req, res) => {
 
   // --- POST: Crear nou hidrant local ---
   if (method === 'POST') {
-    const { lat, lon, osm_tags, private_tags } = req.body;
+    const parsed = createSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.message);
+    }
+    const { lat, lon, osm_tags, private_tags } = parsed.data;
     const result = HidrantsService.createLocal(municipi, lat, lon, osm_tags, private_tags);
     return res.status(201).json(result);
   }
 
   // --- PUT: Actualitzar hidrant ---
   if (method === 'PUT') {
-    const id = req.params?.id || req.body?.id;
-    const { lat, lon, osm_tags, private_tags } = req.body;
+    const parsed = updateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.message);
+    }
+    const id = req.params?.id || parsed.data.id;
+    if (!id) throw new BadRequestError('Missing hydrant ID');
+
+    const { lat, lon, osm_tags, private_tags } = parsed.data;
     const result = HidrantsService.updateLocal(id, municipi, lat, lon, osm_tags, private_tags);
     return res.json(result);
   }

@@ -4,7 +4,7 @@ import db from '../db/index.js';
 
 const username = process.argv[2];
 const password = process.argv[3];
-const municipi = process.argv[4] || 'els-hostalets-de-pierola';
+const municipi = process.argv[4] || 'general';
 
 if (!username || !password) {
   console.log('Ús: npm run create:user <usuari> <contrasenya> [municipi]');

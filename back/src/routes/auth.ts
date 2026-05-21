@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
-import db from '../db/index.js';
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
+import { eq, or, and } from 'drizzle-orm';
 import { ApiHandler } from '../types.js';
 
 /**
@@ -17,27 +18,24 @@ export const login: ApiHandler = async (req, res) => {
   }
 
   try {
-    // Intentem buscar l'usuari pel municipi actual (subdomini) o pel municipi 'general'
     const targetMunicipi = municipi || 'general';
-    const user = db.prepare("SELECT * FROM users WHERE username = ? AND (municipi = ? OR municipi = 'general')").get(username, targetMunicipi) as any;
+    const user = db.select()
+      .from(users)
+      .where(
+        and(
+          eq(users.username, username),
+          or(
+            eq(users.municipi, targetMunicipi),
+            eq(users.municipi, 'general')
+          )
+        )
+      )
+      .get();
 
     if (!user || !bcrypt.compareSync(password, user.password_hash)) {
       return res.status(401).json({ error: 'Usuari o contrasenya incorrectes' });
     }
 
-    // El token el signarem des del server.ts o passant una utilitat
-    // Però com que estem en un wrapper, podem retornar les dades per a que el wrapper les signi
-    // O millor: injectem la funció de signat si cal. 
-    // Per ara, retornem la info de l'usuari i que el server.ts s'encarregui de la resposta si volem ser puristes,
-    // o simplement passem el 'app' al wrap.
-    
-    // Simplificació: el handler de login serà especial i rebrà la app o el signat.
-    // Però per mantenir la teva estructura de 'ApiHandler', farem que el login retorni la info
-    // i el server.ts (que té accés a app.jwt) faci el signat.
-    
-    // Espera, puc importar jsonwebtoken o usar el secret directament aquí si vull.
-    // Però usarem el mètode de Fastify.
-    
     (res as any)._userToSign = {
       id: user.id,
       username: user.username,

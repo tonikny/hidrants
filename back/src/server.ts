@@ -12,13 +12,13 @@ import municipisList from './routes/municipis.js';
 import boundary from './routes/boundary.js';
 import hidrants from './routes/hidrants.js';
 import { login, me } from './routes/auth.js';
-import { initDB } from './db/index.js';
+
 import { ApiHandler, ApiRequest } from './types.js';
 import { config } from './config.js';
 import { AppError } from './errors.js';
 
 // Inicialitzem la base de dades
-initDB();
+
 
 const BASE_DOMAIN_URL = config.BASE_DOMAIN_URL;
 

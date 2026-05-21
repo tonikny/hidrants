@@ -8,23 +8,39 @@ import overpass from './routes/overpass.js';
 import sendToTelegram from './routes/sendToTelegram.js';
 import route from './routes/route.js';
 import municipi from './routes/municipi.js';
+import municipisList from './routes/municipis.js';
 import boundary from './routes/boundary.js';
 import hidrants from './routes/hidrants.js';
 import { login, me } from './routes/auth.js';
 import { initDB } from './db/index.js';
 import { ApiHandler, ApiRequest } from './types.js';
+import { config } from './config.js';
+import { AppError } from './errors.js';
 
 // Inicialitzem la base de dades
 initDB();
 
-const BASE_DOMAIN_URL = process.env.BASE_DOMAIN_URL || 'localhost';
+const BASE_DOMAIN_URL = config.BASE_DOMAIN_URL;
 
 const app = Fastify({
-  logger: { level: process.env.FASTIFY_LOGLEVEL || 'info' },
+  logger: { level: config.FASTIFY_LOGLEVEL },
 });
 
 app.register(fastifyJwt, {
-  secret: process.env.JWT_SECRET || 'secret-per-defecte-molt-malament',
+  secret: config.JWT_SECRET,
+});
+
+app.setErrorHandler((error, request, reply) => {
+  if (error instanceof AppError) {
+    return reply.status(error.statusCode).send({ error: error.message });
+  }
+  
+  if (error.statusCode) {
+    return reply.status(error.statusCode).send({ error: error.message });
+  }
+
+  request.log.error(error);
+  return reply.status(500).send({ error: 'Internal server error (500)' });
 });
 
 /**
@@ -105,11 +121,7 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
     try {
       await handler(req, res);
     } catch (err) {
-      request.log.error(err);
-
-      reply.code(500).send({
-        error: 'Internal server error (500)',
-      });
+      throw err; // El global error handler ho gestionarà
     }
   };
 }
@@ -144,6 +156,7 @@ const routes = [
   { path: '/api/sendToTelegram', handler: sendToTelegram },
   { path: '/api/route', handler: route },
   { path: '/api/municipi', handler: municipi },
+  { path: '/api/municipis', handler: municipisList },
   { path: '/api/municipi/boundary', handler: boundary },
 ];
 
@@ -165,7 +178,7 @@ const start = async () => {
   try {
     await app.listen({
       host: '0.0.0.0',
-      port: Number(process.env.PORT || 3033),
+      port: config.PORT,
     });
 
     console.log('🚀 API running');

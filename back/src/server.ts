@@ -30,7 +30,7 @@ app.register(fastifyJwt, {
   secret: config.JWT_SECRET,
 });
 
-app.setErrorHandler((error, request, reply) => {
+app.setErrorHandler((error: any, request, reply) => {
   if (error instanceof AppError) {
     return reply.status(error.statusCode).send({ error: error.message });
   }

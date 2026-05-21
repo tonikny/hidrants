@@ -1,4 +1,6 @@
-import db from '../db/index.js';
+import { db } from '../db/index.js';
+import { hidrants } from '../db/schema.js';
+import { inArray, notInArray, eq, and, sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,7 +11,6 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Sincronitza els hidrants d'un municipi des d'OpenStreetMap (Overpass)
-
  * a la base de dades local SQLite.
  */
 export async function syncMunicipiFromOSM(municipiSlug: string) {
@@ -52,8 +53,6 @@ export async function syncMunicipiFromOSM(municipiSlug: string) {
     const result = await queryOverpass(query);
 
     if (!result.ok) {
-      // ✅ Si l'API d'Overpass està saturada o dona timeout (504/429), no aturem el servidor.
-      // Simplement continuem amb el que tinguem a la BD local.
       if (result.status === 504 || result.status === 429) {
         console.warn(
           `[OSM Sync] Error temporal d'Overpass (${result.status}). S'omet la sincronització per ara.`
@@ -70,56 +69,51 @@ export async function syncMunicipiFromOSM(municipiSlug: string) {
       `[OSM Sync] Rebuts ${elements.length} hidrants d'OSM per a ${municipiSlug}`
     );
 
-    // 2. Actualitzar la base de dades en una transacció
     const syncTimestamp = new Date().toISOString();
 
-    const insertOrUpdate = db.prepare(`
-      INSERT INTO hidrants (id, osm_id, municipi, lat, lon, osm_tags, sync_status, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'SYNCED', ?)
-      ON CONFLICT(id) DO UPDATE SET
-        lat = excluded.lat,
-        lon = excluded.lon,
-        osm_tags = excluded.osm_tags,
-        updated_at = excluded.updated_at
-      WHERE sync_status = 'SYNCED'
-    `);
-
-    const transaction = db.transaction((nodes: any[]) => {
-      for (const node of nodes) {
+    db.transaction((tx) => {
+      for (const node of elements) {
         const id = `osm-${node.id}`;
-        insertOrUpdate.run(
+        tx.insert(hidrants).values({
           id,
-          node.id,
-          municipiSlug,
-          node.lat,
-          node.lon,
-          JSON.stringify(node.tags || {}),
-          syncTimestamp
-        );
+          osm_id: node.id,
+          municipi: municipiSlug,
+          lat: node.lat,
+          lon: node.lon,
+          osm_tags: JSON.stringify(node.tags || {}),
+          sync_status: 'SYNCED',
+          updated_at: syncTimestamp
+        }).onConflictDoUpdate({
+          target: hidrants.id,
+          set: {
+            lat: node.lat,
+            lon: node.lon,
+            osm_tags: JSON.stringify(node.tags || {}),
+            updated_at: syncTimestamp
+          },
+          where: eq(hidrants.sync_status, 'SYNCED')
+        }).run();
       }
 
-      // 3. Gestionar eliminacions: esborrar nodes que eren SYNCED però ja no venen a la resposta d'OSM
-      const currentOsmIds = nodes.map((n) => n.id);
+      const currentOsmIds = elements.map((n: any) => n.id);
+      
       if (currentOsmIds.length > 0) {
-        // SQLite té un límit de paràmetres, així que si n'hi ha molts, ho fem per parts o amb una altra estratègia.
-        // Per a hidrants municipals (solen ser < 500) això és segur.
-        const placeholders = currentOsmIds.map(() => '?').join(',');
-        const deleteStale = db.prepare(`
-          DELETE FROM hidrants 
-          WHERE municipi = ? 
-          AND sync_status = 'SYNCED' 
-          AND osm_id NOT IN (${placeholders})
-        `);
-        deleteStale.run(municipiSlug, ...currentOsmIds);
+        tx.delete(hidrants).where(
+          and(
+            eq(hidrants.municipi, municipiSlug),
+            eq(hidrants.sync_status, 'SYNCED'),
+            notInArray(hidrants.osm_id, currentOsmIds as number[])
+          )
+        ).run();
       } else {
-        // Si OSM no ha retornat res, esborrem tots els SYNCED d'aquest municipi
-        db.prepare(
-          `DELETE FROM hidrants WHERE municipi = ? AND sync_status = 'SYNCED'`
-        ).run(municipiSlug);
+        tx.delete(hidrants).where(
+          and(
+            eq(hidrants.municipi, municipiSlug),
+            eq(hidrants.sync_status, 'SYNCED')
+          )
+        ).run();
       }
     });
-
-    transaction(elements);
 
     console.log(`[OSM Sync] Sincronització completada per a ${municipiSlug}`);
     return elements.length;

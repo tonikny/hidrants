@@ -19,7 +19,6 @@ import { AppError } from './errors.js';
 
 // Inicialitzem la base de dades
 
-
 const BASE_DOMAIN_URL = config.BASE_DOMAIN_URL;
 
 const app = Fastify({
@@ -34,7 +33,7 @@ app.setErrorHandler((error: any, request, reply) => {
   if (error instanceof AppError) {
     return reply.status(error.statusCode).send({ error: error.message });
   }
-  
+
   if (error.statusCode) {
     return reply.status(error.statusCode).send({ error: error.message });
   }
@@ -87,10 +86,12 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
       try {
         await request.jwtVerify();
         user = (request as any).user;
-        
+
         // Verifiquem que el municipi del token coincideix amb el del subdomini
         if (user.municipi !== (request as any).municipi) {
-          return reply.status(401).send({ error: 'Token no vàlid per aquest municipi' });
+          return reply
+            .status(401)
+            .send({ error: 'Token no vàlid per aquest municipi' });
         }
       } catch (err) {
         return reply.status(401).send({ error: 'Sessió caducada o no vàlida' });
@@ -131,11 +132,19 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
  */
 app.addHook('preHandler', async (request) => {
   const fullHost = request.headers.host || '';
-  const host = fullHost.split(':')[0]; 
+  const host = fullHost.split(':')[0];
 
   let municipi = '';
 
-  if (host.endsWith(BASE_DOMAIN_URL) && host !== BASE_DOMAIN_URL) {
+  // Intentem extreure el municipi del host
+  if (host.endsWith('.localhost')) {
+    municipi = host.replace('.localhost', '');
+  } else if (host.endsWith('.nip.io')) {
+    const parts = host.split('.');
+    if (parts.length > 6) {
+      municipi = parts.slice(0, -6).join('.');
+    }
+  } else if (host.endsWith(BASE_DOMAIN_URL) && host !== BASE_DOMAIN_URL) {
     municipi = host.replace(`.${BASE_DOMAIN_URL}`, '');
     if (municipi.endsWith('.')) municipi = municipi.slice(0, -1);
   }
@@ -162,11 +171,13 @@ const routes = [
 
 routes.forEach((r) => {
   // Les mutacions d'hidrants sempre protegides
-  const isMutation = (r.path.includes('/hidrants') && r.handler === hidrants);
-  
+  const isMutation = r.path.includes('/hidrants') && r.handler === hidrants;
+
   app.all(r.path, async (request, reply) => {
     // Per a hidrants, mirem si el mètode és de mutació
-    const needsAuth = r.protected || (isMutation && ['POST', 'PUT', 'DELETE'].includes(request.method));
+    const needsAuth =
+      r.protected ||
+      (isMutation && ['POST', 'PUT', 'DELETE'].includes(request.method));
     return wrap(r.handler, { protected: needsAuth })(request, reply);
   });
 });
@@ -181,7 +192,7 @@ const start = async () => {
       port: config.PORT,
     });
 
-    console.log('🚀 API running');
+    console.log('🚀 API running on port', config.PORT);
     console.log(app.printRoutes());
   } catch (err) {
     app.log.error(err);

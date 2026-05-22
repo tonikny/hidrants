@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { latLng, LatLng } from 'leaflet';
 import { MapClickHandler, NewNodeForm } from './NewNodeForm';
+import MapRightClickHandler from './MapRightClickHandler';
 import { LocateButton } from './LocateButton';
 import { Layers } from './Layers';
 import { ZoomDisplay } from './ZoomDisplay';
@@ -100,9 +101,9 @@ export function LeafletMap() {
   return (
     <>
       <MapContainer
-        center={municipi?.center || [41.56, 1.72]}
-        zoom={municipi ? 14 : 11}
-        className="leaflet-map"
+          center={municipi?.center || [41.56, 1.72]}
+          zoom={municipi ? 14 : 11}
+          className="leaflet-map"
       >
         <FixMapSize />
         <MapStateListener
@@ -111,6 +112,7 @@ export function LeafletMap() {
         <MaskedAreaMap />
         <Layers />
         <ZoomDisplay />
+        <MapRightClickHandler setClickedPosition={setClickedPosition} setShowNewForm={setShowNewForm} user={user} />
         <HydrantMarkerList 
           features={features} 
           setPoi={setPoi} 

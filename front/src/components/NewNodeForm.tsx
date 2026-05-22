@@ -239,6 +239,8 @@ export const MapClickHandler = ({
       if (isActive) return;
       if (hasOpenedRef.current) return;
       hasOpenedRef.current = true;
+      // e.originalEvent?.preventDefault?.();
+      // e.originalEvent?.stopPropagation?.();
       onClick(e.latlng);
     };
 

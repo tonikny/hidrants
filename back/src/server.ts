@@ -18,10 +18,6 @@ import { ApiHandler, ApiRequest } from './types.js';
 import { config } from './config.js';
 import { AppError } from './errors.js';
 
-// Inicialitzem la base de dades
-
-const BASE_DOMAIN_URL = config.BASE_DOMAIN_URL;
-
 const app = Fastify({
   logger: { level: config.FASTIFY_LOGLEVEL },
 });
@@ -50,9 +46,9 @@ app.setErrorHandler((error: any, request, reply) => {
 });
 
 /**
- * Adapter de resposta (manté la teva API custom)
+ * Adapter de resposta (simplificat, sense subdominis)
  */
-function createRes(reply: FastifyReply, app: any, host: string) {
+function createRes(reply: FastifyReply, app: any, request: FastifyRequest) {
   return {
     status(code: number) {
       reply.code(code);
@@ -60,31 +56,6 @@ function createRes(reply: FastifyReply, app: any, host: string) {
     },
 
     json(data: any) {
-      // Càlcul del domini de la cookie per a que sigui vàlida entre subdominis
-      let cookieDomain: string | undefined = undefined;
-      const domainHost = (host || '').split(':')[0];
-
-      // Només intentem fixar el domini si sembla un nom de domini (té punts) i no és una IP
-      if (domainHost.includes('.') && !/^\d+\.\d+\.\d+\.\d+$/.test(domainHost)) {
-        if (domainHost.endsWith('.nip.io')) {
-          const parts = domainHost.split('.');
-          if (parts.length >= 6) {
-            cookieDomain = parts.slice(-6).join('.');
-          }
-        } else if (
-          config.BASE_DOMAIN_URL &&
-          config.BASE_DOMAIN_URL.includes('.') &&
-          domainHost.endsWith(config.BASE_DOMAIN_URL)
-        ) {
-          cookieDomain = config.BASE_DOMAIN_URL;
-        }
-      }
-
-      // Evitem posar el Domain si és el mateix que el host actual (redundant i a vegades rebutjat)
-      if (cookieDomain === domainHost) {
-        cookieDomain = undefined;
-      }
-
       // Si el handler ha marcat un usuari per signar (cas del login)
       if ((this as any)._userToSign) {
         const token = app.jwt.sign((this as any)._userToSign);
@@ -92,17 +63,16 @@ function createRes(reply: FastifyReply, app: any, host: string) {
 
         const cookieOptions: any = {
           path: '/',
-          httpOnly: false,
-          secure: false,
+          httpOnly: true,
           sameSite: 'lax',
           maxAge: 60 * 60 * 24 * 30, // 30 dies
         };
 
-        if (cookieDomain) {
-          cookieOptions.domain = cookieDomain;
+        // Si estem en producció o l'usuari accedeix per HTTPS, marquem la cookie com a segura
+        if (process.env.NODE_ENV === 'production' || request.protocol === 'https' || request.headers['x-forwarded-proto'] === 'https') {
+          cookieOptions.secure = true;
         }
 
-        console.log(`[Cookie DEBUG] host: ${domainHost}, set-domain: ${cookieDomain || 'none'}`);
         reply.setCookie('auth_token', token, cookieOptions);
       }
 
@@ -110,7 +80,6 @@ function createRes(reply: FastifyReply, app: any, host: string) {
       if ((this as any)._clearCookie) {
         reply.clearCookie('auth_token', {
           path: '/',
-          domain: cookieDomain,
         });
       }
 
@@ -136,15 +105,17 @@ function createRes(reply: FastifyReply, app: any, host: string) {
  */
 function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    const fullHost = request.headers.host || '';
-
-    // Si la ruta és protegida, mirem el token
     let user: any = undefined;
-    
+
     try {
+      // DEBUG: Log cookies
+      // console.log('Cookies:', request.cookies);
+      
       await request.jwtVerify();
       user = (request as any).user;
+      // console.log('User verified:', user.username);
     } catch (err) {
+      // console.log('JWT Verification failed:', (err as Error).message);
       if (options.protected) {
         return reply.status(401).send({ error: 'Sessió caducada o no vàlida' });
       }
@@ -152,16 +123,17 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
 
     if (user && options.protected) {
       const isMutation = ['POST', 'PUT', 'DELETE'].includes(request.method);
-      const targetMunicipi = (request as any).municipi;
+      const query = request.query as any;
+      const targetAdfId = Number(query?.adf || (request.body as any)?.adf_id);
 
       // Lògica de permisos:
       // 1. Admin pot fer-ho tot
-      // 2. Editor només pot mutar el seu propi municipi
+      // 2. Editor només pot mutar la seva pròpia ADF
       if (user.role !== 'admin' && isMutation) {
-        if (user.municipi !== targetMunicipi) {
+        if (user.adf_id !== targetAdfId) {
           return reply
             .status(403)
-            .send({ error: 'No tens permisos per editar aquest municipi' });
+            .send({ error: 'No tens permisos per editar aquesta ADF' });
         }
       }
     }
@@ -173,41 +145,18 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
       headers: request.headers,
       params: request.params,
       url: request.url,
-      municipi: (request as any).municipi,
       user,
     };
 
-    const res = createRes(reply, app, fullHost);
+    const res = createRes(reply, app, request);
 
     try {
       await handler(req, res);
     } catch (err) {
-      throw err; // El global error handler ho gestionarà
+      throw err;
     }
   };
 }
-
-/**
- * MIDDLEWARE GLOBAL (EXTRACCIÓ SUBDOMINI)
- */
-app.addHook('preHandler', async (request) => {
-  const fullHost = request.headers.host || '';
-  const host = fullHost.split(':')[0];
-
-  let municipi = '';
-
-  if (host.endsWith('.nip.io')) {
-    const parts = host.split('.');
-    if (parts.length > 6) {
-      municipi = parts.slice(0, -6).join('.');
-    }
-  } else if (BASE_DOMAIN_URL && host.endsWith(`.${BASE_DOMAIN_URL}`)) {
-    municipi = host.replace(`.${BASE_DOMAIN_URL}`, '');
-  }
-
-  if (municipi.endsWith('.')) municipi = municipi.slice(0, -1);
-  (request as any).municipi = municipi || 'general'; // Default a 'general' si no hi ha subdomini
-});
 
 /**
  * RUTES
@@ -222,17 +171,15 @@ const routes = [
   { path: '/api/hidrants/:id', handler: hidrants },
   { path: '/api/sendToTelegram', handler: sendToTelegram },
   { path: '/api/route', handler: route },
-  { path: '/api/municipi', handler: municipi },
-  { path: '/api/municipis', handler: municipisList },
-  { path: '/api/municipi/boundary', handler: boundary },
+  { path: '/api/adf', handler: municipi },
+  { path: '/api/adfs', handler: municipisList },
+  { path: '/api/adf/boundary', handler: boundary },
 ];
 
 routes.forEach((r) => {
-  // Les mutacions d'hidrants sempre protegides
   const isMutation = r.path.includes('/hidrants') && r.handler === hidrants;
 
   app.all(r.path, async (request, reply) => {
-    // Per a hidrants, mirem si el mètode és de mutació
     const needsAuth =
       r.protected ||
       (isMutation && ['POST', 'PUT', 'DELETE'].includes(request.method));
@@ -249,9 +196,7 @@ const start = async () => {
       host: '0.0.0.0',
       port: config.PORT,
     });
-
     console.log('🚀 API running on port', config.PORT);
-    console.log(app.printRoutes());
   } catch (err) {
     app.log.error(err);
     process.exit(1);

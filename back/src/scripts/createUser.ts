@@ -5,10 +5,10 @@ import { users } from '../db/schema.js';
 
 const username = process.argv[2];
 const password = process.argv[3];
-const municipi = process.argv[4] || 'general';
+const adf_id = process.argv[4] ? Number(process.argv[4]) : null;
 
 if (!username || !password) {
-  console.log('Ús: npm run create:user <usuari> <contrasenya> [municipi]');
+  console.log('Ús: npm run create:user <usuari> <contrasenya> [adf_id]');
   process.exit(1);
 }
 
@@ -20,10 +20,10 @@ try {
     id,
     username,
     password_hash: hash,
-    municipi,
+    adf_id,
     role: 'admin'
   }).run();
-  console.log(`✅ Usuari creat: ${username} (${municipi})`);
+  console.log(`✅ Usuari creat: ${username} (ADF: ${adf_id || 'Global'})`);
 } catch (err) {
   console.error('❌ Error creant usuari:', (err as Error).message);
 }

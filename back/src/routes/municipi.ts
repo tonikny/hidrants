@@ -1,26 +1,31 @@
-import fs from 'fs';
-import path from 'path';
-import { ApiHandler } from '../types.js';
+import { db } from '../db/index.js';
+import { adfs } from '../db/schema.js';
+import type { ApiHandler } from '../types.js';
+import { eq } from 'drizzle-orm';
 
-const municipi: ApiHandler = async (req, res) => {
-  try {
-    const catalogPath = path.resolve(import.meta.dirname, '../../data/municipis_catalog.json');
-    
-    if (!fs.existsSync(catalogPath)) {
-      return res.status(500).json({ error: 'Municipis catalog not found' });
-    }
+const handler: ApiHandler = async (req, res) => {
+  const adf_id = Number(req.query?.adf);
 
-    const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
-    
-    // req.municipi és extret pel middleware a server.ts basant-se en el subdomini
-    const data = catalog.find((m: any) => m.slug === req.municipi);
-
-    // Si no es troba, retornem null tal com s'ha demanat
-    res.json(data || null);
-  } catch (error) {
-    console.error('Error in /api/municipi:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  if (!adf_id) {
+    return res.status(400).json({ error: 'Falta adf id' });
   }
+
+  const adf = db.select().from(adfs).where(eq(adfs.id, adf_id)).get();
+
+  if (!adf) {
+    return res.status(404).json({ error: 'ADF no trobada' });
+  }
+
+  // Parse JSON fields
+  const data = {
+    ...adf,
+    osm_relations: JSON.parse(adf.osm_relations),
+    bbox: adf.bbox ? JSON.parse(adf.bbox) : null,
+    center: adf.center ? JSON.parse(adf.center) : null,
+    boundary_geojson: adf.boundary_geojson ? JSON.parse(adf.boundary_geojson) : null,
+  };
+
+  return res.json(data);
 };
 
-export default municipi;
+export default handler;

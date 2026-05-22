@@ -1,29 +1,22 @@
-import fs from 'fs';
-import path from 'path';
-import { ApiHandler } from '../types.js';
+import { db } from '../db/index.js';
+import { adfs } from '../db/schema.js';
+import type { ApiHandler } from '../types.js';
+import { eq } from 'drizzle-orm';
 
-const boundary: ApiHandler = async (req, res) => {
-  try {
-    if (!req.municipi) {
-      return res.status(400).json({ error: 'No municipi detected' });
-    }
+const handler: ApiHandler = async (req, res) => {
+  const adf_id = Number(req.query?.adf);
 
-    const boundaryPath = path.resolve(
-      import.meta.dirname,
-      `../../data/boundaries/${req.municipi}.geojson`
-    );
-
-    if (!fs.existsSync(boundaryPath)) {
-      console.warn(`⚠️ Boundary file not found for: ${req.municipi}`);
-      return res.status(404).json({ error: 'Boundary not found' });
-    }
-
-    const data = JSON.parse(fs.readFileSync(boundaryPath, 'utf-8'));
-    res.json(data);
-  } catch (error) {
-    console.error('Error in /api/municipi/boundary:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  if (!adf_id) {
+    return res.status(400).json({ error: 'No adf id' });
   }
+
+  const adf = db.select({ boundary_geojson: adfs.boundary_geojson }).from(adfs).where(eq(adfs.id, adf_id)).get();
+
+  if (!adf || !adf.boundary_geojson) {
+    return res.status(404).json({ error: 'Boundary not found' });
+  }
+
+  return res.json(JSON.parse(adf.boundary_geojson));
 };
 
-export default boundary;
+export default handler;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdf } from '../contexts/AdfContext';
 
 interface SyncButtonProps {
   style?: React.CSSProperties;
@@ -8,20 +9,17 @@ interface SyncButtonProps {
 
 export function SyncButton({ style }: SyncButtonProps) {
   const [isSyncing, setIsSyncing] = useState(false);
-  const { token } = useAuth();
+  const { activeAdf } = useAdf();
 
   const handleSync = async () => {
-    if (isSyncing) return;
+    if (isSyncing || !activeAdf) return;
     
     setIsSyncing(true);
     const toastId = toast.loading('Sincronitzant amb OSM...');
     
     try {
-      const response = await fetch('/api/hidrants/sync', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(`/api/hidrants/sync?adf=${activeAdf.id}`, {
+        method: 'POST'
       });
       
       if (!response.ok) {

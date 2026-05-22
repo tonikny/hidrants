@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import L, { latLng, LatLng } from 'leaflet';
+import L, { LatLng } from 'leaflet';
 import { MapClickHandler, NewNodeForm } from './NewNodeForm';
 import MapRightClickHandler from './MapRightClickHandler';
 import { LocateButton } from './LocateButton';
@@ -10,7 +10,7 @@ import { useHydrantData } from '../hooks/useHidrantData';
 import { floatingButtonStyle } from '../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
-import { useMunicipi } from '../contexts/MunicipiContext';
+import { useAdf } from '../contexts/AdfContext';
 import { useAuth } from '../contexts/AuthContext';
 import { HydrantMarkerList } from './HydrantMarkerList';
 import { MapUIOverlays } from './MapUIOverlays';
@@ -57,7 +57,7 @@ function FixMapSize() {
 }
 
 export function LeafletMap() {
-  const { municipi, isLoading } = useMunicipi();
+  const { activeAdf, isLoading, setActiveAdf } = useAdf();
   const { user, logout } = useAuth();
   const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null);
   const [mapZoom, setMapZoom] = useState<number>(14);
@@ -95,14 +95,14 @@ export function LeafletMap() {
   };
 
   if (isLoading) {
-    return <div className="loading">Carregant dades del municipi...</div>;
+    return <div className="loading">Carregant dades de l'ADF...</div>;
   }
 
   return (
     <>
       <MapContainer
-          center={municipi?.center || [41.56, 1.72]}
-          zoom={municipi ? 14 : 11}
+          center={activeAdf?.center || [41.56, 1.72]}
+          zoom={activeAdf ? 14 : 11}
           className="leaflet-map"
       >
         <FixMapSize />
@@ -170,7 +170,8 @@ export function LeafletMap() {
       <MapUIOverlays 
         user={user}
         logout={logout}
-        municipi={municipi}
+        activeAdf={activeAdf}
+        setActiveAdf={setActiveAdf}
         loadingHidrants={loadingHidrants}
         hidrantsError={hidrantsError}
         showLoginModal={showLoginModal}

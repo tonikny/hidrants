@@ -5,7 +5,7 @@ import { count, eq, and, ne, sql } from 'drizzle-orm';
 export interface HidrantData {
   id: string;
   osm_id?: number | null;
-  municipi: string | null;
+  adf_id: number | null;
   lat: number;
   lon: number;
   osm_tags?: string | null;
@@ -16,32 +16,32 @@ export interface HidrantData {
 }
 
 export const HidrantsRepository = {
-  countByMunicipi(municipi: string): number {
+  countByAdf(adfId: number): number {
     const res = db.select({ count: count() })
       .from(hidrants)
-      .where(eq(hidrants.municipi, municipi))
+      .where(eq(hidrants.adf_id, adfId))
       .get();
     return res?.count || 0;
   },
 
-  findActiveByMunicipi(municipi: string): HidrantData[] {
+  findActiveByAdf(adfId: number): HidrantData[] {
     return db.select()
       .from(hidrants)
       .where(
         and(
-          eq(hidrants.municipi, municipi),
+          eq(hidrants.adf_id, adfId),
           ne(hidrants.sync_status, 'PENDING_DELETE')
         )
       ).all() as HidrantData[];
   },
 
-  findByIdAndMunicipi(id: string, municipi: string): HidrantData | undefined {
+  findByIdAndAdf(id: string, adfId: number): HidrantData | undefined {
     return db.select()
       .from(hidrants)
       .where(
         and(
           eq(hidrants.id, id),
-          eq(hidrants.municipi, municipi)
+          eq(hidrants.adf_id, adfId)
         )
       ).get() as HidrantData | undefined;
   },
@@ -49,7 +49,7 @@ export const HidrantsRepository = {
   create(data: Omit<HidrantData, 'created_at' | 'updated_at'>): void {
     db.insert(hidrants).values({
       id: data.id,
-      municipi: data.municipi,
+      adf_id: data.adf_id,
       lat: data.lat,
       lon: data.lon,
       osm_tags: data.osm_tags || '{}',
@@ -58,7 +58,7 @@ export const HidrantsRepository = {
     }).run();
   },
 
-  update(id: string, municipi: string, data: Partial<HidrantData>): void {
+  update(id: string, adfId: number, data: Partial<HidrantData>): void {
     db.update(hidrants).set({
       lat: data.lat,
       lon: data.lon,
@@ -69,7 +69,7 @@ export const HidrantsRepository = {
     }).where(
       and(
         eq(hidrants.id, id),
-        eq(hidrants.municipi, municipi)
+        eq(hidrants.adf_id, adfId)
       )
     ).run();
   },

@@ -1,12 +1,12 @@
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { LeafletMap } from './components/LeafletMap';
-import { MunicipiProvider, useMunicipi } from './contexts/MunicipiContext';
+import { AdfProvider, useAdf } from './contexts/AdfContext';
 import { AuthProvider } from './contexts/AuthContext';
-import { MunicipiSelector } from './components/MunicipiSelector';
+import { AdfSelector } from './components/AdfSelector';
 
 function AppContent() {
-  const { municipi, isLoading } = useMunicipi();
+  const { activeAdf, isLoading } = useAdf();
 
   if (isLoading) {
     return (
@@ -16,8 +16,8 @@ function AppContent() {
     );
   }
 
-  if (!municipi) {
-    return <MunicipiSelector />;
+  if (!activeAdf) {
+    return <AdfSelector />;
   }
 
   return (
@@ -30,10 +30,10 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <MunicipiProvider>
+      <AdfProvider>
         <AppContent />
         <ToastContainer position="top-center" autoClose={3000} theme="colored" />
-      </MunicipiProvider>
+      </AdfProvider>
     </AuthProvider>
   );
 }

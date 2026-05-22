@@ -1,21 +1,18 @@
-import fs from 'fs';
-import path from 'path';
-import { ApiHandler } from '../types.js';
+import { db } from '../db/index.js';
+import { adfs } from '../db/schema.js';
+import type { ApiHandler } from '../types.js';
 
-const municipis: ApiHandler = async (req, res) => {
-  try {
-    const catalogPath = path.resolve(import.meta.dirname, '../../data/municipis_catalog.json');
-    
-    if (!fs.existsSync(catalogPath)) {
-      return res.status(500).json({ error: 'Municipis catalog not found' });
-    }
+const handler: ApiHandler = async (req, res) => {
+  const result = db.select().from(adfs).all();
+  
+  const data = result.map(adf => ({
+    ...adf,
+    osm_relations: JSON.parse(adf.osm_relations),
+    bbox: adf.bbox ? JSON.parse(adf.bbox) : null,
+    center: adf.center ? JSON.parse(adf.center) : null,
+  }));
 
-    const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
-    res.json(catalog);
-  } catch (error) {
-    console.error('Error in /api/municipis:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  return res.json(data);
 };
 
-export default municipis;
+export default handler;

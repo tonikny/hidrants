@@ -1,124 +1,90 @@
 import { db } from '../db/index.js';
-import { hidrants } from '../db/schema.js';
-import { inArray, notInArray, eq, and, sql } from 'drizzle-orm';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { adfs, hidrants } from '../db/schema.js';
+import { eq, notInArray, and } from 'drizzle-orm';
 import { queryOverpass } from './overpass.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 /**
- * Sincronitza els hidrants d'un municipi des d'OpenStreetMap (Overpass)
- * a la base de dades local SQLite.
+ * Sincronitza els hidrants d'una ADF des d'OpenStreetMap (Overpass)
  */
-export async function syncMunicipiFromOSM(municipiSlug: string) {
-  // 1. Obtenir info del municipi (relation ID) del catàleg
-  const catalogPath = path.resolve(
-    __dirname,
-    '../../data/municipis_catalog.json'
-  );
-  if (!fs.existsSync(catalogPath)) {
-    throw new Error(
-      'Municipis catalog not found. Run generate:municipis first.'
-    );
+export async function syncAdfFromOSM(adfId: number) {
+  const adf = db.select().from(adfs).where(eq(adfs.id, adfId)).get();
+
+  if (!adf) {
+    throw new Error(`ADF ${adfId} not found in database.`);
   }
 
-  const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
-  const municipiInfo = catalog.find((m: any) => m.slug === municipiSlug);
+  const relations: string[] = JSON.parse(adf.osm_relations);
+  let allElements: any[] = [];
 
-  if (!municipiInfo) {
-    throw new Error(`Municipi "${municipiSlug}" not found in catalog.`);
-  }
+  for (const rel of relations) {
+    const osmId = rel.replace('R', '');
+    const areaId = 3600000000 + Number(osmId);
 
-  const relationId = municipiInfo.osmRelation.replace('R', '');
-  const areaId = 3600000000 + Number(relationId);
+    const query = `
+      [out:json][timeout:60];
+      area(${areaId})->.searchArea;
+      (
+        node(area.searchArea)["emergency"="fire_hydrant"];
+        node(area.searchArea)["disused:emergency"="fire_hydrant"];
+      );
+      out center tags;
+    `.trim();
 
-  const query = `
-    [out:json][timeout:60];
-    area(${areaId})->.searchArea;
-    (
-      node(area.searchArea)["emergency"="fire_hydrant"];
-      node(area.searchArea)["disused:emergency"="fire_hydrant"];
-    );
-    out center tags;
-  `.trim();
-
-  console.log(
-    `[OSM Sync] Descarregant dades d'OSM per al municipi: ${municipiSlug}...`
-  );
-
-  try {
+    console.log(`[OSM Sync] Descarregant dades d'OSM per a relació ${rel}...`);
     const result = await queryOverpass(query);
 
-    if (!result.ok) {
-      if (result.status === 504 || result.status === 429) {
-        console.warn(
-          `[OSM Sync] Error temporal d'Overpass (${result.status}). S'omet la sincronització per ara.`
-        );
-        return 0;
-      }
-      throw new Error(`Error de l'API Overpass (${result.status}): ${result.error}`);
+    if (result.ok) {
+      allElements = [...allElements, ...(result.data.elements || [])];
     }
+  }
 
-    const data = result.data;
-    const elements = data.elements || [];
+  console.log(`[OSM Sync] Rebuts ${allElements.length} hidrants d'OSM per a ADF ${adfId}`);
 
-    console.log(
-      `[OSM Sync] Rebuts ${elements.length} hidrants d'OSM per a ${municipiSlug}`
-    );
+  const syncTimestamp = new Date().toISOString();
 
-    const syncTimestamp = new Date().toISOString();
-
-    db.transaction((tx) => {
-      for (const node of elements) {
-        const id = `osm-${node.id}`;
-        tx.insert(hidrants).values({
-          id,
-          osm_id: node.id,
-          municipi: municipiSlug,
+  db.transaction((tx) => {
+    for (const node of allElements) {
+      const id = `osm-${node.id}`;
+      tx.insert(hidrants).values({
+        id,
+        osm_id: node.id,
+        adf_id: adfId,
+        lat: node.lat,
+        lon: node.lon,
+        osm_tags: JSON.stringify(node.tags || {}),
+        sync_status: 'SYNCED',
+        updated_at: syncTimestamp
+      }).onConflictDoUpdate({
+        target: hidrants.id,
+        set: {
           lat: node.lat,
           lon: node.lon,
           osm_tags: JSON.stringify(node.tags || {}),
-          sync_status: 'SYNCED',
           updated_at: syncTimestamp
-        }).onConflictDoUpdate({
-          target: hidrants.id,
-          set: {
-            lat: node.lat,
-            lon: node.lon,
-            osm_tags: JSON.stringify(node.tags || {}),
-            updated_at: syncTimestamp
-          },
-          where: eq(hidrants.sync_status, 'SYNCED')
-        }).run();
-      }
+        },
+        where: eq(hidrants.sync_status, 'SYNCED')
+      }).run();
+    }
 
-      const currentOsmIds = elements.map((n: any) => n.id);
-      
-      if (currentOsmIds.length > 0) {
-        tx.delete(hidrants).where(
-          and(
-            eq(hidrants.municipi, municipiSlug),
-            eq(hidrants.sync_status, 'SYNCED'),
-            notInArray(hidrants.osm_id, currentOsmIds as number[])
-          )
-        ).run();
-      } else {
-        tx.delete(hidrants).where(
-          and(
-            eq(hidrants.municipi, municipiSlug),
-            eq(hidrants.sync_status, 'SYNCED')
-          )
-        ).run();
-      }
-    });
+    const currentOsmIds = allElements.map((n: any) => n.id);
+    
+    if (currentOsmIds.length > 0) {
+      tx.delete(hidrants).where(
+        and(
+          eq(hidrants.adf_id, adfId),
+          eq(hidrants.sync_status, 'SYNCED'),
+          notInArray(hidrants.osm_id, currentOsmIds as number[])
+        )
+      ).run();
+    } else {
+      tx.delete(hidrants).where(
+        and(
+          eq(hidrants.adf_id, adfId),
+          eq(hidrants.sync_status, 'SYNCED')
+        )
+      ).run();
+    }
+  });
 
-    console.log(`[OSM Sync] Sincronització completada per a ${municipiSlug}`);
-    return elements.length;
-  } catch (error) {
-    console.error(`[OSM Sync] Error sincronitzant ${municipiSlug}:`, error);
-    throw error;
-  }
+  return allElements.length;
 }

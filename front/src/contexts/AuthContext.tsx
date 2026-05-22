@@ -4,7 +4,7 @@ import Cookies from 'js-cookie';
 interface User {
   id: string;
   username: string;
-  municipi: string;
+  adf_id: number | null;
   role: string;
 }
 
@@ -22,57 +22,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(Cookies.get('auth_token') || null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const verifyToken = async () => {
-      // Si ja tenim l'usuari (acabem de fer login), no cal verificar
-      if (user) {
-        setLoading(false);
-        return;
-      }
-
-      const currentToken = Cookies.get('auth_token');
-      
-      if (!currentToken) {
-        setUser(null);
-        setToken(null);
-        setLoading(false);
-        return;
-      }
-
       try {
         const response = await fetch('/api/auth/me', {
-          headers: {
-            Authorization: `Bearer ${currentToken}`,
-          },
+          credentials: 'same-origin' // Ens assegurem que s'envien les cookies
         });
-
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
-          setToken(currentToken);
         } else {
-          // Token invàlid o caducat
-          logout();
+          setUser(null);
         }
       } catch (err) {
-        console.error('Error verificant token:', err);
+        console.error('Error verificant sessió:', err);
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
     verifyToken();
-  }, [token]);
+  }, []);
 
-  const login = (newToken: string, newUser: User) => {
-    setToken(newToken);
+  const login = (_newToken: string, newUser: User) => {
     setUser(newUser);
-    // La cookie ja la planta el servidor amb el domini correcte, 
-    // però per si de cas la sincronitzem aquí també si el servidor no ho fes.
-    // Cookies.set('auth_token', newToken, { expires: 30 }); 
   };
 
   const logout = async () => {
@@ -81,30 +57,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (err) {
       console.error('Error in logout request:', err);
     }
-    setToken(null);
     setUser(null);
-    Cookies.remove('auth_token', { path: '/' });
-    // Per si s'ha posat amb domini, l'intentem esborrar també
-    const host = window.location.hostname;
-    if (host.includes('.')) {
-      const parts = host.split('.');
-      if (parts.length > 2) {
-        // .hidrants.cat o .127.0.0.1.nip.io
-        let domain = '';
-        if (host.endsWith('.nip.io')) {
-          if (parts.length >= 6) {
-             domain = parts.slice(-6).join('.');
-          }
-        } else {
-           domain = parts.slice(-2).join('.');
-        }
-        Cookies.remove('auth_token', { path: '/', domain: domain || undefined });
-      }
-    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token: null, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

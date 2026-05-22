@@ -6,7 +6,7 @@ proxy_cache_path /var/cache/nginx/tiles levels=1:2 keys_zone=tiles_cache:10m max
 server {
     listen 80;
     listen [::]:80;
-    server_name .EL_TEU_DOMINI.com;
+    server_name EL_TEU_DOMINI.com;
     
     location /.well-known/acme-challenge/ {
         root /var/www/html;
@@ -21,7 +21,7 @@ server {
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    server_name EL_TEU_DOMINI.com ~^(?<municipi>.+)\.EL_TEU_DOMINI\.com$;
+    server_name EL_TEU_DOMINI.com;
 
     # Certificats SSL (Gestionats pel Host)
     ssl_certificate /etc/letsencrypt/live/EL_TEU_DOMINI.com/fullchain.pem;

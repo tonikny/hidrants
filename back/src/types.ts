@@ -5,11 +5,10 @@ export type ApiRequest = {
   headers?: any;
   params?: any;
   url?: string;
-  municipi?: string;
   user?: {
     id: string;
     username: string;
-    municipi: string;
+    adf_id: number | null;
     role: string;
   };
 };

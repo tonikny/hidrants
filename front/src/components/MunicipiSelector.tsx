@@ -29,21 +29,20 @@ export const MunicipiSelector: React.FC = () => {
   const hostname = window.location.hostname;
   const port = window.location.port ? `:${window.location.port}` : '';
   const protocol = window.location.protocol;
+  const configuredDomain = import.meta.env.VITE_BASE_DOMAIN_URL;
 
-  // Detectem el domini base per construir les URLs dels municipis
-  let baseDomain = hostname;
-  if (hostname.endsWith('.localhost')) {
-    baseDomain = 'localhost';
+  // Determinem el domini base per construir les URLs dels municipis
+  let baseDomain = configuredDomain || hostname;
+
+  // Si és una IP (per accedir des del mòbil), forcem l'ús de nip.io per permetre subdominis
+  const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
+  if (isIP) {
+    baseDomain = `${hostname}.nip.io`;
   } else if (hostname.endsWith('.nip.io')) {
+    // Si ja estem a un domini nip.io, mantenim la base (IP.nip.io)
     const parts = hostname.split('.');
     if (parts.length >= 6) {
       baseDomain = parts.slice(-6).join('.');
-    }
-  } else {
-    // Cas per dominis reals tipus "hidrants.cat"
-    const parts = hostname.split('.');
-    if (parts.length >= 2) {
-      baseDomain = parts.slice(-2).join('.');
     }
   }
 

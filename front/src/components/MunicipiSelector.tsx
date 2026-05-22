@@ -26,9 +26,26 @@ export const MunicipiSelector: React.FC = () => {
     );
   }
 
-  const baseDomain = window.location.hostname.split('.').slice(-2).join('.');
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost');
-  const protocol = window.location.protocol; // Manté "http:" o "https:"
+  const hostname = window.location.hostname;
+  const port = window.location.port ? `:${window.location.port}` : '';
+  const protocol = window.location.protocol;
+
+  // Detectem el domini base per construir les URLs dels municipis
+  let baseDomain = hostname;
+  if (hostname.endsWith('.localhost')) {
+    baseDomain = 'localhost';
+  } else if (hostname.endsWith('.nip.io')) {
+    const parts = hostname.split('.');
+    if (parts.length >= 6) {
+      baseDomain = parts.slice(-6).join('.');
+    }
+  } else {
+    // Cas per dominis reals tipus "hidrants.cat"
+    const parts = hostname.split('.');
+    if (parts.length >= 2) {
+      baseDomain = parts.slice(-2).join('.');
+    }
+  }
 
   return (
     <div style={{
@@ -60,10 +77,7 @@ export const MunicipiSelector: React.FC = () => {
           marginTop: '20px'
         }}>
           {municipis.map(m => {
-            const port = window.location.port ? `:${window.location.port}` : '';
-            const url = isLocalhost 
-              ? `${protocol}//${m.slug}.localhost${port}`
-              : `${protocol}//${m.slug}.${baseDomain}`;
+            const url = `${protocol}//${m.slug}.${baseDomain}${port}`;
 
             return (
               <a

@@ -136,19 +136,16 @@ app.addHook('preHandler', async (request) => {
 
   let municipi = '';
 
-  // Intentem extreure el municipi del host
-  if (host.endsWith('.localhost')) {
-    municipi = host.replace('.localhost', '');
-  } else if (host.endsWith('.nip.io')) {
+  if (host.endsWith('.nip.io')) {
     const parts = host.split('.');
     if (parts.length > 6) {
       municipi = parts.slice(0, -6).join('.');
     }
-  } else if (host.endsWith(BASE_DOMAIN_URL) && host !== BASE_DOMAIN_URL) {
+  } else if (BASE_DOMAIN_URL && host.endsWith(`.${BASE_DOMAIN_URL}`)) {
     municipi = host.replace(`.${BASE_DOMAIN_URL}`, '');
-    if (municipi.endsWith('.')) municipi = municipi.slice(0, -1);
   }
 
+  if (municipi.endsWith('.')) municipi = municipi.slice(0, -1);
   (request as any).municipi = municipi || 'general'; // Default a 'general' si no hi ha subdomini
 });
 

@@ -1,27 +1,27 @@
 import { v4 as uuidv4 } from 'uuid';
 import { HidrantsRepository } from '../db/repositories/hidrantsRepository.js';
-import { syncMunicipiFromOSM } from './osmSync.js';
+import { syncAdfFromOSM } from './osmSync.js';
 import { NotFoundError, BadRequestError } from '../errors.js';
 
 export const HidrantsService = {
-  async forceSync(municipi: string) {
-    const count = await syncMunicipiFromOSM(municipi);
+  async forceSync(adfId: number) {
+    const count = await syncAdfFromOSM(adfId);
     return count;
   },
 
-  async getGeoJson(municipi: string) {
-    const count = HidrantsRepository.countByMunicipi(municipi);
+  async getGeoJson(adfId: number) {
+    const count = HidrantsRepository.countByAdf(adfId);
 
     if (count === 0) {
-      console.log(`[Service] Inicialitzant dades per ${municipi}...`);
+      console.log(`[Service] Inicialitzant dades per ADF ${adfId}...`);
       try {
-        await syncMunicipiFromOSM(municipi);
+        await syncAdfFromOSM(adfId);
       } catch (syncErr) {
-        console.error(`[Service] Failed initial sync for ${municipi}:`, syncErr);
+        console.error(`[Service] Failed initial sync for ADF ${adfId}:`, syncErr);
       }
     }
 
-    const rows = HidrantsRepository.findActiveByMunicipi(municipi);
+    const rows = HidrantsRepository.findActiveByAdf(adfId);
 
     const features = rows.map(row => ({
       type: 'Feature',
@@ -46,7 +46,7 @@ export const HidrantsService = {
     };
   },
 
-  createLocal(municipi: string, lat: number, lon: number, osm_tags: any, private_tags: any) {
+  createLocal(adfId: number, lat: number, lon: number, osm_tags: any, private_tags: any) {
     if (!lat || !lon) {
       throw new BadRequestError('Missing lat or lon');
     }
@@ -54,7 +54,7 @@ export const HidrantsService = {
     const id = uuidv4();
     HidrantsRepository.create({
       id,
-      municipi,
+      adf_id: adfId,
       lat,
       lon,
       osm_tags: JSON.stringify(osm_tags || {}),
@@ -65,10 +65,10 @@ export const HidrantsService = {
     return { id, sync_status: 'PENDING_CREATE' };
   },
 
-  updateLocal(id: string, municipi: string, lat?: number, lon?: number, osm_tags?: any, private_tags?: any) {
+  updateLocal(id: string, adfId: number, lat?: number, lon?: number, osm_tags?: any, private_tags?: any) {
     if (!id) throw new BadRequestError('Missing hydrant ID');
 
-    const current = HidrantsRepository.findByIdAndMunicipi(id, municipi);
+    const current = HidrantsRepository.findByIdAndAdf(id, adfId);
     if (!current) throw new NotFoundError('Hydrant not found');
 
     let newSyncStatus = current.sync_status;
@@ -76,7 +76,7 @@ export const HidrantsService = {
       newSyncStatus = 'PENDING_UPDATE';
     }
 
-    HidrantsRepository.update(id, municipi, {
+    HidrantsRepository.update(id, adfId, {
       lat,
       lon,
       osm_tags: osm_tags ? JSON.stringify(osm_tags) : undefined,
@@ -87,10 +87,10 @@ export const HidrantsService = {
     return { success: true, sync_status: newSyncStatus };
   },
 
-  deleteLocal(id: string, municipi: string) {
+  deleteLocal(id: string, adfId: number) {
     if (!id) throw new BadRequestError('Missing hydrant ID');
 
-    const current = HidrantsRepository.findByIdAndMunicipi(id, municipi);
+    const current = HidrantsRepository.findByIdAndAdf(id, adfId);
     if (!current) throw new NotFoundError('Hydrant not found');
 
     if (current.sync_status === 'PENDING_CREATE') {

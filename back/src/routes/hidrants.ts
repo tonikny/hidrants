@@ -19,23 +19,22 @@ const updateSchema = z.object({
 });
 
 const handler: ApiHandler = async (req, res) => {
-  const { method, municipi, url } = req;
+  const { method, url, query } = req;
+  const adf_id = Number(query?.adf || req.body?.adf_id);
 
-  if (!municipi) {
-    throw new BadRequestError('Municipi not identified. Use a valid subdomain.');
+  if (!adf_id) {
+    throw new BadRequestError('ADF ID not identified.');
   }
 
   // --- POST /api/hidrants/sync: Forçar sincronització amb OSM ---
   if (method === 'POST' && url?.endsWith('/sync')) {
-    console.log(`[API] Forçant sincronització d'OSM per a ${municipi}...`);
-    const count = await HidrantsService.forceSync(municipi);
+    const count = await HidrantsService.forceSync(adf_id);
     return res.json({ success: true, message: `Sincronitzats ${count} hidrants d'OSM.` });
   }
 
   // --- GET: Llistar hidrants (GeoJSON) ---
   if (method === 'GET') {
-    console.log(`[API] GET /api/hidrants for municipi: ${municipi}`);
-    const geoJson = await HidrantsService.getGeoJson(municipi);
+    const geoJson = await HidrantsService.getGeoJson(adf_id);
     return res.json(geoJson);
   }
 
@@ -46,7 +45,7 @@ const handler: ApiHandler = async (req, res) => {
       throw new BadRequestError(parsed.error.message);
     }
     const { lat, lon, osm_tags, private_tags } = parsed.data;
-    const result = HidrantsService.createLocal(municipi, lat, lon, osm_tags, private_tags);
+    const result = HidrantsService.createLocal(adf_id, lat, lon, osm_tags, private_tags);
     return res.status(201).json(result);
   }
 
@@ -60,14 +59,14 @@ const handler: ApiHandler = async (req, res) => {
     if (!id) throw new BadRequestError('Missing hydrant ID');
 
     const { lat, lon, osm_tags, private_tags } = parsed.data;
-    const result = HidrantsService.updateLocal(id, municipi, lat, lon, osm_tags, private_tags);
+    const result = HidrantsService.updateLocal(id, adf_id, lat, lon, osm_tags, private_tags);
     return res.json(result);
   }
 
   // --- DELETE: Esborrar hidrant ---
   if (method === 'DELETE') {
     const id = req.params?.id || req.query?.id;
-    const result = HidrantsService.deleteLocal(id, municipi);
+    const result = HidrantsService.deleteLocal(id, adf_id);
     return res.json(result);
   }
 

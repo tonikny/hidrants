@@ -2,22 +2,26 @@ import { useEffect, useState } from 'react';
 import { GeoJSON, useMap } from 'react-leaflet';
 import * as turf from '@turf/turf';
 import type { Feature, Polygon, MultiPolygon } from 'geojson';
-import { useMunicipi } from '../contexts/MunicipiContext';
+import { useAdf } from '../contexts/AdfContext';
 
 export default function MaskedAreaMap() {
-  const { municipi } = useMunicipi();
+  const { activeAdf } = useAdf();
   const map = useMap();
   const [mask, setMask] = useState<Feature<Polygon | MultiPolygon> | null>(
     null
   );
-  const [hasFittedBounds, setHasFittedBounds] = useState(false);
+  const [hasFittedBounds, setHasFittedBounds] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!municipi) return;
+    if (!activeAdf) {
+      setMask(null);
+      setHasFittedBounds(null);
+      return;
+    }
 
     const fetchAndMaskArea = async () => {
       try {
-        const response = await fetch('/api/municipi/boundary');
+        const response = await fetch(`/api/adf/boundary?adf=${activeAdf.id}`);
 
         if (!response.ok) {
           throw new Error(`API error ${response.status}`);
@@ -25,7 +29,8 @@ export default function MaskedAreaMap() {
 
         const geojson = await response.json();
 
-        const areaFeature = geojson.features[0] as
+        // El boundary ara és un Feature directament (o pot estar dins d'un Collection)
+        const areaFeature = (geojson.type === 'Feature' ? geojson : geojson.features?.[0]) as
           | Feature<Polygon | MultiPolygon>
           | undefined;
 
@@ -44,14 +49,15 @@ export default function MaskedAreaMap() {
         const masked = turf.difference(collection);
 
         if (masked) {
-          setMask(masked);
+          setMask(masked as any);
 
-          // Només ajustem el zoom la primera vegada
-          if (!hasFittedBounds) {
-            if (municipi.bbox) {
+          // Ajustem el zoom si canviem d'ADF
+          if (hasFittedBounds !== activeAdf.id) {
+            if (activeAdf.bbox) {
+              const bbox = activeAdf.bbox;
               map.fitBounds([
-                [municipi.bbox[0], municipi.bbox[1]],
-                [municipi.bbox[2], municipi.bbox[3]],
+                [bbox[0], bbox[1]],
+                [bbox[2], bbox[3]],
               ]);
             } else {
               const bbox = turf.bbox(areaFeature);
@@ -60,7 +66,7 @@ export default function MaskedAreaMap() {
                 [bbox[3], bbox[2]],
               ]);
             }
-            setHasFittedBounds(true);
+            setHasFittedBounds(activeAdf.id);
           }
         }
       } catch (err) {
@@ -69,14 +75,15 @@ export default function MaskedAreaMap() {
     };
 
     fetchAndMaskArea();
-  }, [map, municipi, hasFittedBounds]);
+  }, [map, activeAdf, hasFittedBounds]);
 
-  if (!municipi) return null;
+  if (!activeAdf) return null;
 
   return (
     <>
       {mask && (
         <GeoJSON
+          key={`mask-${activeAdf.id}`}
           data={mask}
           pathOptions={{
             fillColor: 'rgba(0, 0, 0, 0.6)',

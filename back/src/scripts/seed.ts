@@ -1,49 +1,66 @@
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/index.js';
-import { users } from '../db/schema.js';
-import fs from 'fs';
-import path from 'path';
-import slugify from 'slug';
-import { MUNICIPIS_NOMS } from './municipis.js';
+import { users, adfs } from '../db/schema.js';
+
+// Catàleg d'ADFs basat en la llista anterior de municipis
+// En aquest cas, cada municipi té la seva pròpia ADF per defecte
+const ADFS_INICIALS = [
+  { id: 278, nom: 'ADF els Hostalets de Pierola', relations: ['R345695'] },
+  { id: 266, nom: 'ADF Piera', relations: ['R345699'] },
+  { id: 256, nom: 'ADF Masquefa', relations: ['R340791'] },
+  { id: 279, nom: "ADF Vallbona d'Anoia", relations: ['R341896'] },
+  { id: 202, nom: 'ADF la Torre de Claramunt', relations: ['R343659'] },
+];
 
 async function run() {
-  console.log('🌱 Iniciant seed de dades...');
+  console.log('🌱 Iniciant seed de dades (ADF i Usuaris)...');
 
   const DEFAULT_PASSWORD = 'admin';
   const hash = bcrypt.hashSync(DEFAULT_PASSWORD, 10);
-  
-  const catalogPath = path.resolve(import.meta.dirname, '../../data/municipis_catalog.json');
-  let municipis = MUNICIPIS_NOMS.map(name => ({ name, slug: slugify(name) }));
 
-  if (fs.existsSync(catalogPath)) {
-    const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
-    municipis = catalog.map((m: any) => ({ name: m.name, slug: m.slug }));
-  }
-
-  // Afegim un admin global
-  const globalAdmin = { id: uuidv4(), username: 'admin', hash, municipi: 'all', role: 'admin' };
-  
   try {
-    // Admin global
-    db.insert(users).values({
-      id: uuidv4(),
-      username: 'admin',
-      password_hash: hash,
-      municipi: 'general',
-      role: 'admin'
-    }).onConflictDoNothing().run();
+    // 1. Inserir ADFs
+    for (const adfData of ADFS_INICIALS) {
+      db.insert(adfs)
+        .values({
+          id: adfData.id,
+          nom: adfData.nom,
+          osm_relations: JSON.stringify(adfData.relations),
+        })
+        .onConflictDoNothing()
+        .run();
+      console.log(`✅ ADF ${adfData.id} - ${adfData.nom} creada.`);
+    }
+
+    // 2. Inserir admin global (no lligat a cap ADF per defecte, o podem triar-ne una)
+    db.insert(users)
+      .values({
+        id: uuidv4(),
+        username: 'admin',
+        password_hash: hash,
+        adf_id: null, // Admin global
+        role: 'admin',
+      })
+      .onConflictDoNothing()
+      .run();
     console.log('👤 Usuari admin global creat (admin/admin)');
 
-    for (const m of municipis) {
-      db.insert(users).values({
-        id: uuidv4(),
-        username: `admin_${m.slug.replace(/-/g, '_')}`,
-        password_hash: hash,
-        municipi: m.slug,
-        role: 'admin'
-      }).onConflictDoNothing().run();
-      console.log(`👤 Usuari admin per a ${m.name} creat (admin_${m.slug.replace(/-/g, '_')}/admin)`);
+    // 3. Inserir editors per a cada ADF
+    for (const adfData of ADFS_INICIALS) {
+      db.insert(users)
+        .values({
+          id: uuidv4(),
+          username: `editor_${adfData.id}`,
+          password_hash: hash,
+          adf_id: adfData.id,
+          role: 'editor',
+        })
+        .onConflictDoNothing()
+        .run();
+      console.log(
+        `👤 Usuari editor per a ${adfData.nom} creat (editor_${adfData.id}/admin)`
+      );
     }
 
     console.log('✨ Seed completat correctament.');

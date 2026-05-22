@@ -2,12 +2,13 @@ import { Popup } from 'react-leaflet';
 import { useState } from 'react';
 import { sendToTelegram } from '../utils/sendToTelegram';
 import { toast } from 'react-toastify';
-import { OSMFeature } from '../hooks/useHidrantData';
+import { HidrantFeature } from '../hooks/useHidrantData';
 import { openInNativeMaps } from '../utils/geoMaps';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdf } from '../contexts/AdfContext';
 
 type NodeFormProps = {
-  feature: OSMFeature;
+  feature: HidrantFeature;
   showRoute: boolean;
   setShowRoute: (value: boolean) => void;
 };
@@ -24,6 +25,7 @@ const posicioHidrants = (key: string) => {
       return 'Desconegut';
   }
 };
+
 const tipusHidrants = (key: string) => {
   switch (key) {
     case 'underground':
@@ -34,26 +36,24 @@ const tipusHidrants = (key: string) => {
       return 'Desconegut';
   }
 };
-const estatHidrants = (props: Record<string, string>) => {
+
+const estatHidrants = (props: Record<string, any>) => {
   if (props['emergency'] === 'fire_hydrant') return 'Operatiu';
   if (props['disused:emergency'] === 'fire_hydrant') return 'Fora de servei';
   return 'Desconegut';
 };
 
-const diametreHidrant = 'Diametre';
-
-export const NodeWithForm = ({
+  export const NodeWithForm = ({
   feature,
   showRoute,
   setShowRoute,
 }: NodeFormProps) => {
   const [message, setMessage] = useState('');
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const { activeAdf } = useAdf();
 
   const props = feature.properties;
   
-  // ✅ Lògica per extreure l'ID de visualització:
-  // Si ve d'OSM pot ser "node/12345" o "osm-12345". Volem mostrar només "12345".
   let displayId = String(feature.id);
   let osmId = props.osm_id;
 
@@ -63,13 +63,12 @@ export const NodeWithForm = ({
     displayId = displayId.replace('osm-', '');
   }
 
-  // ✅ Traduim les etiquetes d'OSM a noms llegibles en català.
   const translatedTags = {
-    'Data de revisió': props['survey:date'],
+    'Data de revisió': props['survey:date'],
     Estat: estatHidrants(props),
     Tipus: tipusHidrants(props['fire_hydrant:type']),
-    Posició: posicioHidrants(props['fire_hydrant:position']),
-    Diametre: props['fire_hydrant:diameter'] ?? 'Desconegut',
+    Posició: posicioHidrants(props['fire_hydrant:position']),
+    Diàmetre: props['fire_hydrant:diameter'] ?? 'Desconegut',
     Adreça: `${props['addr:street'] ?? ''} ${props['addr:housenumber'] ?? ''} ${
       props['addr:neighbourhood'] ? '(' + props['addr:neighbourhood'] + ')' : ''
     }`,
@@ -80,7 +79,7 @@ export const NodeWithForm = ({
     lng: feature.geometry.coordinates[0],
   };
 
-  const handleSend = async (feature: OSMFeature) => {
+  const handleSend = async (feature: HidrantFeature) => {
     try {
       await sendToTelegram({
         lat: poi.lat,
@@ -106,10 +105,10 @@ export const NodeWithForm = ({
   };
 
   const handleUpdateSurveyDate = async (isOperative: boolean) => {
+    if (!activeAdf) return;
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Filtrem camps interns de properties per quedar-nos només amb els tags d'OSM
       const {
         id: _id,
         osm_id: _osm_id,
@@ -129,11 +128,10 @@ export const NodeWithForm = ({
         delete newTags['emergency'];
       }
 
-      const response = await fetch(`/api/hidrants/${feature.id}`, {
+      const response = await fetch(`/api/hidrants/${feature.id}?adf=${activeAdf.id}`, {
         method: 'PUT',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           osm_tags: newTags
@@ -145,7 +143,6 @@ export const NodeWithForm = ({
       const statusText = isOperative ? 'Operatiu' : 'Fora de servei';
       toast.success(`Revisió registrada (${statusText}): ${today}`);
       
-      // Refresquem per veure els canvis (el color de la icona canvia segons l'estat)
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       console.error(err);

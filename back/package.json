@@ -7,7 +7,6 @@
     "start": "node dist/scripts/migrate.js && node dist/server.js",
     "build": "tsc",
     "update:boundaries": "tsx src/scripts/updateBoundaries.ts",
-    "generate:municipis": "tsx src/scripts/generateMunicipis.ts",
     "create:user": "tsx src/scripts/createUser.ts",
     "db:reset": "tsx src/scripts/resetDb.ts",
     "db:seed": "tsx src/scripts/seed.ts",

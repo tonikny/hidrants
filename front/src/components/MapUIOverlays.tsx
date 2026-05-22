@@ -9,7 +9,8 @@ import { floatingButtonStyle } from '../styles/uiStyles';
 interface MapUIOverlaysProps {
   user: any;
   logout: () => void;
-  municipi: any;
+  activeAdf: any;
+  setActiveAdf: (adf: any) => void;
   loadingHidrants: boolean;
   hidrantsError: string | null;
   showLoginModal: boolean;
@@ -22,7 +23,8 @@ interface MapUIOverlaysProps {
 export function MapUIOverlays({
   user,
   logout,
-  municipi,
+  activeAdf,
+  setActiveAdf,
   loadingHidrants,
   hidrantsError,
   showLoginModal,
@@ -35,7 +37,32 @@ export function MapUIOverlays({
     <>
       <FullscreenButton targetId="map-container" />
 
-      {user && municipi && (
+      {/* Botó per canviar d'ADF / Sortir a selector */}
+      <button
+        onClick={() => setActiveAdf(null)}
+        style={{
+          position: 'fixed',
+          top: '1rem',
+          left: '1rem',
+          ...floatingButtonStyle,
+          background: 'white',
+          color: 'black',
+          width: 'auto',
+          padding: '0 15px',
+          height: '40px',
+          fontSize: '0.9rem',
+          fontWeight: 'bold',
+          zIndex: 1000,
+          border: 'none',
+          borderRadius: '20px',
+          cursor: 'pointer',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+        }}
+      >
+        📍 {activeAdf?.nom || 'Selector'}
+      </button>
+
+      {user && activeAdf && (
         <SyncButton
           style={{
             position: 'fixed',
@@ -70,7 +97,7 @@ export function MapUIOverlays({
           cursor: 'pointer'
         }}
       >
-        {user ? `Surt (${user.username})` : '🔐'}
+        {user ? `Surt (${user.username})` : '🔐 Accés'}
       </button>
 
       {showLoginModal && !user && (
@@ -95,7 +122,7 @@ export function MapUIOverlays({
       {loadingHidrants && (
         <div style={{
           position: 'fixed',
-          top: '1rem',
+          top: '4rem',
           left: '50%',
           transform: 'translateX(-50%)',
           background: 'rgba(255, 255, 255, 0.8)',
@@ -113,7 +140,7 @@ export function MapUIOverlays({
       {hidrantsError && (
         <div style={{
           position: 'fixed',
-          top: '4rem',
+          top: '6rem',
           left: '50%',
           transform: 'translateX(-50%)',
           background: 'rgba(255, 0, 0, 0.8)',

@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix front\" \"npm run dev --prefix back\"",
+    "dev": "concurrently \"npm run dev --prefix back\" \"sleep 3 && npm run dev --prefix front\"",
     "generate:municipis": "npm run generate:municipis --prefix back",
     "update:boundaries": "npm run update:boundaries --prefix back",
     "build": "npm run build --prefix front && npm run build --prefix back",

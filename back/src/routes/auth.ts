@@ -58,6 +58,15 @@ export const login: ApiHandler = async (req, res) => {
 };
 
 /**
+ * Logout handler
+ * POST /api/auth/logout
+ */
+export const logout: ApiHandler = async (req, res) => {
+  (res as any)._clearCookie = true;
+  return res.status(200).json({ success: true });
+};
+
+/**
  * Get current user
  * GET /api/auth/me
  */

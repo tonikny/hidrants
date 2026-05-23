@@ -16,7 +16,8 @@ const ADFS_INICIALS = [
 async function run() {
   console.log('🌱 Iniciant seed de dades (ADF i Usuaris)...');
 
-  const DEFAULT_PASSWORD = 'admin';
+  const DEFAULT_PASSWORD = 'anoia';
+  const USER_PREFIX = 'adf';
   const hash = bcrypt.hashSync(DEFAULT_PASSWORD, 10);
 
   try {
@@ -51,7 +52,7 @@ async function run() {
       db.insert(users)
         .values({
           id: uuidv4(),
-          username: `editor_${adfData.id}`,
+          username: `adf${adfData.id}`,
           password_hash: hash,
           adf_id: adfData.id,
           role: 'editor',
@@ -59,7 +60,7 @@ async function run() {
         .onConflictDoNothing()
         .run();
       console.log(
-        `👤 Usuari editor per a ${adfData.nom} creat (editor_${adfData.id}/admin)`
+        `👤 Usuari editor per a ${adfData.nom} creat (${USER_PREFIX}${adfData.id}/${DEFAULT_PASSWORD})`
       );
     }
 

@@ -10,7 +10,7 @@
     "docker:build": "docker compose build",
     "docker:logs": "docker compose logs -f",
     "docker:clean": "docker image prune -f",
-    "docker:deploy": "git pull && npm run install && npm run update:boundaries && docker compose up -d --build && docker image prune -f",
+    "docker:deploy": "git reset --hard && git pull && npm run install && npm run update:boundaries && docker compose up -d --build && docker image prune -f",
     "db:reset": "npm run db:reset --prefix back",
     "db:seed": "npm run db:seed --prefix back",
     "db:import-osm": "npm run db:import-osm --prefix back",

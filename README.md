@@ -8,16 +8,15 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
 
 ## Característiques
 
-- **Arquitectura SPA**: Aplicació de pàgina única (Single Page Application) sense necessitat de subdominis complexos.
+- **Arquitectura SPA**: Aplicació de pàgina única.
 - **Gestió per ADF**: Suport per a múltiples ADFs, cadascuna amb un o diversos municipis assignats.
 - **Sincronització amb OSM**: Importació automàtica de dades des d'OpenStreetMap.
-- **Seguretat robusta**: Sessions segures mitjançant cookies `httpOnly` i control d'accés per rols (Admin/Editor).
+- **Seguretat**: Sessions amb JWT i control d'accés per rols.
 - **Mapa interactiu**: Basat en Leaflet amb suport per a:
-  - Visualització de fronteres territorials (boundaries) emmagatzemades a la BD.
+  - Visualització de limits territorials.
   - Creació i edició d'hidrants locals.
   - Càlcul de rutes a hidrants.
   - Enviament de notificacions a Telegram.
-- **Mode Offline**: Preparat per a ús en entorns amb poca cobertura (properament).
 
 ## Stack Tecnològic
 

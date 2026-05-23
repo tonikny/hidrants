@@ -37,6 +37,9 @@ export function useGeolocationTracking(onEdit?: (latlng: L.LatLng) => void) {
 
       watchIdRef.current = geolocation.watchPosition(
         (pos) => {
+          // @ts-ignore
+          if (!map || !map._loaded || !map.getContainer()) return;
+
           const { latitude, longitude, accuracy } = pos.coords;
           const latlng = L.latLng(latitude, longitude);
           setPosition(latlng);
@@ -45,7 +48,10 @@ export function useGeolocationTracking(onEdit?: (latlng: L.LatLng) => void) {
           if (firstUpdateRef.current) {
             map.setView(latlng, 17);
             setTimeout(() => {
-              map.invalidateSize();
+              // @ts-ignore
+              if (map && map._loaded && map.getContainer()) {
+                map.invalidateSize();
+              }
             }, 100);
             firstUpdateRef.current = false;
           }

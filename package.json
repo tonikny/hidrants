@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "install": "npm install --ignore-scripts && npm install --prefix back && npm install --prefix front",
     "dev": "concurrently \"npm run dev --prefix back\" \"sleep 3 && npm run dev --prefix front\"",
     "update:boundaries": "npm run update:boundaries --prefix back",
     "build": "npm run build --prefix front && npm run build --prefix back",
@@ -9,10 +10,11 @@
     "docker:build": "docker compose build",
     "docker:logs": "docker compose logs -f",
     "docker:clean": "docker image prune -f",
-    "deploy": "git pull && npm install && npm run update:boundaries && docker compose up -d --build && docker image prune -f",
+    "docker:deploy": "git pull && npm run install && npm run update:boundaries && docker compose up -d --build && docker image prune -f",
     "db:reset": "npm run db:reset --prefix back",
     "db:seed": "npm run db:seed --prefix back",
     "db:import-osm": "npm run db:import-osm --prefix back",
+    "db:reset-hidrants": "npm run db:reset-hidrants --prefix back",
     "db:setup": "npm run db:reset && npm run db:seed && npm run db:import-osm"
   },
   "devDependencies": {

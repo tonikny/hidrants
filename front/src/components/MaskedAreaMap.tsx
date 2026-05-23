@@ -13,6 +13,8 @@ export default function MaskedAreaMap() {
   const [hasFittedBounds, setHasFittedBounds] = useState<number | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!activeAdf) {
       setMask(null);
       setHasFittedBounds(null);
@@ -28,6 +30,8 @@ export default function MaskedAreaMap() {
         }
 
         const geojson = await response.json();
+
+        if (!isMounted) return;
 
         // El boundary ara és un Feature directament (o pot estar dins d'un Collection)
         const areaFeature = (geojson.type === 'Feature' ? geojson : geojson.features?.[0]) as
@@ -53,28 +57,38 @@ export default function MaskedAreaMap() {
 
           // Ajustem el zoom si canviem d'ADF
           if (hasFittedBounds !== activeAdf.id) {
-            if (activeAdf.bbox) {
-              const bbox = activeAdf.bbox;
-              map.fitBounds([
-                [bbox[0], bbox[1]],
-                [bbox[2], bbox[3]],
-              ]);
-            } else {
-              const bbox = turf.bbox(areaFeature);
-              map.fitBounds([
-                [bbox[1], bbox[0]],
-                [bbox[3], bbox[2]],
-              ]);
+            // Verificació extra de seguretat per a Leaflet
+            // @ts-ignore
+            if (map && map._loaded && map.getContainer()) {
+              if (activeAdf.bbox) {
+                const bbox = activeAdf.bbox;
+                map.fitBounds([
+                  [bbox[0], bbox[1]],
+                  [bbox[2], bbox[3]],
+                ]);
+              } else {
+                const bbox = turf.bbox(areaFeature);
+                map.fitBounds([
+                  [bbox[1], bbox[0]],
+                  [bbox[3], bbox[2]],
+                ]);
+              }
             }
             setHasFittedBounds(activeAdf.id);
           }
         }
       } catch (err) {
-        console.error('Error loading masked area:', err);
+        if (isMounted) {
+          console.error('Error loading masked area:', err);
+        }
       }
     };
 
     fetchAndMaskArea();
+
+    return () => {
+      isMounted = false;
+    };
   }, [map, activeAdf, hasFittedBounds]);
 
   if (!activeAdf) return null;

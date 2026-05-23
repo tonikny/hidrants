@@ -30,7 +30,8 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
 L'aplicació inclou scripts per gestionar la base de dades fàcilment des de l'arrel:
 
 - `npm run db:setup`: Reset complet, creació d'ADFs/usuaris i importació des d'OSM.
-- `npm run db:reset`: Buida completament la base de dades.
+- `npm run db:reset`: Buida completament la base de dades (usuaris i hidrants).
+- `npm run db:reset-hidrants`: Esborra només els hidrants i els torna a baixar d'OSM.
 - `npm run db:seed`: Crea les ADFs inicials i els usuaris administradors.
 - `npm run db:import-osm`: Sincronitza els hidrants des d'OSM per a totes les ADFs.
 - `npm run update:boundaries`: Descarrega i desa les fronteres geogràfiques a la base de dades.

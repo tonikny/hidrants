@@ -19,7 +19,11 @@ export function SyncButton({ style }: SyncButtonProps) {
     
     try {
       const response = await fetch(`/api/hidrants/sync?adf=${activeAdf.id}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
       });
       
       if (!response.ok) {

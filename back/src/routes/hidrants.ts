@@ -27,7 +27,8 @@ const handler: ApiHandler = async (req, res) => {
   }
 
   // --- POST /api/hidrants/sync: Forçar sincronització amb OSM ---
-  if (method === 'POST' && url?.endsWith('/sync')) {
+  const isSyncPath = url?.split('?')[0].endsWith('/sync');
+  if (method === 'POST' && isSyncPath) {
     const count = await HidrantsService.forceSync(adf_id);
     return res.json({ success: true, message: `Sincronitzats ${count} hidrants d'OSM.` });
   }

@@ -9,7 +9,7 @@
     "update:boundaries": "tsx src/scripts/updateBoundaries.ts",
     "create:user": "tsx src/scripts/createUser.ts",
     "db:reset": "tsx src/scripts/resetDb.ts",
-    "db:seed": "tsx src/scripts/seed.ts",
+    "db:reset-hidrants": "tsx src/scripts/cleanHidrants.ts && npm run db:import-osm",
     "db:import-osm": "tsx src/scripts/importOsm.ts"
   },
   "dependencies": {

@@ -33,11 +33,14 @@ function MapStateListener({
 
   // Inicialitzem l'estat en muntar-se
   useEffect(() => {
-    const b = map.getBounds();
-    onStateChange(
-      [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
-      map.getZoom()
-    );
+    // @ts-ignore
+    if (map && map._loaded && map.getContainer()) {
+      const b = map.getBounds();
+      onStateChange(
+        [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
+        map.getZoom()
+      );
+    }
   }, [map, onStateChange]);
 
   return null;
@@ -48,9 +51,14 @@ function FixMapSize() {
   const map = useMap();
 
   useEffect(() => {
-    setTimeout(() => {
-      map.invalidateSize();
+    const timer = setTimeout(() => {
+      // @ts-ignore
+      if (map && map._loaded && map.getContainer()) {
+        map.invalidateSize();
+      }
     }, 200);
+
+    return () => clearTimeout(timer);
   }, [map]);
 
   return null;

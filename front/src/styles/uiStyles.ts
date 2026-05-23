@@ -1,14 +1,56 @@
 export const floatingButtonStyle: React.CSSProperties = {
-  background: '#007bff',
-  color: 'white',
-  border: 'none',
-  borderRadius: '50%',
-  width: '3rem',
-  height: '3rem',
-  fontSize: '1.5rem',
+  background: 'white',
+  color: '#333',
+  border: '1px solid #ccc',
+  borderRadius: '4px',
+  width: '34px',
+  height: '34px',
+  fontSize: '1.2rem',
   cursor: 'pointer',
-  zIndex: 1000,
-  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+  zIndex: 990,
+  boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 0,
+};
+
+export const controlBarStyle: React.CSSProperties = {
+  background: 'white',
+  border: '2px solid rgba(0,0,0,0.2)',
+  backgroundClip: 'padding-box',
+  borderRadius: '4px',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+export const controlBarButtonStyle: React.CSSProperties = {
+  width: '30px',
+  height: '30px',
+  lineHeight: '30px',
+  background: 'white',
+  border: 'none',
+  borderBottom: '1px solid #ccc',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '1.2rem',
+  color: '#333',
+  padding: 0,
+};
+
+export const controlContainerStyle: React.CSSProperties = {
+  position: 'fixed',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+  zIndex: 990,
+  pointerEvents: 'none',
+};
+
+export const controlItemStyle: React.CSSProperties = {
+  pointerEvents: 'auto', // Re-enable pointer events for buttons
 };
 
 // formStyles

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { GeoJSON, useMap } from 'react-leaflet';
 import * as turf from '@turf/turf';
 import type { Feature, Polygon, MultiPolygon } from 'geojson';
-import { useAdf } from '../contexts/AdfContext';
+import { useAdf } from '../../contexts/AdfContext';
 
 export default function MaskedAreaMap() {
   const { activeAdf } = useAdf();

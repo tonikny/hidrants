@@ -1,19 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLng } from 'leaflet';
-import { MapClickHandler, NewNodeForm } from './NewNodeForm';
+import { MapClickHandler, NewNodeForm } from '../ui/NewNodeForm';
 import MapRightClickHandler from './MapRightClickHandler';
-import { LocateButton } from './LocateButton';
+import { LocateButton } from '../controls/LocateButton';
 import { Layers } from './Layers';
-import { ZoomDisplay } from './ZoomDisplay';
-import { useHydrantData } from '../hooks/useHidrantData';
-import { floatingButtonStyle } from '../styles/uiStyles';
+import { ZoomDisplay } from '../controls/ZoomDisplay';
+import { useHydrantData } from '../../hooks/useHidrantData';
+import { floatingButtonStyle } from '../../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
-import { useAdf } from '../contexts/AdfContext';
-import { useAuth } from '../contexts/AuthContext';
-import { HydrantMarkerList } from './HydrantMarkerList';
-import { MapUIOverlays } from './MapUIOverlays';
+import { useAdf } from '../../contexts/AdfContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { HydrantMarkerList } from './markers/HydrantMarkerList';
+import { MapUIOverlays } from '../controls/MapUIOverlays';
+import { LocationMarker } from './LocationMarker';
 
 // ✅ Component per escoltar canvis al mapa i informar al pare
 function MapStateListener({
@@ -93,6 +94,7 @@ export function LeafletMap() {
   const [showCoordModal, setShowCoordModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
   const [poi, setPoi] = useState<LatLng | null>(null);
   const [showRoute, setShowRoute] = useState(false);
 
@@ -119,7 +121,6 @@ export function LeafletMap() {
         />
         <MaskedAreaMap />
         <Layers />
-        <ZoomDisplay />
         <MapRightClickHandler setClickedPosition={setClickedPosition} setShowNewForm={setShowNewForm} user={user} />
         <HydrantMarkerList 
           features={features} 
@@ -154,15 +155,28 @@ export function LeafletMap() {
         {poi && position && showRoute && (
           <RouteLayer from={position} to={poi} />
         )}
-        <LocateButton
-          style={{
-            position: 'fixed',
-            bottom: '9rem',
-            left: '1rem',
-            ...floatingButtonStyle,
+        <LocationMarker position={position} accuracy={accuracy} onEdit={user ? openFormAtPosition : undefined} />
+        
+        <MapUIOverlays 
+          user={user}
+          logout={logout}
+          activeAdf={activeAdf}
+          setActiveAdf={setActiveAdf}
+          loadingHidrants={loadingHidrants}
+          hidrantsError={hidrantsError}
+          showLoginModal={showLoginModal}
+          setShowLoginModal={setShowLoginModal}
+          showCoordModal={showCoordModal}
+          setShowCoordModal={setShowCoordModal}
+          onCoordinateConfirm={(lat, lon) => {
+            const latlng = L.latLng(lat, lon);
+            setClickedPosition(latlng);
+            setShowNewForm(true);
+            setShowCoordModal(false);
           }}
-          onEdit={user ? openFormAtPosition : undefined}
-          setPosition={setPosition}
+          onLocateEdit={user ? openFormAtPosition : undefined}
+          setLocatePosition={setPosition}
+          setLocateAccuracy={setAccuracy}
         />
       </MapContainer>
 
@@ -174,25 +188,6 @@ export function LeafletMap() {
           setNewNodeLatLng={setClickedPosition}
         />
       )}
-
-      <MapUIOverlays 
-        user={user}
-        logout={logout}
-        activeAdf={activeAdf}
-        setActiveAdf={setActiveAdf}
-        loadingHidrants={loadingHidrants}
-        hidrantsError={hidrantsError}
-        showLoginModal={showLoginModal}
-        setShowLoginModal={setShowLoginModal}
-        showCoordModal={showCoordModal}
-        setShowCoordModal={setShowCoordModal}
-        onCoordinateConfirm={(lat, lon) => {
-          const latlng = L.latLng(lat, lon);
-          setClickedPosition(latlng);
-          setShowNewForm(true);
-          setShowCoordModal(false);
-        }}
-      />
     </>
   );
 }

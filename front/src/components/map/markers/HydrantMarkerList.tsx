@@ -1,7 +1,7 @@
 import { Marker } from 'react-leaflet';
 import { latLng, LatLng } from 'leaflet';
-import getHydrantIcon from '../utils/icons';
-import { NodeWithForm } from './NodeForm';
+import getHydrantIcon from '../../../utils/icons';
+import { NodeWithForm } from '../../ui/NodeForm';
 
 interface HydrantMarkerListProps {
   features: any[];

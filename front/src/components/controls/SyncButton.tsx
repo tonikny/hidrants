@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { useAuth } from '../contexts/AuthContext';
-import { useAdf } from '../contexts/AdfContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useAdf } from '../../contexts/AdfContext';
 
 interface SyncButtonProps {
   style?: React.CSSProperties;
@@ -60,14 +60,11 @@ export function SyncButton({ style }: SyncButtonProps) {
       title="Sincronitzar amb OSM"
       style={{
         ...style,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
         cursor: isSyncing ? 'not-allowed' : 'pointer',
         opacity: isSyncing ? 0.7 : 1,
       }}
     >
-      <span style={{ fontSize: '1.2rem' }}>{isSyncing ? '⏳' : '🔄'}</span>
+      <span>{isSyncing ? '⏳' : '🔄'}</span>
     </button>
   );
 }

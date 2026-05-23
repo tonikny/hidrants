@@ -8,7 +8,16 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
   return (
     <>
       {/* Botó d'informació */}
-      <button onClick={() => setOpen(true)} style={style} title="Llegenda">
+      <button 
+        onClick={() => setOpen(true)} 
+        style={{
+          ...style,
+          fontWeight: 'bold',
+          fontFamily: 'serif',
+          fontStyle: 'italic',
+        }} 
+        title="Llegenda"
+      >
         i
       </button>
 

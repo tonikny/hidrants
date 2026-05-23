@@ -1,9 +1,9 @@
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { LeafletMap } from './components/LeafletMap';
+import { LeafletMap } from './components/map/LeafletMap';
 import { AdfProvider, useAdf } from './contexts/AdfContext';
 import { AuthProvider } from './contexts/AuthContext';
-import { AdfSelector } from './components/AdfSelector';
+import { AdfSelector } from './components/ui/AdfSelector';
 
 function AppContent() {
   const { activeAdf, isLoading } = useAdf();

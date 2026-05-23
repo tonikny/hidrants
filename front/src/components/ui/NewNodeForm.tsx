@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { sendToTelegram } from '../utils/sendToTelegram';
+import { sendToTelegram } from '../../utils/sendToTelegram';
 import { useMap } from 'react-leaflet';
 import { LatLng, point } from 'leaflet';
 import { toast } from 'react-toastify';
@@ -9,7 +9,7 @@ import {
   primaryButtonStyle,
   secondaryButtonStyle,
   selectStyle,
-} from '../styles/uiStyles';
+} from '../../styles/uiStyles';
 
 type NodeFormProps = {
   lat: number;

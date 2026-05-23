@@ -1,6 +1,13 @@
 import { useState } from 'react';
+import { floatingButtonStyle } from '../../styles/uiStyles';
 
-export function FullscreenButton({ targetId }: Readonly<{ targetId: string }>) {
+export function FullscreenButton({ 
+  targetId,
+  style
+}: Readonly<{ 
+  targetId: string;
+  style?: React.CSSProperties;
+}>) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -17,20 +24,7 @@ export function FullscreenButton({ targetId }: Readonly<{ targetId: string }>) {
   return (
     <button
       onClick={toggleFullscreen}
-      style={{
-        position: 'absolute',
-        bottom: '13rem',
-        left: '1rem',
-        background: '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '50%',
-        width: '3rem',
-        height: '3rem',
-        fontSize: '1.5rem',
-        cursor: 'pointer',
-        zIndex: 1000,
-      }}
+      style={style || floatingButtonStyle}
       title={isFullscreen ? 'Sortir de pantalla completa' : 'Pantalla completa'}
     >
       {isFullscreen ? '⤫' : '⛶'}

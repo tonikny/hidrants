@@ -1,11 +1,11 @@
 import { Popup } from 'react-leaflet';
 import { useState } from 'react';
-import { sendToTelegram } from '../utils/sendToTelegram';
+import { sendToTelegram } from '../../utils/sendToTelegram';
 import { toast } from 'react-toastify';
-import { HidrantFeature } from '../hooks/useHidrantData';
-import { openInNativeMaps } from '../utils/geoMaps';
-import { useAuth } from '../contexts/AuthContext';
-import { useAdf } from '../contexts/AdfContext';
+import { HidrantFeature } from '../../hooks/useHidrantData';
+import { openInNativeMaps } from '../../utils/geoMaps';
+import { useAuth } from '../../contexts/AuthContext';
+import { useAdf } from '../../contexts/AdfContext';
 
 type NodeFormProps = {
   feature: HidrantFeature;

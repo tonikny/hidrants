@@ -4,7 +4,7 @@ import {
   popupContainerStyle,
   primaryButtonStyle,
   secondaryButtonStyle,
-} from '../styles/uiStyles';
+} from '../../styles/uiStyles';
 
 type CoordinateModalProps = {
   onConfirm: (lat: number, lon: number) => void;

@@ -20,14 +20,14 @@ export const ZoomDisplay = () => {
   return (
     <div
       style={{
-        position: 'absolute',
-        bottom: 20,
-        right: 0,
         background: 'white',
-        padding: '2px 4px',
+        padding: '2px 8px',
+        border: '1px solid #ccc',
         borderRadius: '4px',
-        fontSize: '0.7rem',
-        zIndex: 1000,
+        fontSize: '0.75rem',
+        color: '#333',
+        boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
+        fontWeight: 'bold',
       }}
     >
       Zoom: {zoom}

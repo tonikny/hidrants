@@ -15,7 +15,7 @@
     "db:seed": "npm run db:seed --prefix back",
     "db:import-osm": "npm run db:import-osm --prefix back",
     "db:reset-hidrants": "npm run db:reset-hidrants --prefix back",
-    "db:setup": "npm run db:reset && npm run db:seed && npm run db:import-osm"
+    "db:setup": "npm run db:reset && npm run db:seed && npm run db:import-osm && npm run update:boundaries"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

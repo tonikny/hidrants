@@ -10,6 +10,7 @@
     "create:user": "tsx src/scripts/createUser.ts",
     "db:reset": "tsx src/scripts/resetDb.ts",
     "db:reset-hidrants": "tsx src/scripts/cleanHidrants.ts && npm run db:import-osm",
+    "db:seed": "tsx src/scripts/seed.ts",
     "db:import-osm": "tsx src/scripts/importOsm.ts"
   },
   "dependencies": {

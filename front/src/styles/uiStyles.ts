@@ -90,10 +90,10 @@ export const secondaryButtonStyle: React.CSSProperties = {
 
 export const popupContainerStyle: React.CSSProperties = {
   backgroundColor: 'white',
-  padding: '1.5rem',
+  padding: '1rem',
   borderRadius: '8px',
   boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-  width: 'min(90vw, 450px)',
+  width: 'min(calc(100vw - 60px), 340px)',
   maxHeight: '85vh',
   overflowY: 'auto',
   zIndex: 2000,
@@ -107,7 +107,7 @@ export const modalOverlayStyle: React.CSSProperties = {
   left: 0,
   width: '100%',
   height: '100%',
-  backgroundColor: 'rgba(0,0,0,0.5)',
+  backgroundColor: 'rgba(0,0,0,0.4)',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',

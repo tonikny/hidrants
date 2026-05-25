@@ -6,6 +6,11 @@ import { HidrantFeature } from '../../hooks/useHidrantData';
 import { openInNativeMaps } from '../../utils/geoMaps';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdf } from '../../contexts/AdfContext';
+import { 
+  inputStyle, 
+  primaryButtonStyle, 
+  secondaryButtonStyle 
+} from '../../styles/uiStyles';
 
 type NodeFormProps = {
   feature: HidrantFeature;
@@ -176,10 +181,16 @@ const estatHidrants = (props: Record<string, any>) => {
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
-          <button onClick={handleShowRoute} style={{ flex: 1, fontSize: '0.7rem' }}>
+          <button 
+            onClick={handleShowRoute} 
+            style={{ ...secondaryButtonStyle, flex: 1, fontSize: '0.7rem', padding: '6px' }}
+          >
             {showRoute ? 'Tanca ruta' : 'Ruta'}
           </button>
-          <button onClick={handleOpenMaps} style={{ flex: 1, fontSize: '0.7rem' }}>
+          <button 
+            onClick={handleOpenMaps} 
+            style={{ ...secondaryButtonStyle, flex: 1, fontSize: '0.7rem', padding: '6px' }}
+          >
             Mapes
           </button>
         </div>
@@ -195,7 +206,8 @@ const estatHidrants = (props: Record<string, any>) => {
                 borderRadius: '4px', 
                 padding: '6px',
                 fontSize: '0.75rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontWeight: 600
               }}
             >
               ✅ Operatiu (Revisat avui)
@@ -209,7 +221,8 @@ const estatHidrants = (props: Record<string, any>) => {
                 borderRadius: '4px', 
                 padding: '6px',
                 fontSize: '0.75rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontWeight: 600
               }}
             >
               ❌ Fora de servei (Revisat avui)
@@ -223,9 +236,14 @@ const estatHidrants = (props: Record<string, any>) => {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         rows={2}
-        style={{ width: '100%', marginTop: '0.5rem' }}
+        style={{ ...inputStyle, width: '100%', marginTop: '0.5rem', padding: '4px' }}
       />
-      <button onClick={() => handleSend(feature)}>Enviar</button>
+      <button 
+        onClick={() => handleSend(feature)}
+        style={{ ...primaryButtonStyle, width: '100%', marginTop: '0.5rem', padding: '8px' }}
+      >
+        Enviar
+      </button>
     </Popup>
   );
 };

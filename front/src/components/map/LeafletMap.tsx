@@ -183,7 +183,11 @@ export function LeafletMap() {
       </MapContainer>
 
       {clickedPosition && showNewForm && user && (
-        <Modal title="📍 Nou hidrant" onClose={() => setClickedPosition(null)}>
+        <Modal 
+          title="📍 Nou hidrant" 
+          onClose={() => setClickedPosition(null)}
+          nonBlocking={true}
+        >
           <NewNodeForm
             lat={clickedPosition.lat}
             lon={clickedPosition.lng}

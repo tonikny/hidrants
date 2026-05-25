@@ -25,7 +25,7 @@ export const AdfSelector: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
       
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
         gap: '10px',
         maxHeight: '50vh',
         overflowY: 'auto',

@@ -93,36 +93,31 @@ export function MapUIOverlays({
       <div
         style={{
           ...controlContainerStyle,
-          top: '90px',
+          top: '80px',
           left: '10px',
           alignItems: 'flex-start',
+          gap: '8px',
         }}
       >
-        <div
-          style={{ ...controlItemStyle, display: 'flex', alignItems: 'center' }}
-        >
-          <div style={barStyle}>
-            <button
-              onClick={() => setShowAdfSelector(true)}
-              style={{ ...barButtonStyle, borderBottom: 'none' }}
-              title={activeAdf?.nom || 'Selector de ADF'}
-            >
-              📍
-            </button>
-          </div>
+        <div style={controlItemStyle}>
+          <button
+            onClick={() => setShowAdfSelector(true)}
+            style={floatingButtonStyle}
+            title={activeAdf?.nom || 'Selector de ADF'}
+          >
+            🗺️
+          </button>
         </div>
 
         {/* Login/Logout Button under ADF Selector */}
         <div style={controlItemStyle}>
-          <div style={barStyle}>
-            <button
-              onClick={user ? logout : () => setShowLoginModal(true)}
-              style={{ ...barButtonStyle, borderBottom: 'none' }}
-              title={user ? `Surt de ${user.username}` : 'Accés'}
-            >
-              {user ? '🔓' : '🔐'}
-            </button>
-          </div>
+          <button
+            onClick={user ? logout : () => setShowLoginModal(true)}
+            style={floatingButtonStyle}
+            title={user ? `Surt de ${user.username}` : 'Accés'}
+          >
+            {user ? '🔓' : '🔐'}
+          </button>
         </div>
       </div>
 

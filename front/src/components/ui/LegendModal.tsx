@@ -17,6 +17,12 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
     marginBottom: '10px',
   };
 
+  const imgStyle = {
+    width: '25px',
+    height: '41px',
+    objectFit: 'contain' as const,
+  };
+
   return (
     <>
       {/* Botó d'informació */}
@@ -39,19 +45,19 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
           <div style={{ padding: '0.5rem 0' }}>
             <h4 style={{ marginTop: 0 }}>Hidrants</h4>
             <div style={itemStyle}>
-              <img src={hidrant_op_rev} alt="Verd" />
+              <img src={hidrant_op_rev} alt="Verd" style={imgStyle} />
               <span>Operatiu (revisat {currentYear})</span>
             </div>
             <div style={itemStyle}>
-              <img src={hidrant_op_nrev} alt="Verd apagat" />
+              <img src={hidrant_op_nrev} alt="Verd apagat" style={imgStyle} />
               <span>Operatiu (no revisat)</span>
             </div>
             <div style={itemStyle}>
-              <img src={hidrant_nop_rev} alt="Vermell" />
+              <img src={hidrant_nop_rev} alt="Vermell" style={imgStyle} />
               <span>Fora de servei ({currentYear})</span>
             </div>
             <div style={itemStyle}>
-              <img src={hidrant_nop_nrev} alt="Vermell apagat" />
+              <img src={hidrant_nop_nrev} alt="Vermell apagat" style={imgStyle} />
               <span>Fora de servei (no revisat)</span>
             </div>
           </div>

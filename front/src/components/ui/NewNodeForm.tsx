@@ -62,157 +62,142 @@ export const NewNodeForm = ({
   };
 
   return (
-    <div style={popupContainerStyle}>
-      <form
-        onSubmit={handleSubmit}
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '0 0.5rem',
+      }}
+    >
+      <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          //   gap: '0.75rem',
-          padding: '0.5rem 1rem',
-          //   minWidth: '340px',
+          fontSize: '0.8rem',
+          color: '#555',
+          textAlign: 'center',
+          marginBottom: '1rem',
         }}
       >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: '1rem',
-            fontWeight: 600,
-            textAlign: 'center',
-          }}
-        >
-          📍 Nou hidrant
-        </h2>
+        <strong>
+          [ {lat.toFixed(5)}, {lon.toFixed(5)} ]
+        </strong>
+      </div>
 
-        <div
-          style={{
-            fontSize: '0.8rem',
-            color: '#555',
-            textAlign: 'center',
-            marginBottom: '0.5rem',
-          }}
-        >
-          <strong>
-            [ {lat.toFixed(5)}, {lon.toFixed(5)} ]
-          </strong>
-        </div>
+      {/* Línia 1: Tipus - Posició - Diàmetre */}
+      <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic', marginBottom: '1rem' }}>
+        <label style={{ flex: 1, fontSize: '0.8rem' }}>
+          Tipus:{' '}
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            style={selectStyle}
+          >
+            <option value=""></option>
+            <option value="columna">Columna</option>
+            <option value="subterrani">Subterrani</option>
+          </select>
+        </label>
+        <label style={{ flex: 1, fontSize: '0.8rem' }}>
+          Posició:{' '}
+          <select
+            value={position}
+            onChange={(e) => setPosition(e.target.value)}
+            style={selectStyle}
+          >
+            <option value=""></option>
+            <option value="calçada">Calçada</option>
+            <option value="vorera">Vorera</option>
+            <option value="verd">Verd</option>
+          </select>
+        </label>
+        <label style={{ flex: 1, fontSize: '0.8rem' }}>
+          Diàmetre:{' '}
+          <select
+            value={diameter}
+            onChange={(e) => setDiameter(e.target.value)}
+            style={selectStyle}
+          >
+            <option value=""></option>
+            <option value="100">100</option>
+            <option value="70">70</option>
+            <option value="45">45</option>
+          </select>
+        </label>
+      </div>
 
-        {/* Línia 1: Tipus - Posició - Diàmetre */}
-        <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic' }}>
-          <label style={{ flex: 1, fontSize: '0.8rem' }}>
-            Tipus:{' '}
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              style={selectStyle}
-            >
-              <option value=""></option>
-              <option value="columna">Columna</option>
-              <option value="subterrani">Subterrani</option>
-            </select>
-          </label>
-          <label style={{ flex: 1, fontSize: '0.8rem' }}>
-            Posició:{' '}
-            <select
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              style={selectStyle}
-            >
-              <option value=""></option>
-              <option value="calçada">Calçada</option>
-              <option value="vorera">Vorera</option>
-              <option value="verd">Verd</option>
-            </select>
-          </label>
-          <label style={{ flex: 1, fontSize: '0.8rem' }}>
-            Diàmetre:{' '}
-            <select
-              value={diameter}
-              onChange={(e) => setDiameter(e.target.value)}
-              style={selectStyle}
-            >
-              <option value=""></option>
-              <option value="100">100</option>
-              <option value="70">70</option>
-              <option value="45">45</option>
-            </select>
-          </label>
-        </div>
+      {/* Línia 2: Carrer (100%) */}
+      <label
+        style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic', marginBottom: '1rem' }}
+      >
+        Carrer:{' '}
+        <input
+          type="text"
+          value={street}
+          onChange={(e) => setStreet(e.target.value)}
+          style={{ ...inputStyle, width: '100%' }}
+        />
+      </label>
 
-        {/* Línia 2: Carrer (100%) */}
-        <label
-          style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic' }}
-        >
-          Carrer:{' '}
+      {/* Línia 3: Número (1/3) i Urbanització (2/3) */}
+      <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic', marginBottom: '1rem' }}>
+        <label style={{ flex: 1, fontSize: '0.8rem' }}>
+          Número:{' '}
           <input
             type="text"
-            value={street}
-            onChange={(e) => setStreet(e.target.value)}
-            style={{ ...inputStyle, width: '100%' }}
+            value={num}
+            onChange={(e) => setNum(e.target.value)}
+            style={inputStyle}
           />
         </label>
-
-        {/* Línia 3: Número (1/3) i Urbanització (2/3) */}
-        <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic' }}>
-          <label style={{ flex: 1, fontSize: '0.8rem' }}>
-            Número:{' '}
-            <input
-              type="text"
-              value={num}
-              onChange={(e) => setNum(e.target.value)}
-              style={inputStyle}
-            />
-          </label>
-          <label style={{ flex: 2, fontSize: '0.8rem' }}>
-            Urbanització:{' '}
-            <select
-              value={urbanizatio}
-              onChange={(e) => setUrbanizatio(e.target.value)}
-              style={selectStyle}
-            >
-              <option value=""></option>
-              <option value="urb1">Urb1</option>
-              <option value="urb2">Urb2</option>
-              <option value="urb3">Urb3</option>
-            </select>
-          </label>
-        </div>
-
-        {/* Línia 4: Comentari (100%) */}
-        <label
-          style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic' }}
-        >
-          Comentari:{' '}
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={2}
-            style={{ ...inputStyle, width: '100%', resize: 'vertical' }}
-          />
-        </label>
-
-        {/* Botons */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: '0.5rem',
-            marginTop: '0.2rem',
-          }}
-        >
-          <button type="submit" style={{ ...primaryButtonStyle, flex: 1 }}>
-            Enviar
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ ...secondaryButtonStyle, flex: 1 }}
+        <label style={{ flex: 2, fontSize: '0.8rem' }}>
+          Urbanització:{' '}
+          <select
+            value={urbanizatio}
+            onChange={(e) => setUrbanizatio(e.target.value)}
+            style={selectStyle}
           >
-            Cancel·la
-          </button>
-        </div>
-      </form>
-    </div>
+            <option value=""></option>
+            <option value="urb1">Urb1</option>
+            <option value="urb2">Urb2</option>
+            <option value="urb3">Urb3</option>
+          </select>
+        </label>
+      </div>
+
+      {/* Línia 4: Comentari (100%) */}
+      <label
+        style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic', marginBottom: '1rem' }}
+      >
+        Comentari:{' '}
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={2}
+          style={{ ...inputStyle, width: '100%', resize: 'vertical' }}
+        />
+      </label>
+
+      {/* Botons */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '0.5rem',
+          marginTop: '0.5rem',
+        }}
+      >
+        <button type="submit" style={{ ...primaryButtonStyle, flex: 1 }}>
+          Enviar
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{ ...secondaryButtonStyle, flex: 1 }}
+        >
+          Cancel·la
+        </button>
+      </div>
+    </form>
   );
 };
 

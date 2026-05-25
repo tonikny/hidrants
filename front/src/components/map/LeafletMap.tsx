@@ -16,6 +16,8 @@ import { HydrantMarkerList } from './markers/HydrantMarkerList';
 import { MapUIOverlays } from '../controls/MapUIOverlays';
 import { LocationMarker } from './LocationMarker';
 
+import { Modal } from '../ui/Modal';
+
 // ✅ Component per escoltar canvis al mapa i informar al pare
 function MapStateListener({
   onStateChange,
@@ -181,12 +183,18 @@ export function LeafletMap() {
       </MapContainer>
 
       {clickedPosition && showNewForm && user && (
-        <NewNodeForm
-          lat={clickedPosition.lat}
-          lon={clickedPosition.lng}
+        <Modal 
+          title="📍 Nou hidrant" 
           onClose={() => setClickedPosition(null)}
-          setNewNodeLatLng={setClickedPosition}
-        />
+          nonBlocking={true}
+        >
+          <NewNodeForm
+            lat={clickedPosition.lat}
+            lon={clickedPosition.lng}
+            onClose={() => setClickedPosition(null)}
+            setNewNodeLatLng={setClickedPosition}
+          />
+        </Modal>
       )}
     </>
   );

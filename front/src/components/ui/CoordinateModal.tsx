@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   inputStyle,
-  popupContainerStyle,
   primaryButtonStyle,
   secondaryButtonStyle,
 } from '../../styles/uiStyles';
@@ -28,8 +27,8 @@ export const CoordinateModal = ({
   };
 
   return (
-    <div style={popupContainerStyle}>
-      <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem', color: '#555' }}>
         Pots afegir un node manualment fent una pulsació llarga o un clic dret
         en el mapa o entrar les coordenades
       </div>
@@ -37,17 +36,6 @@ export const CoordinateModal = ({
         onSubmit={handleSubmit}
         style={{ display: 'flex', flexDirection: 'column' }}
       >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: '1rem',
-            fontWeight: 600,
-            textAlign: 'center',
-          }}
-        >
-          📍 Coordenades
-        </h2>
-
         <label
           style={{
             fontSize: '0.8rem',
@@ -85,7 +73,7 @@ export const CoordinateModal = ({
             display: 'flex',
             justifyContent: 'space-between',
             gap: '0.5rem',
-            marginTop: '1rem',
+            marginTop: '1.5rem',
           }}
         >
           <button type="submit" style={{ ...primaryButtonStyle, flex: 1 }}>

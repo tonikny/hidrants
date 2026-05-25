@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FullscreenButton } from './FullscreenButton';
 import { SyncButton } from './SyncButton';
 import { Login } from '../ui/Login';
@@ -7,6 +7,8 @@ import { NewNodeButton } from './NewNodeButton';
 import { CoordinateModal } from '../ui/CoordinateModal';
 import { LocateButton } from './LocateButton';
 import { ZoomDisplay } from './ZoomDisplay';
+import { AdfSelector } from '../ui/AdfSelector';
+import { Modal } from '../ui/Modal';
 import {
   floatingButtonStyle,
   controlContainerStyle,
@@ -46,9 +48,16 @@ export function MapUIOverlays({
   setLocatePosition,
   setLocateAccuracy,
 }: MapUIOverlaysProps) {
-  const [showAdfName, setShowAdfName] = useState(false);
+  const [showAdfSelector, setShowAdfSelector] = useState(!activeAdf);
   const isAdmin = user?.role === 'admin';
   const isEditor = user?.role === 'admin' || user?.role === 'editor';
+
+  // Sync state with activeAdf
+  useEffect(() => {
+    if (!activeAdf) {
+      setShowAdfSelector(true);
+    }
+  }, [activeAdf]);
 
   // Leaflet-like bar style for grouping buttons
   const barStyle: React.CSSProperties = {
@@ -81,55 +90,34 @@ export function MapUIOverlays({
   return (
     <>
       {/* Top Left: Zoom control is at top: 10px, left: 10px (~70px high). */}
-      <div style={{ ...controlContainerStyle, top: '90px', left: '10px' }}>
-        <div
-          style={{ ...controlItemStyle, display: 'flex', alignItems: 'center' }}
-        >
-          <div
-            style={{ ...barStyle, flexDirection: 'row', alignItems: 'center' }}
+      <div
+        style={{
+          ...controlContainerStyle,
+          top: '80px',
+          left: '10px',
+          alignItems: 'flex-start',
+          gap: '8px',
+        }}
+      >
+        <div style={controlItemStyle}>
+          <button
+            onClick={() => setShowAdfSelector(true)}
+            style={floatingButtonStyle}
+            title={activeAdf?.nom || 'Selector de ADF'}
           >
-            <button
-              onClick={() => setShowAdfName(!showAdfName)}
-              style={{
-                ...barButtonStyle,
-                borderBottom: 'none',
-                borderRight: showAdfName ? '1px solid #ccc' : 'none',
-              }}
-              title={activeAdf?.nom || 'Selector de ADF'}
-            >
-              📍
-            </button>
-            {showAdfName && (
-              <button
-                onClick={() => setActiveAdf(null)}
-                style={{
-                  ...barButtonStyle,
-                  width: 'auto',
-                  padding: '0 10px',
-                  borderBottom: 'none',
-                  fontSize: '0.85rem',
-                  fontWeight: 'bold',
-                  whiteSpace: 'nowrap',
-                  backgroundColor: '#f8f9fa',
-                }}
-              >
-                {activeAdf?.nom || 'Selector'} ✕
-              </button>
-            )}
-          </div>
+            🗺️
+          </button>
         </div>
 
         {/* Login/Logout Button under ADF Selector */}
         <div style={controlItemStyle}>
-          <div style={barStyle}>
-            <button
-              onClick={user ? logout : () => setShowLoginModal(true)}
-              style={{ ...barButtonStyle, borderBottom: 'none' }}
-              title={user ? `Surt de ${user.username}` : 'Accés'}
-            >
-              {user ? '🔓' : '🔐'}
-            </button>
-          </div>
+          <button
+            onClick={user ? logout : () => setShowLoginModal(true)}
+            style={floatingButtonStyle}
+            title={user ? `Surt de ${user.username}` : 'Accés'}
+          >
+            {user ? '🔓' : '🔐'}
+          </button>
         </div>
       </div>
 
@@ -139,7 +127,7 @@ export function MapUIOverlays({
         style={{
           ...controlContainerStyle,
           top: '66px',
-          right: '11px',
+          right: '12px',
           alignItems: 'flex-end',
           gap: '8px',
         }}
@@ -187,26 +175,14 @@ export function MapUIOverlays({
         </div>
       </div>
 
+      {showAdfSelector && (
+        <AdfSelector onClose={() => activeAdf && setShowAdfSelector(false)} />
+      )}
+
       {showLoginModal && !user && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 2000,
-          }}
-          onClick={() => setShowLoginModal(false)}
-        >
-          <div onClick={(e) => e.stopPropagation()}>
-            <Login />
-          </div>
-        </div>
+        <Modal onClose={() => setShowLoginModal(false)}>
+          <Login />
+        </Modal>
       )}
 
       {loadingHidrants && (
@@ -249,10 +225,12 @@ export function MapUIOverlays({
       )}
 
       {showCoordModal && (
-        <CoordinateModal
-          onClose={() => setShowCoordModal(false)}
-          onConfirm={onCoordinateConfirm}
-        />
+        <Modal title="📍 Coordenades" onClose={() => setShowCoordModal(false)}>
+          <CoordinateModal
+            onClose={() => setShowCoordModal(false)}
+            onConfirm={onCoordinateConfirm}
+          />
+        </Modal>
       )}
     </>
   );

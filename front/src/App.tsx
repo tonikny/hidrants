@@ -6,7 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { AdfSelector } from './components/ui/AdfSelector';
 
 function AppContent() {
-  const { activeAdf, isLoading } = useAdf();
+  const { isLoading } = useAdf();
 
   if (isLoading) {
     return (
@@ -14,10 +14,6 @@ function AppContent() {
         Carregant...
       </div>
     );
-  }
-
-  if (!activeAdf) {
-    return <AdfSelector />;
   }
 
   return (

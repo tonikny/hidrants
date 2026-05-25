@@ -89,17 +89,27 @@ export const secondaryButtonStyle: React.CSSProperties = {
 };
 
 export const popupContainerStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '10%',
-  left: '50%',
-  transform: 'translateX(-50%)',
   backgroundColor: 'white',
-  padding: '0.5rem 1rem',
-  borderRadius: '10px',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-  width: 'min(60vw, 300px)',
-  maxHeight: '80vh',
+  padding: '1rem',
+  borderRadius: '8px',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+  width: 'min(calc(100vw - 60px), 340px)',
+  maxHeight: '85vh',
   overflowY: 'auto',
-  zIndex: 1000,
-  fontFamily: '"Helvetica Neue", Arial, Helvetica, sans-serif',
+  zIndex: 2000,
+  fontFamily: 'system-ui, -apple-system, sans-serif',
+  position: 'relative',
+};
+
+export const modalOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  backgroundColor: 'rgba(0,0,0,0.4)',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 2000,
 };

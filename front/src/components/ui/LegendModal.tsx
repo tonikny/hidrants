@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Modal } from './Modal';
 import {
   hidrant_nop_nrev,
   hidrant_nop_rev,
@@ -9,8 +10,12 @@ import {
 export function LegendModal({ style }: { style?: React.CSSProperties }) {
   const [open, setOpen] = useState(false);
   const currentYear = new Date().getFullYear();
-  const styles = { display: 'flex', alignItems: 'center', gap: '15px' };
-  const iconsDir = '/images/icons';
+  const itemStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+    marginBottom: '10px',
+  };
 
   return (
     <>
@@ -30,56 +35,27 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
 
       {/* Finestra modal centrada */}
       {open && (
-        <button
-          onClick={() => setOpen(false)}
-          aria-label="Tanca la llegenda"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'transparent',
-            border: 'none',
-            padding: 0,
-            margin: 0,
-            zIndex: 2000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <div
-            style={{
-              background: 'white',
-              opacity: '80%',
-              padding: '1rem 2rem',
-              borderRadius: '10px',
-              maxWidth: '90vw',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              textAlign: 'left',
-            }}
-          >
-            <h4>Hidrants</h4>
-            <div style={styles}>
-              <img src={iconsDir + hidrant_op_rev} /> Operatiu (revisat
-              {currentYear})
+        <Modal title="Llegenda" onClose={() => setOpen(false)}>
+          <div style={{ padding: '0.5rem 0' }}>
+            <h4 style={{ marginTop: 0 }}>Hidrants</h4>
+            <div style={itemStyle}>
+              <img src={hidrant_op_rev} alt="Verd" />
+              <span>Operatiu (revisat {currentYear})</span>
             </div>
-            <div style={styles}>
-              <img src={iconsDir + hidrant_op_nrev} /> Operatiu (no revisat)
+            <div style={itemStyle}>
+              <img src={hidrant_op_nrev} alt="Verd apagat" />
+              <span>Operatiu (no revisat)</span>
             </div>
-            <div style={styles}>
-              <img src={iconsDir + hidrant_nop_rev} /> Fora de servei (
-              {currentYear})
+            <div style={itemStyle}>
+              <img src={hidrant_nop_rev} alt="Vermell" />
+              <span>Fora de servei ({currentYear})</span>
             </div>
-            <div style={styles}>
-              <img src={iconsDir + hidrant_nop_nrev} /> Fora de servei (no
-              revisat)
+            <div style={itemStyle}>
+              <img src={hidrant_nop_nrev} alt="Vermell apagat" />
+              <span>Fora de servei (no revisat)</span>
             </div>
           </div>
-        </button>
+        </Modal>
       )}
     </>
   );

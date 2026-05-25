@@ -15,8 +15,10 @@ export default function MaskedAreaMap() {
   useEffect(() => {
     let isMounted = true;
 
+    // Netegem la màscara actual mentre carreguem la nova per evitar confusions visuals
+    setMask(null);
+
     if (!activeAdf) {
-      setMask(null);
       setHasFittedBounds(null);
       return;
     }
@@ -89,7 +91,7 @@ export default function MaskedAreaMap() {
     return () => {
       isMounted = false;
     };
-  }, [map, activeAdf, hasFittedBounds]);
+  }, [map, activeAdf]); // Traiem hasFittedBounds de les dependencies per evitar bucles infinits
 
   if (!activeAdf) return null;
 

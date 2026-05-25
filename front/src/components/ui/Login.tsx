@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { inputStyle, primaryButtonStyle } from '../../styles/uiStyles';
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -35,49 +36,35 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '10px',
-      width: '100%',
-      maxWidth: '400px'
-    }}>
+    <div style={{ padding: '10px' }}>
       <form onSubmit={handleSubmit} style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '400px',
         display: 'flex',
         flexDirection: 'column',
         gap: '15px'
       }}>
-        <h2 style={{ textAlign: 'center', margin: '0 0 10px 0' }}>Accés Hidrants</h2>
+        <h2 style={{ textAlign: 'center', margin: '0 0 10px 0', fontSize: '1.2rem' }}>Accés Hidrants</h2>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label htmlFor="username">Usuari</label>
+          <label htmlFor="username" style={{ fontSize: '0.9rem', fontWeight: 600 }}>Usuari</label>
           <input
             id="username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            style={{ ...inputStyle, padding: '8px' }}
           />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label htmlFor="password">Contrasenya</label>
+          <label htmlFor="password" style={{ fontSize: '0.9rem', fontWeight: 600 }}>Contrasenya</label>
           <input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            style={{ ...inputStyle, padding: '8px' }}
           />
         </div>
 
@@ -85,13 +72,7 @@ export const Login: React.FC = () => {
           type="submit"
           disabled={loading}
           style={{
-            padding: '10px',
-            backgroundColor: '#3498db',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '1rem',
+            ...primaryButtonStyle,
             marginTop: '10px'
           }}
         >

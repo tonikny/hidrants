@@ -37,7 +37,7 @@ export function LocateButton({
           : 'Activa el seguiment de la teva posició'
       }
     >
-      📍
+      🛰️
     </button>
   );
 }

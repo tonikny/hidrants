@@ -10,6 +10,7 @@ import {
   secondaryButtonStyle,
   selectStyle,
 } from '../../styles/uiStyles';
+import { HydrantUiFields, ui2Osm } from '../../utils/osmConversion';
 
 type NodeFormProps = {
   lat: number;
@@ -24,40 +25,26 @@ export const NewNodeForm = ({
   onClose,
   setNewNodeLatLng,
 }: NodeFormProps) => {
-  const [type, setType] = useState('');
-  const [position, setPosition] = useState('');
-  const [couplings, setCouplings] = useState('1');
-  const [diameters, setDiameters] = useState<string[]>(['']);
-  const [pressure, setPressure] = useState('');
-  const [street, setStreet] = useState('');
-  const [num, setNum] = useState('');
-  const [urbanizatio, setUrbanizatio] = useState('');
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    const count = parseInt(couplings) || 1;
-    setDiameters((prev) => {
-      const next = [...prev];
-      if (next.length < count) {
-        return [...next, ...Array(count - next.length).fill('')];
-      }
-      return next.slice(0, count);
-    });
-  }, [couplings]);
+  const uiData: HydrantUiFields = {
+    type: '',
+    position: '',
+    couplings: '',
+    diameters: '',
+    pressure: '',
+    street: '',
+    num: '',
+    urbanitzacio: '',
+    estat: '',
+    surveyDate: '',
+  };
+  const [data, setData] = useState(uiData);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
-    const tags = {
-      'fire_hydrant:type': type,
-      'fire_hydrant:position': position,
-      'couplings': couplings,
-      'couplings:diameters': diameters.join(';'),
-      'fire_hydrant:pressure': pressure,
-      'addr:street': street,
-      'addr:housenumber': num,
-      'addr:neighbourhood': urbanizatio,
-    };
+    const tags = ui2Osm(data);
 
     try {
       await sendToTelegram({
@@ -99,12 +86,21 @@ export const NewNodeForm = ({
       </div>
 
       {/* Línia 1: Tipus - Posició */}
-      <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '0.5rem',
+          fontStyle: 'italic',
+          marginBottom: '0.5rem',
+        }}
+      >
         <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Tipus:{' '}
+          Tipus:
           <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
+            value={data.type}
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, type: e.target.value }))
+            }
             style={selectStyle}
           >
             <option value=""></option>
@@ -113,10 +109,12 @@ export const NewNodeForm = ({
           </select>
         </label>
         <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Posició:{' '}
+          Posició:
           <select
-            value={position}
-            onChange={(e) => setPosition(e.target.value)}
+            value={data.position}
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, position: e.target.value }))
+            }
             style={selectStyle}
           >
             <option value=""></option>
@@ -128,14 +126,24 @@ export const NewNodeForm = ({
       </div>
 
       {/* Línia 2: Acoblaments - Pressió */}
-      <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '0.5rem',
+          fontStyle: 'italic',
+          marginBottom: '0.5rem',
+        }}
+      >
         <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Acoblaments:{' '}
+          Acoblaments:
           <select
-            value={couplings}
-            onChange={(e) => setCouplings(e.target.value)}
+            value={data.couplings}
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, couplings: e.target.value }))
+            }
             style={selectStyle}
           >
+            <option value=""></option>
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
@@ -143,70 +151,106 @@ export const NewNodeForm = ({
           </select>
         </label>
         <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Pressió (bar):{' '}
+          Pressió (bar):
           <input
             type="number"
-            value={pressure}
-            onChange={(e) => setPressure(e.target.value)}
+            value={data.pressure}
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, pressure: e.target.value }))
+            }
             style={inputStyle}
-            placeholder="0"
           />
         </label>
       </div>
 
       {/* Línia 3: Diàmetres dinàmics */}
-      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '1rem' }}>
-        Diàmetres (mm):
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.2rem' }}>
-          {diameters.map((d, index) => (
-            <select
-              key={index}
-              value={d}
-              onChange={(e) => {
-                const newDiameters = [...diameters];
-                newDiameters[index] = e.target.value;
-                setDiameters(newDiameters);
-              }}
-              style={{ ...selectStyle, flex: '1 1 30%' }}
-            >
-              <option value=""></option>
-              <option value="45">45</option>
-              <option value="70">70</option>
-              <option value="100">100</option>
-            </select>
-          ))}
-        </div>
-      </label>
+      {Number(data.couplings) > 0 && (
+        <label style={{ fontSize: '0.75rem' }}>
+          Diàmetres (mm):
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.3rem',
+              marginTop: '0.2rem',
+              marginBottom: '1rem',
+            }}
+          >
+            {Array.from({ length: Number(data.couplings) }, (_, i) => (
+              <select
+                key={i}
+                value={data.diameters.split(';')[i]}
+                onChange={(e) => {
+                  const nd = [...data.diameters];
+                  nd[i] = e.target.value;
+                  setData((prev) => ({
+                    ...prev,
+                    diameters: nd.join(';'),
+                  }));
+                  setData((prev) => ({
+                    ...prev,
+                    diameters: e.target.value,
+                  }));
+                }}
+                style={{ ...selectStyle, flex: '1 1 30%' }}
+              >
+                <option value=""></option>
+                <option value="45">45</option>
+                <option value="70">70</option>
+                <option value="100">100</option>
+              </select>
+            ))}
+          </div>
+        </label>
+      )}
 
       {/* Línia 2: Carrer (100%) */}
       <label
-        style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic', marginBottom: '1rem' }}
+        style={{
+          fontSize: '0.8rem',
+          width: '100%',
+          fontStyle: 'italic',
+          marginBottom: '1rem',
+        }}
       >
-        Carrer:{' '}
+        Carrer:
         <input
           type="text"
-          value={street}
-          onChange={(e) => setStreet(e.target.value)}
+          value={data.street}
+          onChange={(e) =>
+            setData((prev) => ({ ...prev, street: e.target.value }))
+          }
           style={{ ...inputStyle, width: '100%' }}
         />
       </label>
 
       {/* Línia 3: Número (1/3) i Urbanització (2/3) */}
-      <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic', marginBottom: '1rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '0.5rem',
+          fontStyle: 'italic',
+          marginBottom: '1rem',
+        }}
+      >
         <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Número:{' '}
+          Número:
           <input
             type="text"
-            value={num}
-            onChange={(e) => setNum(e.target.value)}
+            value={data.num}
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, num: e.target.value }))
+            }
             style={inputStyle}
           />
         </label>
         <label style={{ flex: 2, fontSize: '0.8rem' }}>
-          Urbanització:{' '}
+          Urbanització:
           <select
-            value={urbanizatio}
-            onChange={(e) => setUrbanizatio(e.target.value)}
+            value={data.urbanitzacio}
+            onChange={(e) =>
+              setData((prev) => ({ ...prev, urbanitzacio: e.target.value }))
+            }
             style={selectStyle}
           >
             <option value=""></option>
@@ -219,9 +263,14 @@ export const NewNodeForm = ({
 
       {/* Línia 4: Comentari (100%) */}
       <label
-        style={{ fontSize: '0.8rem', width: '100%', fontStyle: 'italic', marginBottom: '1rem' }}
+        style={{
+          fontSize: '0.8rem',
+          width: '100%',
+          fontStyle: 'italic',
+          marginBottom: '1rem',
+        }}
       >
-        Comentari:{' '}
+        Comentari:
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -239,13 +288,26 @@ export const NewNodeForm = ({
           marginTop: '0.5rem',
         }}
       >
-        <button type="submit" style={{ ...primaryButtonStyle, flex: 1, padding: '6px', fontSize: '0.75rem' }}>
+        <button
+          type="submit"
+          style={{
+            ...primaryButtonStyle,
+            flex: 1,
+            padding: '6px',
+            fontSize: '0.75rem',
+          }}
+        >
           Enviar
         </button>
         <button
           type="button"
           onClick={onClose}
-          style={{ ...secondaryButtonStyle, flex: 1, padding: '6px', fontSize: '0.75rem' }}
+          style={{
+            ...secondaryButtonStyle,
+            flex: 1,
+            padding: '6px',
+            fontSize: '0.75rem',
+          }}
         >
           Cancel·la
         </button>

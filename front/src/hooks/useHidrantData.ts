@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAdf } from '../contexts/AdfContext';
+import { HydrantOsmTags } from '../utils/osmConversion';
 
 export interface HidrantFeature {
   type: 'Feature';
@@ -8,10 +9,13 @@ export interface HidrantFeature {
     type: 'Point';
     coordinates: [number, number];
   };
-  properties: any;
+  properties: HydrantOsmTags;
 }
 
-export function useHydrantData(bounds: [number, number, number, number] | null, zoom: number) {
+export function useHydrantData(
+  bounds: [number, number, number, number] | null,
+  zoom: number
+) {
   const { activeAdf } = useAdf();
   const [features, setFeatures] = useState<HidrantFeature[]>([]);
   const [loading, setLoading] = useState(false);

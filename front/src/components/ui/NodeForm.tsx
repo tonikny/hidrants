@@ -12,41 +12,12 @@ import {
   secondaryButtonStyle,
   selectStyle,
 } from '../../styles/uiStyles';
+import { HydrantOsmTags, osm2Ui, ui2Osm } from '../../utils/osmConversion';
 
 type NodeFormProps = {
   feature: HidrantFeature;
   showRoute: boolean;
   setShowRoute: (value: boolean) => void;
-};
-
-const posicioHidrants = (key: string) => {
-  switch (key) {
-    case 'lane':
-      return 'Calçada';
-    case 'sidewalk':
-      return 'Vorera';
-    case 'green':
-      return 'Verd';
-    default:
-      return 'Desconegut';
-  }
-};
-
-const tipusHidrants = (key: string) => {
-  switch (key) {
-    case 'underground':
-      return 'Subterrani';
-    case 'pillar':
-      return 'Columna';
-    default:
-      return 'Desconegut';
-  }
-};
-
-const estatHidrants = (props: Record<string, any>) => {
-  if (props['emergency'] === 'fire_hydrant') return 'Operatiu';
-  if (props['disused:emergency'] === 'fire_hydrant') return 'Fora de servei';
-  return 'Desconegut';
 };
 
 export const NodeWithForm = ({
@@ -60,49 +31,15 @@ export const NodeWithForm = ({
   const { activeAdf } = useAdf();
 
   const props = feature.properties;
+  const uiData = osm2Ui(props);
 
-  // Estats per l'edició
-  const [type, setType] = useState(props['fire_hydrant:type'] || '');
-  const [position, setPosition] = useState(
-    props['fire_hydrant:position'] || ''
-  );
-  const [couplings, setCouplings] = useState(props['couplings'] || '1');
-  const [diameters, setDiameters] = useState<string[]>(() => {
-    const val = String(
-      props['couplings:diameters'] || props['fire_hydrant:diameter'] || ''
-    )
-      .split(';')
-      .filter((v) => v !== '');
-    return val.length > 0 ? val : [''];
-  });
-  const [pressure, setPressure] = useState(
-    props['fire_hydrant:pressure'] || ''
-  );
-  const [street, setStreet] = useState(props['addr:street'] || '');
-  const [num, setNum] = useState(props['addr:housenumber'] || '');
-  const [urbanizatio, setUrbanizatio] = useState(
-    props['addr:neighbourhood'] || ''
-  );
-  const [editOperative, setEditOperative] = useState<boolean>(
-    props['emergency'] === 'fire_hydrant'
-  );
-  const [surveyDate, setSurveyDate] = useState(props['survey:date'] || '');
+  // Estat per l'edició
+  const [data, setData] = useState(uiData);
 
   const canEdit =
     user &&
     (user.role === 'admin' ||
       (user.role === 'editor' && user.adf_id === activeAdf?.id));
-
-  useEffect(() => {
-    const count = parseInt(couplings) || 1;
-    setDiameters((prev) => {
-      const next = [...prev];
-      if (next.length < count) {
-        return [...next, ...Array(count - next.length).fill('')];
-      }
-      return next.slice(0, count);
-    });
-  }, [couplings]);
 
   let displayId = String(feature.id);
   let osmId = props.osm_id;
@@ -115,19 +52,14 @@ export const NodeWithForm = ({
 
   const translatedTags = {
     'Data de revisió': props['survey:date'],
-    Estat: estatHidrants(props),
-    Tipus: tipusHidrants(props['fire_hydrant:type']),
-    Posició: posicioHidrants(props['fire_hydrant:position']),
-    Acoblaments: props['couplings'] || '1',
-    Diàmetres:
-      props['couplings:diameters'] ||
-      props['fire_hydrant:diameter'] ||
-      'Desconegut',
-    Pressió: props['fire_hydrant:pressure']
-      ? props['fire_hydrant:pressure'] + ' bar'
-      : 'Desconeguda',
-    Adreça: `${props['addr:street'] ?? ''} ${props['addr:housenumber'] ?? ''} ${
-      props['addr:neighbourhood'] ? '(' + props['addr:neighbourhood'] + ')' : ''
+    Estat: data.estat,
+    Tipus: data.type,
+    Posició: data.position,
+    Acoblaments: data.couplings || 'Desconegut',
+    Diàmetres: Number(data.diameters) || 'Desconegut',
+    Pressió: data.pressure || 'Desconeguda',
+    Adreça: `${data.street ?? ''} ${data.num ?? ''} ${
+      data.urbanitzacio ? '(' + data.urbanitzacio + ')' : ''
     }`,
   };
 
@@ -173,26 +105,10 @@ export const NodeWithForm = ({
         ...osmTags
       } = props;
 
-      const newTags: Record<string, string> = {
+      const newTags: HydrantOsmTags = {
         ...osmTags,
-        'fire_hydrant:type': type,
-        'fire_hydrant:position': position,
-        couplings: couplings,
-        'couplings:diameters': diameters.join(';'),
-        'fire_hydrant:pressure': pressure,
-        'addr:street': street,
-        'addr:housenumber': num,
-        'addr:neighbourhood': urbanizatio,
-        'survey:date': surveyDate,
+        ...ui2Osm(data),
       };
-
-      if (editOperative) {
-        newTags['emergency'] = 'fire_hydrant';
-        delete newTags['disused:emergency'];
-      } else {
-        newTags['disused:emergency'] = 'fire_hydrant';
-        delete newTags['emergency'];
-      }
 
       const response = await fetch(
         `/api/hidrants/${feature.id}?adf=${activeAdf.id}`,
@@ -415,8 +331,14 @@ export const NodeWithForm = ({
               <label style={{ flex: 1, fontSize: '0.75rem' }}>
                 Estat:
                 <select
-                  value={editOperative ? 'true' : 'false'}
-                  onChange={(e) => setEditOperative(e.target.value === 'true')}
+                  value={data.estat === 'Operatiu' ? 'true' : 'false'}
+                  // onChange={(e) => setEditOperative(e.target.value === 'true')}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      estat: e.target.value ? 'Operatiu' : 'Fora de servei',
+                    }))
+                  }
                   style={selectStyle}
                 >
                   <option value="true">Operatiu</option>
@@ -427,8 +349,10 @@ export const NodeWithForm = ({
                 Data revisió:
                 <input
                   type="date"
-                  value={surveyDate}
-                  onChange={(e) => setSurveyDate(e.target.value)}
+                  value={data.surveyDate}
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, surveyDate: e.target.value }))
+                  }
                   style={{ ...inputStyle, padding: '2px' }}
                 />
               </label>
@@ -438,26 +362,30 @@ export const NodeWithForm = ({
               <label style={{ flex: 1, fontSize: '0.75rem' }}>
                 Tipus:
                 <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
+                  value={data.type}
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, type: e.target.value }))
+                  }
                   style={selectStyle}
                 >
                   <option value=""></option>
-                  <option value="pillar">Columna</option>
-                  <option value="underground">Subterrani</option>
+                  <option value="Columna">Columna</option>
+                  <option value="Subterrani">Subterrani</option>
                 </select>
               </label>
               <label style={{ flex: 1, fontSize: '0.75rem' }}>
                 Posició:
                 <select
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
+                  value={data.position}
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, position: e.target.value }))
+                  }
                   style={selectStyle}
                 >
                   <option value=""></option>
-                  <option value="lane">Calçada</option>
-                  <option value="sidewalk">Vorera</option>
-                  <option value="green">Verd</option>
+                  <option value="Calçada">Calçada</option>
+                  <option value="Vorera">Vorera</option>
+                  <option value="Verd">Verd</option>
                 </select>
               </label>
             </div>
@@ -466,10 +394,13 @@ export const NodeWithForm = ({
               <label style={{ flex: 1, fontSize: '0.75rem' }}>
                 Acoblaments:
                 <select
-                  value={couplings}
-                  onChange={(e) => setCouplings(e.target.value)}
+                  value={data.couplings}
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, couplings: e.target.value }))
+                  }
                   style={selectStyle}
                 >
+                  <option value=""></option>
                   <option value="1">1</option>
                   <option value="2">2</option>
                   <option value="3">3</option>
@@ -480,42 +411,61 @@ export const NodeWithForm = ({
                 Pressió (bar):
                 <input
                   type="number"
-                  value={pressure}
-                  onChange={(e) => setPressure(e.target.value)}
+                  value={data.pressure}
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, pressure: e.target.value }))
+                  }
                   style={inputStyle}
                 />
               </label>
             </div>
 
-            <label style={{ fontSize: '0.75rem' }}>
-              Diàmetres (mm):
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.2rem' }}>
-                {diameters.map((d, i) => (
-                  <select
-                    key={i}
-                    value={d}
-                    onChange={(e) => {
-                      const nd = [...diameters];
-                      nd[i] = e.target.value;
-                      setDiameters(nd);
-                    }}
-                    style={{ ...selectStyle, flex: '1 1 30%' }}
-                  >
-                    <option value=""></option>
-                    <option value="45">45</option>
-                    <option value="70">70</option>
-                    <option value="100">100</option>
-                  </select>
-                ))}
-              </div>
-            </label>
-
+            {Number(data.couplings) > 0 && (
+              <label style={{ fontSize: '0.75rem' }}>
+                Diàmetres (mm):
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.3rem',
+                    marginTop: '0.2rem',
+                  }}
+                >
+                  {Array.from({ length: Number(data.couplings) }, (_, i) => (
+                    <select
+                      key={i}
+                      value={data.diameters.split(';')[i]}
+                      onChange={(e) => {
+                        const nd = [...data.diameters];
+                        nd[i] = e.target.value;
+                        setData((prev) => ({
+                          ...prev,
+                          diameters: nd.join(';'),
+                        }));
+                        setData((prev) => ({
+                          ...prev,
+                          diameters: e.target.value,
+                        }));
+                      }}
+                      style={{ ...selectStyle, flex: '1 1 30%' }}
+                    >
+                      <option value=""></option>
+                      <option value="45">45</option>
+                      <option value="70">70</option>
+                      <option value="100">100</option>
+                    </select>
+                  ))}
+                </div>
+              </label>
+            )}
             <label style={{ fontSize: '0.75rem' }}>
               Carrer:
               <input
                 type="text"
-                value={street}
-                onChange={(e) => setStreet(e.target.value)}
+                value={data.street}
+                onChange={(e) =>
+                  setData((prev) => ({ ...prev, street: e.target.value }))
+                }
                 style={inputStyle}
               />
             </label>
@@ -525,8 +475,10 @@ export const NodeWithForm = ({
                 Núm:
                 <input
                   type="text"
-                  value={num}
-                  onChange={(e) => setNum(e.target.value)}
+                  value={data.num}
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, num: e.target.value }))
+                  }
                   style={inputStyle}
                 />
               </label>
@@ -534,8 +486,13 @@ export const NodeWithForm = ({
                 Urb:
                 <input
                   type="text"
-                  value={urbanizatio}
-                  onChange={(e) => setUrbanizatio(e.target.value)}
+                  value={data.urbanitzacio}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      urbanitzacio: e.target.value,
+                    }))
+                  }
                   style={inputStyle}
                 />
               </label>

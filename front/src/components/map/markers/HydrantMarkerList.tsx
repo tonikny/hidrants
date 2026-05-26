@@ -10,7 +10,12 @@ interface HydrantMarkerListProps {
   setShowRoute: (show: boolean) => void;
 }
 
-export function HydrantMarkerList({ features, setPoi, showRoute, setShowRoute }: HydrantMarkerListProps) {
+export function HydrantMarkerList({
+  features,
+  setPoi,
+  showRoute,
+  setShowRoute,
+}: HydrantMarkerListProps) {
   return (
     <>
       {features.map((feature) => {

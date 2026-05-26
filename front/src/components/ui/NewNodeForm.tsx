@@ -26,11 +26,24 @@ export const NewNodeForm = ({
 }: NodeFormProps) => {
   const [type, setType] = useState('');
   const [position, setPosition] = useState('');
-  const [diameter, setDiameter] = useState('');
+  const [couplings, setCouplings] = useState('1');
+  const [diameters, setDiameters] = useState<string[]>(['']);
+  const [pressure, setPressure] = useState('');
   const [street, setStreet] = useState('');
   const [num, setNum] = useState('');
   const [urbanizatio, setUrbanizatio] = useState('');
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const count = parseInt(couplings) || 1;
+    setDiameters((prev) => {
+      const next = [...prev];
+      if (next.length < count) {
+        return [...next, ...Array(count - next.length).fill('')];
+      }
+      return next.slice(0, count);
+    });
+  }, [couplings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +51,9 @@ export const NewNodeForm = ({
     const tags = {
       'fire_hydrant:type': type,
       'fire_hydrant:position': position,
-      'fire_hydrant:diameter': diameter,
+      'couplings': couplings,
+      'couplings:diameters': diameters.join(';'),
+      'fire_hydrant:pressure': pressure,
       'addr:street': street,
       'addr:housenumber': num,
       'addr:neighbourhood': urbanizatio,
@@ -83,8 +98,8 @@ export const NewNodeForm = ({
         </strong>
       </div>
 
-      {/* Línia 1: Tipus - Posició - Diàmetre */}
-      <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic', marginBottom: '1rem' }}>
+      {/* Línia 1: Tipus - Posició */}
+      <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
         <label style={{ flex: 1, fontSize: '0.8rem' }}>
           Tipus:{' '}
           <select
@@ -93,8 +108,8 @@ export const NewNodeForm = ({
             style={selectStyle}
           >
             <option value=""></option>
-            <option value="columna">Columna</option>
-            <option value="subterrani">Subterrani</option>
+            <option value="pillar">Columna</option>
+            <option value="underground">Subterrani</option>
           </select>
         </label>
         <label style={{ flex: 1, fontSize: '0.8rem' }}>
@@ -105,25 +120,63 @@ export const NewNodeForm = ({
             style={selectStyle}
           >
             <option value=""></option>
-            <option value="calçada">Calçada</option>
-            <option value="vorera">Vorera</option>
-            <option value="verd">Verd</option>
-          </select>
-        </label>
-        <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Diàmetre:{' '}
-          <select
-            value={diameter}
-            onChange={(e) => setDiameter(e.target.value)}
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="100">100</option>
-            <option value="70">70</option>
-            <option value="45">45</option>
+            <option value="lane">Calçada</option>
+            <option value="sidewalk">Vorera</option>
+            <option value="green">Verd</option>
           </select>
         </label>
       </div>
+
+      {/* Línia 2: Acoblaments - Pressió */}
+      <div style={{ display: 'flex', gap: '0.5rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+        <label style={{ flex: 1, fontSize: '0.8rem' }}>
+          Acoblaments:{' '}
+          <select
+            value={couplings}
+            onChange={(e) => setCouplings(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label style={{ flex: 1, fontSize: '0.8rem' }}>
+          Pressió (bar):{' '}
+          <input
+            type="number"
+            value={pressure}
+            onChange={(e) => setPressure(e.target.value)}
+            style={inputStyle}
+            placeholder="0"
+          />
+        </label>
+      </div>
+
+      {/* Línia 3: Diàmetres dinàmics */}
+      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '1rem' }}>
+        Diàmetres (mm):
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.2rem' }}>
+          {diameters.map((d, index) => (
+            <select
+              key={index}
+              value={d}
+              onChange={(e) => {
+                const newDiameters = [...diameters];
+                newDiameters[index] = e.target.value;
+                setDiameters(newDiameters);
+              }}
+              style={{ ...selectStyle, flex: '1 1 30%' }}
+            >
+              <option value=""></option>
+              <option value="45">45</option>
+              <option value="70">70</option>
+              <option value="100">100</option>
+            </select>
+          ))}
+        </div>
+      </label>
 
       {/* Línia 2: Carrer (100%) */}
       <label
@@ -186,13 +239,13 @@ export const NewNodeForm = ({
           marginTop: '0.5rem',
         }}
       >
-        <button type="submit" style={{ ...primaryButtonStyle, flex: 1 }}>
+        <button type="submit" style={{ ...primaryButtonStyle, flex: 1, padding: '6px', fontSize: '0.75rem' }}>
           Enviar
         </button>
         <button
           type="button"
           onClick={onClose}
-          style={{ ...secondaryButtonStyle, flex: 1 }}
+          style={{ ...secondaryButtonStyle, flex: 1, padding: '6px', fontSize: '0.75rem' }}
         >
           Cancel·la
         </button>

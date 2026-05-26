@@ -1,15 +1,16 @@
 import { Popup } from 'react-leaflet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { sendToTelegram } from '../../utils/sendToTelegram';
 import { toast } from 'react-toastify';
 import { HidrantFeature } from '../../hooks/useHidrantData';
 import { openInNativeMaps } from '../../utils/geoMaps';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdf } from '../../contexts/AdfContext';
-import { 
-  inputStyle, 
-  primaryButtonStyle, 
-  secondaryButtonStyle 
+import {
+  inputStyle,
+  primaryButtonStyle,
+  secondaryButtonStyle,
+  selectStyle,
 } from '../../styles/uiStyles';
 
 type NodeFormProps = {
@@ -48,17 +49,61 @@ const estatHidrants = (props: Record<string, any>) => {
   return 'Desconegut';
 };
 
-  export const NodeWithForm = ({
+export const NodeWithForm = ({
   feature,
   showRoute,
   setShowRoute,
 }: NodeFormProps) => {
   const [message, setMessage] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const { user } = useAuth();
   const { activeAdf } = useAdf();
 
   const props = feature.properties;
-  
+
+  // Estats per l'edició
+  const [type, setType] = useState(props['fire_hydrant:type'] || '');
+  const [position, setPosition] = useState(
+    props['fire_hydrant:position'] || ''
+  );
+  const [couplings, setCouplings] = useState(props['couplings'] || '1');
+  const [diameters, setDiameters] = useState<string[]>(() => {
+    const val = String(
+      props['couplings:diameters'] || props['fire_hydrant:diameter'] || ''
+    )
+      .split(';')
+      .filter((v) => v !== '');
+    return val.length > 0 ? val : [''];
+  });
+  const [pressure, setPressure] = useState(
+    props['fire_hydrant:pressure'] || ''
+  );
+  const [street, setStreet] = useState(props['addr:street'] || '');
+  const [num, setNum] = useState(props['addr:housenumber'] || '');
+  const [urbanizatio, setUrbanizatio] = useState(
+    props['addr:neighbourhood'] || ''
+  );
+  const [editOperative, setEditOperative] = useState<boolean>(
+    props['emergency'] === 'fire_hydrant'
+  );
+  const [surveyDate, setSurveyDate] = useState(props['survey:date'] || '');
+
+  const canEdit =
+    user &&
+    (user.role === 'admin' ||
+      (user.role === 'editor' && user.adf_id === activeAdf?.id));
+
+  useEffect(() => {
+    const count = parseInt(couplings) || 1;
+    setDiameters((prev) => {
+      const next = [...prev];
+      if (next.length < count) {
+        return [...next, ...Array(count - next.length).fill('')];
+      }
+      return next.slice(0, count);
+    });
+  }, [couplings]);
+
   let displayId = String(feature.id);
   let osmId = props.osm_id;
 
@@ -73,7 +118,14 @@ const estatHidrants = (props: Record<string, any>) => {
     Estat: estatHidrants(props),
     Tipus: tipusHidrants(props['fire_hydrant:type']),
     Posició: posicioHidrants(props['fire_hydrant:position']),
-    Diàmetre: props['fire_hydrant:diameter'] ?? 'Desconegut',
+    Acoblaments: props['couplings'] || '1',
+    Diàmetres:
+      props['couplings:diameters'] ||
+      props['fire_hydrant:diameter'] ||
+      'Desconegut',
+    Pressió: props['fire_hydrant:pressure']
+      ? props['fire_hydrant:pressure'] + ' bar'
+      : 'Desconeguda',
     Adreça: `${props['addr:street'] ?? ''} ${props['addr:housenumber'] ?? ''} ${
       props['addr:neighbourhood'] ? '(' + props['addr:neighbourhood'] + ')' : ''
     }`,
@@ -109,11 +161,9 @@ const estatHidrants = (props: Record<string, any>) => {
     openInNativeMaps(poi.lat, poi.lng, 'Destinació');
   };
 
-  const handleUpdateSurveyDate = async (isOperative: boolean) => {
+  const handleSave = async () => {
     if (!activeAdf) return;
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
       const {
         id: _id,
         osm_id: _osm_id,
@@ -123,8 +173,75 @@ const estatHidrants = (props: Record<string, any>) => {
         ...osmTags
       } = props;
 
-      const newTags: Record<string, string> = { ...osmTags, 'survey:date': today };
-      
+      const newTags: Record<string, string> = {
+        ...osmTags,
+        'fire_hydrant:type': type,
+        'fire_hydrant:position': position,
+        couplings: couplings,
+        'couplings:diameters': diameters.join(';'),
+        'fire_hydrant:pressure': pressure,
+        'addr:street': street,
+        'addr:housenumber': num,
+        'addr:neighbourhood': urbanizatio,
+        'survey:date': surveyDate,
+      };
+
+      if (editOperative) {
+        newTags['emergency'] = 'fire_hydrant';
+        delete newTags['disused:emergency'];
+      } else {
+        newTags['disused:emergency'] = 'fire_hydrant';
+        delete newTags['emergency'];
+      }
+
+      const response = await fetch(
+        `/api/hidrants/${feature.id}?adf=${activeAdf.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            osm_tags: newTags,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Error actualitzant dades');
+
+      toast.success('Canvis desats correctament');
+
+      setIsEditing(false);
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err) {
+      console.error(err);
+      toast.error('No s’han pogut desar els canvis');
+    }
+  };
+
+  const handleQuickStatusUpdate = async (isOperative: boolean) => {
+    if (!activeAdf) return;
+    const statusText = isOperative ? 'OPERATIU' : 'FORA DE SERVEI';
+    if (
+      !window.confirm(
+        `Vols marcar aquest hidrant com a ${statusText} amb data d'avui?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const {
+        id: _id,
+        osm_id: _osm_id,
+        private_tags: _private_tags,
+        sync_status: _sync_status,
+        updated_at: _updated_at,
+        ...newTags
+      } = props;
+
+      newTags['survey:date'] = today;
       if (isOperative) {
         newTags['emergency'] = 'fire_hydrant';
         delete newTags['disused:emergency'];
@@ -133,117 +250,365 @@ const estatHidrants = (props: Record<string, any>) => {
         delete newTags['emergency'];
       }
 
-      const response = await fetch(`/api/hidrants/${feature.id}?adf=${activeAdf.id}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          osm_tags: newTags
-        }),
-      });
+      const response = await fetch(
+        `/api/hidrants/${feature.id}?adf=${activeAdf.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ osm_tags: newTags }),
+        }
+      );
 
-      if (!response.ok) throw new Error('Error actualitzant dades');
-      
-      const statusText = isOperative ? 'Operatiu' : 'Fora de servei';
-      toast.success(`Revisió registrada (${statusText}): ${today}`);
-      
+      if (!response.ok) throw new Error('Error actualitzant');
+      toast.success(`Hidrant actualitzat a ${statusText}`);
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       console.error(err);
-      toast.error('No s’ha pogut registrar la revisió');
+      toast.error('Error en l’actualització ràpida');
     }
   };
 
   return (
     <Popup>
-      <strong>Id:</strong> {displayId}
-      <br />
-      {Object.entries(translatedTags).map(([key, value]) => (
-        <div key={key}>
-          <strong>{key}: </strong>
-          {typeof value === 'string' || typeof value === 'number'
-            ? value
-            : JSON.stringify(value)}
-        </div>
-      ))}
-      {osmId && (
-        <>
-          <strong>Info: </strong>
-          <a
-            href={`https://www.openstreetmap.org/node/${osmId}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Veure en OSM
-          </a>
-        </>
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
-          <button 
-            onClick={handleShowRoute} 
-            style={{ ...secondaryButtonStyle, flex: 1, fontSize: '0.7rem', padding: '6px' }}
-          >
-            {showRoute ? 'Tanca ruta' : 'Ruta'}
-          </button>
-          <button 
-            onClick={handleOpenMaps} 
-            style={{ ...secondaryButtonStyle, flex: 1, fontSize: '0.7rem', padding: '6px' }}
-          >
-            Mapes
-          </button>
-        </div>
-        
-        {user && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <button 
-              onClick={() => handleUpdateSurveyDate(true)}
-              style={{ 
-                background: '#27ae60', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                padding: '6px',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                fontWeight: 600
+      <div style={{ minWidth: '220px' }}>
+        <strong>Id:</strong> {displayId}
+        <br />
+        {!isEditing ? (
+          <>
+            {Object.entries(translatedTags).map(([key, value]) => (
+              <div key={key}>
+                <strong>{key}: </strong>
+                {typeof value === 'string' || typeof value === 'number'
+                  ? value
+                  : JSON.stringify(value)}
+              </div>
+            ))}
+            {osmId && (
+              <>
+                <strong>Info: </strong>
+                <a
+                  href={`https://www.openstreetmap.org/node/${osmId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Veure en OSM
+                </a>
+              </>
+            )}
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '5px',
+                marginTop: '0.5rem',
               }}
             >
-              ✅ Operatiu (Revisat avui)
-            </button>
-            <button 
-              onClick={() => handleUpdateSurveyDate(false)}
-              style={{ 
-                background: '#e74c3c', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                padding: '6px',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-            >
-              ❌ Fora de servei (Revisat avui)
-            </button>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: '5px',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShowRoute();
+                  }}
+                  style={{
+                    ...secondaryButtonStyle,
+                    flex: 1,
+                    fontSize: '0.75rem',
+                    padding: '6px',
+                  }}
+                >
+                  {showRoute ? 'Tanca ruta' : 'Ruta'}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenMaps();
+                  }}
+                  style={{
+                    ...secondaryButtonStyle,
+                    flex: 1,
+                    fontSize: '0.75rem',
+                    padding: '6px',
+                  }}
+                >
+                  Mapes
+                </button>
+              </div>
+
+              {canEdit && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleQuickStatusUpdate(true);
+                    }}
+                    style={{
+                      background: '#27ae60',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ✅ Operatiu (Avui)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleQuickStatusUpdate(false);
+                    }}
+                    style={{
+                      background: '#e74c3c',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ❌ Fora de servei (Avui)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsEditing(true);
+                    }}
+                    style={{
+                      ...primaryButtonStyle,
+                      padding: '6px',
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    ✏️ Editar dades
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+              marginTop: '0.5rem',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <label style={{ flex: 1, fontSize: '0.75rem' }}>
+                Estat:
+                <select
+                  value={editOperative ? 'true' : 'false'}
+                  onChange={(e) => setEditOperative(e.target.value === 'true')}
+                  style={selectStyle}
+                >
+                  <option value="true">Operatiu</option>
+                  <option value="false">Fora de servei</option>
+                </select>
+              </label>
+              <label style={{ flex: 1, fontSize: '0.75rem' }}>
+                Data revisió:
+                <input
+                  type="date"
+                  value={surveyDate}
+                  onChange={(e) => setSurveyDate(e.target.value)}
+                  style={{ ...inputStyle, padding: '2px' }}
+                />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <label style={{ flex: 1, fontSize: '0.75rem' }}>
+                Tipus:
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  style={selectStyle}
+                >
+                  <option value=""></option>
+                  <option value="pillar">Columna</option>
+                  <option value="underground">Subterrani</option>
+                </select>
+              </label>
+              <label style={{ flex: 1, fontSize: '0.75rem' }}>
+                Posició:
+                <select
+                  value={position}
+                  onChange={(e) => setPosition(e.target.value)}
+                  style={selectStyle}
+                >
+                  <option value=""></option>
+                  <option value="lane">Calçada</option>
+                  <option value="sidewalk">Vorera</option>
+                  <option value="green">Verd</option>
+                </select>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <label style={{ flex: 1, fontSize: '0.75rem' }}>
+                Acoblaments:
+                <select
+                  value={couplings}
+                  onChange={(e) => setCouplings(e.target.value)}
+                  style={selectStyle}
+                >
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                </select>
+              </label>
+              <label style={{ flex: 1, fontSize: '0.75rem' }}>
+                Pressió (bar):
+                <input
+                  type="number"
+                  value={pressure}
+                  onChange={(e) => setPressure(e.target.value)}
+                  style={inputStyle}
+                />
+              </label>
+            </div>
+
+            <label style={{ fontSize: '0.75rem' }}>
+              Diàmetres (mm):
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.2rem' }}>
+                {diameters.map((d, i) => (
+                  <select
+                    key={i}
+                    value={d}
+                    onChange={(e) => {
+                      const nd = [...diameters];
+                      nd[i] = e.target.value;
+                      setDiameters(nd);
+                    }}
+                    style={{ ...selectStyle, flex: '1 1 30%' }}
+                  >
+                    <option value=""></option>
+                    <option value="45">45</option>
+                    <option value="70">70</option>
+                    <option value="100">100</option>
+                  </select>
+                ))}
+              </div>
+            </label>
+
+            <label style={{ fontSize: '0.75rem' }}>
+              Carrer:
+              <input
+                type="text"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                style={inputStyle}
+              />
+            </label>
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <label style={{ flex: 1, fontSize: '0.75rem' }}>
+                Núm:
+                <input
+                  type="text"
+                  value={num}
+                  onChange={(e) => setNum(e.target.value)}
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ flex: 2, fontSize: '0.75rem' }}>
+                Urb:
+                <input
+                  type="text"
+                  value={urbanizatio}
+                  onChange={(e) => setUrbanizatio(e.target.value)}
+                  style={inputStyle}
+                />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '5px', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSave();
+                }}
+                style={{
+                  ...primaryButtonStyle,
+                  flex: 1,
+                  padding: '6px',
+                  fontSize: '0.75rem',
+                }}
+              >
+                Guardar
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditing(false);
+                }}
+                style={{
+                  ...secondaryButtonStyle,
+                  flex: 1,
+                  padding: '6px',
+                  fontSize: '0.75rem',
+                }}
+              >
+                Cancel·lar
+              </button>
+            </div>
           </div>
         )}
+        <hr style={{ margin: '0.5rem 0', border: '1px solid #ccc' }} />
+        <textarea
+          placeholder="Comentaris ..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={2}
+          style={{
+            ...inputStyle,
+            width: '100%',
+            marginTop: '0.2rem',
+            padding: '4px',
+          }}
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSend(feature);
+          }}
+          style={{
+            ...primaryButtonStyle,
+            width: '100%',
+            marginTop: '0.5rem',
+            padding: '6px',
+            fontSize: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+        >
+          Notificar <span style={{ fontSize: '1rem' }}>➤</span>
+        </button>
       </div>
-
-      <textarea
-        placeholder="Comentari per Telegram"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        rows={2}
-        style={{ ...inputStyle, width: '100%', marginTop: '0.5rem', padding: '4px' }}
-      />
-      <button 
-        onClick={() => handleSend(feature)}
-        style={{ ...primaryButtonStyle, width: '100%', marginTop: '0.5rem', padding: '8px' }}
-      >
-        Enviar
-      </button>
     </Popup>
   );
 };

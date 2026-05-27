@@ -32,6 +32,9 @@ export const NodeWithForm = ({
 
   const props = feature.properties;
   const uiData = osm2Ui(props);
+  // console.log('props', props);
+
+  // console.log('uiData', uiData);
 
   // Estat per l'edició
   const [data, setData] = useState(uiData);
@@ -69,6 +72,8 @@ export const NodeWithForm = ({
   };
 
   const handleSend = async (feature: HidrantFeature) => {
+    console.log('feature', feature.properties.osm_id);
+
     try {
       await sendToTelegram({
         lat: poi.lat,
@@ -109,6 +114,7 @@ export const NodeWithForm = ({
         ...osmTags,
         ...ui2Osm(data),
       };
+      console.log('newTags', newTags);
 
       const response = await fetch(
         `/api/hidrants/${feature.id}?adf=${activeAdf.id}`,

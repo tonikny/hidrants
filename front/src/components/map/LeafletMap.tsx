@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLng } from 'leaflet';
 import { MapClickHandler, NewNodeForm } from '../ui/NewNodeForm';
+import { CreationSelector } from '../ui/CreationSelector';
+import { NewIncidentForm } from '../ui/NewIncidentForm';
 import MapRightClickHandler from './MapRightClickHandler';
 import { LocateButton } from '../controls/LocateButton';
 import { Layers } from './Layers';
@@ -92,7 +94,7 @@ export function LeafletMap() {
   const { features, loading: loadingHidrants, error: hidrantsError } = useHydrantData(mapBounds, mapZoom);
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
 
-  const [showNewForm, setShowNewForm] = useState(false);
+  const [activeForm, setActiveForm] = useState<'selection' | 'hydrant' | 'incident' | null>(null);
   const [showCoordModal, setShowCoordModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
@@ -103,7 +105,7 @@ export function LeafletMap() {
   const openFormAtPosition = (latlng: L.LatLng) => {
     if (!user) return;
     setClickedPosition(latlng);
-    setShowNewForm(true);
+    setActiveForm('selection');
   };
 
   if (isLoading) {
@@ -123,7 +125,7 @@ export function LeafletMap() {
         />
         <MaskedAreaMap />
         <Layers />
-        <MapRightClickHandler setClickedPosition={setClickedPosition} setShowNewForm={setShowNewForm} user={user} />
+        <MapRightClickHandler setClickedPosition={setClickedPosition} setActiveForm={setActiveForm} user={user} />
         <HydrantMarkerList 
           features={features} 
           setPoi={setPoi} 
@@ -134,16 +136,16 @@ export function LeafletMap() {
           <MapClickHandler
             onClick={(latlng) => {
               setClickedPosition(latlng);
-              setShowNewForm(true);
+              setActiveForm('selection');
             }}
             onCancel={() => {
               setClickedPosition(null);
-              setShowNewForm(false);
+              setActiveForm(null);
             }}
             isActive={!!clickedPosition}
           />
         )}
-        {clickedPosition && showNewForm && (
+        {clickedPosition && activeForm && (
           <Marker
             position={clickedPosition}
             icon={L.icon({
@@ -173,7 +175,7 @@ export function LeafletMap() {
           onCoordinateConfirm={(lat, lon) => {
             const latlng = L.latLng(lat, lon);
             setClickedPosition(latlng);
-            setShowNewForm(true);
+            setActiveForm('selection');
             setShowCoordModal(false);
           }}
           onLocateEdit={user ? openFormAtPosition : undefined}
@@ -182,18 +184,52 @@ export function LeafletMap() {
         />
       </MapContainer>
 
-      {clickedPosition && showNewForm && user && (
+      {clickedPosition && activeForm && user && (
         <Modal 
-          title="📍 Nou hidrant" 
-          onClose={() => setClickedPosition(null)}
+          title={
+            activeForm === 'selection' 
+              ? "📍 Selecciona una acció" 
+              : activeForm === 'hydrant' 
+                ? "📍 Nou hidrant" 
+                : "⚠️ Nova incidència"
+          } 
+          onClose={() => {
+            setClickedPosition(null);
+            setActiveForm(null);
+          }}
           nonBlocking={true}
         >
-          <NewNodeForm
-            lat={clickedPosition.lat}
-            lon={clickedPosition.lng}
-            onClose={() => setClickedPosition(null)}
-            setNewNodeLatLng={setClickedPosition}
-          />
+          {activeForm === 'selection' && (
+            <CreationSelector
+              onSelectHydrant={() => setActiveForm('hydrant')}
+              onSelectIncident={() => setActiveForm('incident')}
+              onClose={() => {
+                setClickedPosition(null);
+                setActiveForm(null);
+              }}
+            />
+          )}
+          {activeForm === 'hydrant' && (
+            <NewNodeForm
+              lat={clickedPosition.lat}
+              lon={clickedPosition.lng}
+              onClose={() => {
+                setClickedPosition(null);
+                setActiveForm(null);
+              }}
+              setNewNodeLatLng={setClickedPosition}
+            />
+          )}
+          {activeForm === 'incident' && (
+            <NewIncidentForm
+              lat={clickedPosition.lat}
+              lon={clickedPosition.lng}
+              onClose={() => {
+                setClickedPosition(null);
+                setActiveForm(null);
+              }}
+            />
+          )}
         </Modal>
       )}
     </>

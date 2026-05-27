@@ -4,13 +4,13 @@ import type { LatLng } from 'leaflet';
 
 interface Props {
   setClickedPosition: (pos: LatLng) => void;
-  setShowNewForm: (show: boolean) => void;
+  setActiveForm: (form: 'selection' | 'hydrant' | 'incident' | null) => void;
   user: any; // replace with proper user type if available
 }
 
 export default function MapRightClickHandler({
   setClickedPosition,
-  setShowNewForm,
+  setActiveForm,
   user,
 }: Props) {
   const map = useMap();
@@ -21,13 +21,13 @@ export default function MapRightClickHandler({
       // Prevent default browser context menu
       if (e.originalEvent?.preventDefault) e.originalEvent.preventDefault();
       setClickedPosition(e.latlng);
-      setShowNewForm(true);
+      setActiveForm('selection');
     };
     map.on('contextmenu', handleContextMenu);
     return () => {
       map.off('contextmenu', handleContextMenu);
     };
-  }, [map, setClickedPosition, setShowNewForm, user]);
+  }, [map, setClickedPosition, setActiveForm, user]);
 
   return null;
 }

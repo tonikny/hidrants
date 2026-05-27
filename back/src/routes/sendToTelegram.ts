@@ -26,13 +26,24 @@ const handler: ApiHandler = async (req, res) => {
       return;
     }
 
-    const text = `
-${tags?.id ? '📝 <b>Comentari del node:</b>' : '🗺️ <b>Nova entrada OSM:</b>'}
+    let title = '🗺️ <b>Nou Hidrant:</b>';
+    if (tags?.type === 'incidencia') {
+      title = '⚠️ <b>Nova Incidència:</b>';
+    } else if (tags?.id) {
+      title = '📝 <b>Comentari:</b>';
+    }
 
-📍 Coord: <pre>${lat}, ${lon}</pre>
+    const text = `
+${title}
+
+📍 Coord: <code>${lat}, ${lon}</code>
 💬 Missatge: ${message || '(cap)'}
 ${tags ? `🏷️ Tags: <pre>${JSON.stringify(tags, null, 2)}</pre>` : ''}
-${tags?.id ? `https://www.openstreetmap.org/${tags.id}` : ''}
+${
+  tags?.osm_id && tags?.type !== 'incidencia'
+    ? `https://www.openstreetmap.org/node/${tags.osm_id}`
+    : ''
+}
     `;
 
     const response = await fetch(

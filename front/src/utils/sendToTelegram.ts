@@ -7,7 +7,7 @@ type SendPayload = {
 
 export async function sendToTelegram(data: SendPayload): Promise<void> {
   try {
-    const res = await fetch('https://hidrants.vercel.app/api/sendToTelegram', {
+    const res = await fetch('/api/sendToTelegram', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

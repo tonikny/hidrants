@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { HidrantsRepository } from '../db/repositories/hidrantsRepository.js';
 import { syncAdfFromOSM } from './osmSync.js';
 import { NotFoundError, BadRequestError } from '../errors.js';
+import { osm2Ui, ui2Osm } from '../utils/osmConversion.js';
 
 export const HidrantsService = {
   async forceSync(adfId: number) {
@@ -23,22 +24,28 @@ export const HidrantsService = {
 
     const rows = HidrantsRepository.findActiveByAdf(adfId);
 
-    const features = rows.map(row => ({
-      type: 'Feature',
-      id: row.id,
-      geometry: {
-        type: 'Point',
-        coordinates: [row.lon, row.lat]
-      },
-      properties: {
+    const features = rows.map(row => {
+      const osm_tags = JSON.parse(row.osm_tags || '{}');
+      const ui_fields = osm2Ui(osm_tags);
+
+      return {
+        type: 'Feature',
         id: row.id,
-        osm_id: row.osm_id,
-        ...JSON.parse(row.osm_tags || '{}'),
-        private_tags: JSON.parse(row.private_tags || '{}'),
-        sync_status: row.sync_status,
-        updated_at: row.updated_at
-      }
-    }));
+        geometry: {
+          type: 'Point',
+          coordinates: [row.lon, row.lat]
+        },
+        properties: {
+          id: row.id,
+          osm_id: row.osm_id,
+          osm_tags, // Ara van en el seu propi objecte, no escampats
+          ui_fields,
+          private_tags: JSON.parse(row.private_tags || '{}'),
+          sync_status: row.sync_status,
+          updated_at: row.updated_at
+        }
+      };
+    });
 
     return {
       type: 'FeatureCollection',
@@ -46,18 +53,20 @@ export const HidrantsService = {
     };
   },
 
-  createLocal(adfId: number, lat: number, lon: number, osm_tags: any, private_tags: any) {
+  createLocal(adfId: number, lat: number, lon: number, ui_fields: any, private_tags: any) {
     if (!lat || !lon) {
       throw new BadRequestError('Missing lat or lon');
     }
 
+    const osm_tags = ui_fields ? ui2Osm(ui_fields) : {};
     const id = uuidv4();
+    
     HidrantsRepository.create({
       id,
       adf_id: adfId,
       lat,
       lon,
-      osm_tags: JSON.stringify(osm_tags || {}),
+      osm_tags: JSON.stringify(osm_tags),
       private_tags: JSON.stringify(private_tags || {}),
       sync_status: 'PENDING_CREATE'
     });
@@ -65,7 +74,7 @@ export const HidrantsService = {
     return { id, sync_status: 'PENDING_CREATE' };
   },
 
-  updateLocal(id: string, adfId: number, lat?: number, lon?: number, osm_tags?: any, private_tags?: any) {
+  updateLocal(id: string, adfId: number, lat?: number, lon?: number, ui_fields?: any, private_tags?: any) {
     if (!id) throw new BadRequestError('Missing hydrant ID');
 
     const current = HidrantsRepository.findByIdAndAdf(id, adfId);
@@ -74,6 +83,15 @@ export const HidrantsService = {
     let newSyncStatus = current.sync_status;
     if (current.sync_status === 'SYNCED') {
       newSyncStatus = 'PENDING_UPDATE';
+    }
+
+    let osm_tags = undefined;
+    if (ui_fields) {
+      const currentOsmTags = JSON.parse(current.osm_tags || '{}');
+      osm_tags = {
+        ...currentOsmTags,
+        ...ui2Osm(ui_fields)
+      };
     }
 
     HidrantsRepository.update(id, adfId, {

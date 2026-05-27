@@ -9,20 +9,22 @@ export const hidrant_shadow = '/images/icons/marker-shadow.png';
 
 function getHydrantIcon(properties: Record<string, any>): L.Icon {
   const currentYear = new Date().getFullYear();
-  const surveyDate = properties['survey:date'];
+  const ui = properties.ui_fields || {};
+  const surveyDate = ui.surveyDate;
   const year = Number(surveyDate?.split('-')[0]);
   const isCurrentYear = year === currentYear;
 
-  const isActive = properties['emergency'] === 'fire_hydrant';
-  const isDisused = properties['disused:emergency'] === 'fire_hydrant';
+  const isActive = ui.estat === 'Operatiu';
+  const isOutOfService = ui.estat === 'Fora de servei';
 
   // Ruta a les icones (Leaflet en porta una per defecte)
   let iconUrl = '';
 
   if (isActive && isCurrentYear) iconUrl = hidrant_op_rev;
   else if (isActive) iconUrl = hidrant_op_nrev;
-  else if (isDisused && isCurrentYear) iconUrl = hidrant_nop_rev;
-  else iconUrl = hidrant_nop_nrev;
+  else if (isOutOfService && isCurrentYear) iconUrl = hidrant_nop_rev;
+  else if (isOutOfService) iconUrl = hidrant_nop_nrev;
+  else iconUrl = hidrant_no_info;
 
   return new L.Icon({
     iconUrl,

@@ -6,114 +6,53 @@ export type HydrantUiFields = {
   pressure: string;
   street: string;
   num: string;
-  urbanitzacio: string;
+  barri: string;
   surveyDate: string;
   estat: string;
 };
 
-export type HydrantOsmTags = {
-  emergency?: string;
-  'disused:emergency'?: string;
-  'fire_hydrant:type': string;
-  'fire_hydrant:position': string;
-  couplings: string;
-  'couplings:diameters': string;
-  'fire_hydrant:pressure': string;
-  'addr:street': string;
-  'addr:housenumber': string;
-  'addr:neighbourhood': string;
-  'survey:date': string;
-} & Record<string, string>;
-
-function fromOsmCouplings(value: string): string {
-  return value
-    .split(';')
-    .map((v) => v.trim())
-    .map((v) => v.replace(/mm/i, '').trim())
-    .map(Number)
-    .filter(Number.isFinite)
-    .join(';');
-}
-
-function toOsmCouplings(diameters: string): string {
-  return diameters
-    .split(';')
-    .map((d) => `${d} mm`)
-    .join('; ');
-}
-
-const posicioOsmKey = (key: string) => {
-  switch (key) {
-    case 'Calçada':
-    case 'lane':
-      return 'lane';
-    case 'Vorera':
-    case 'sidewalk':
-      return 'sidewalk';
-    case 'Verd':
-    case 'green':
-      return 'green';
-    default:
-      return key || '';
-  }
+const POSITION_MAP: Record<string, string> = {
+  lane: 'Calçada',
+  sidewalk: 'Vorera',
+  green: 'Verd',
 };
 
-const tipusOsmKey = (key: string) => {
-  switch (key) {
-    case 'Subterrani':
-    case 'underground':
-      return 'underground';
-    case 'Columna':
-    case 'pillar':
-      return 'pillar';
-    default:
-      return key || '';
-  }
+const TYPE_MAP: Record<string, string> = {
+  underground: 'Subterrani',
+  pillar: 'Columna',
 };
 
-const estatHidrants = (props: Record<string, string | undefined>) => {
-  if (props['emergency'] === 'fire_hydrant') return 'Operatiu';
-  if (props['disused:emergency'] === 'fire_hydrant') return 'Fora de servei';
-  return 'Desconegut';
-};
+export function getHydrantDisplayData(uiFields: HydrantUiFields) {
+  if (!uiFields) return [];
 
-export function osm2Ui(osmTags: HydrantOsmTags): HydrantUiFields {
-  const uiFields: HydrantUiFields = {
-    position: posicioOsmKey(osmTags['fire_hydrant:position']) || '',
-    type: tipusOsmKey(osmTags['fire_hydrant:type']),
-    couplings: osmTags['couplings'] || '',
-    diameters: fromOsmCouplings(osmTags['couplings:diameters'] || ''),
-    pressure: osmTags['fire_hydrant:pressure'] || '',
-    street: osmTags['addr:street'] || '',
-    num: osmTags['addr:housenumber'] || '',
-    urbanitzacio: osmTags['addr:neighbourhood'] || '',
-    surveyDate: osmTags['survey:date'] || '',
-    estat: estatHidrants(osmTags),
-  };
-  return uiFields;
-}
-
-export function ui2Osm(uiFields: HydrantUiFields): HydrantOsmTags {
-  const osmTags: HydrantOsmTags = {
-    emergency: uiFields.estat === 'Operatiu' ? 'fire_hydrant' : '',
-    'disused:emergency': uiFields.estat !== 'Operatiu' ? 'fire_hydrant' : '',
-    'fire_hydrant:position': uiFields.position,
-    'fire_hydrant:type': uiFields.type || '',
-    couplings: uiFields.couplings || '',
-    'couplings:diameters': toOsmCouplings(uiFields.diameters || ''),
-    'fire_hydrant:pressure': uiFields.pressure || '',
-    'addr:street': uiFields.street || '',
-    'addr:housenumber': uiFields.num || '',
-    'addr:neighbourhood': uiFields.urbanitzacio || '',
-    'survey:date': uiFields.surveyDate || '',
-  };
-  if (uiFields.estat === 'Operatiu') {
-    osmTags['emergency'] = 'fire_hydrant';
-    delete osmTags['disused:emergency'];
-  } else {
-    osmTags['disused:emergency'] = 'fire_hydrant';
-    delete osmTags['emergency'];
-  }
-
-  return osmTags;
+  return [
+    { label: 'Data de revisió', value: uiFields.surveyDate || 'Desconeguda' },
+    { label: 'Estat', value: uiFields.estat },
+    {
+      label: 'Tipus',
+      value: TYPE_MAP[uiFields.type] || uiFields.type || 'Desconegut',
+    },
+    {
+      label: 'Posició',
+      value:
+        POSITION_MAP[uiFields.position] || uiFields.position || 'Desconeguda',
+    },
+    { label: 'Acoblaments', value: uiFields.couplings || 'Desconegut' },
+    {
+      label: 'Diàmetres',
+      value: uiFields.diameters
+        ? uiFields.diameters.split(';').join(', ') + ' mm'
+        : 'Desconegut',
+    },
+    {
+      label: 'Pressió',
+      value: uiFields.pressure ? `${uiFields.pressure} bar` : 'Desconeguda',
+    },
+    {
+      label: 'Adreça',
+      value: `${uiFields.street ?? ''} ${uiFields.num ?? ''} ${
+        uiFields.barri ? '(' + uiFields.barri + ')' : ''
+      }`.trim() || 'No disponible',
+    },
+  ];
 }

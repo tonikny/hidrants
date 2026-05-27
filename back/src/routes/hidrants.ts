@@ -6,7 +6,7 @@ import { z } from 'zod';
 const createSchema = z.object({
   lat: z.number(),
   lon: z.number(),
-  osm_tags: z.any().optional(),
+  ui_fields: z.any().optional(),
   private_tags: z.any().optional()
 });
 
@@ -14,7 +14,7 @@ const updateSchema = z.object({
   id: z.string().optional(),
   lat: z.number().optional(),
   lon: z.number().optional(),
-  osm_tags: z.any().optional(),
+  ui_fields: z.any().optional(),
   private_tags: z.any().optional()
 });
 
@@ -45,8 +45,8 @@ const handler: ApiHandler = async (req, res) => {
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.message);
     }
-    const { lat, lon, osm_tags, private_tags } = parsed.data;
-    const result = HidrantsService.createLocal(adf_id, lat, lon, osm_tags, private_tags);
+    const { lat, lon, ui_fields, private_tags } = parsed.data;
+    const result = HidrantsService.createLocal(adf_id, lat, lon, ui_fields, private_tags);
     return res.status(201).json(result);
   }
 
@@ -59,8 +59,8 @@ const handler: ApiHandler = async (req, res) => {
     const id = req.params?.id || parsed.data.id;
     if (!id) throw new BadRequestError('Missing hydrant ID');
 
-    const { lat, lon, osm_tags, private_tags } = parsed.data;
-    const result = HidrantsService.updateLocal(id, adf_id, lat, lon, osm_tags, private_tags);
+    const { lat, lon, ui_fields, private_tags } = parsed.data;
+    const result = HidrantsService.updateLocal(id, adf_id, lat, lon, ui_fields, private_tags);
     return res.json(result);
   }
 

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAdf } from '../contexts/AdfContext';
-import { HydrantOsmTags } from '../utils/osmConversion';
 
 export interface HidrantFeature {
   type: 'Feature';
@@ -9,7 +8,14 @@ export interface HidrantFeature {
     type: 'Point';
     coordinates: [number, number];
   };
-  properties: HydrantOsmTags;
+  properties: {
+    id: string;
+    osm_id: number;
+    ui_fields: any; // Add this
+    private_tags: any;
+    sync_status: string;
+    updated_at: string;
+  } & Record<string, any>;
 }
 
 export function useHydrantData(

@@ -1,5 +1,5 @@
 import { Popup } from 'react-leaflet';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { sendToTelegram } from '../../utils/sendToTelegram';
 import { toast } from 'react-toastify';
 import { HidrantFeature } from '../../hooks/useHidrantData';
@@ -11,7 +11,10 @@ import {
   primaryButtonStyle,
   secondaryButtonStyle,
 } from '../../styles/uiStyles';
-import { HydrantOsmTags, osm2Ui, ui2Osm } from '../../utils/osmConversion';
+import {
+  getHydrantDisplayData,
+  HydrantUiFields,
+} from '../../utils/osmConversion';
 import { HydrantFormFields } from './HydrantFormFields';
 
 type NodeFormProps = {
@@ -31,61 +34,33 @@ export const NodeWithForm = ({
   const { activeAdf } = useAdf();
 
   const props = feature.properties;
-  const uiData = osm2Ui(props);
-  // console.log('props', props);
-
-  // console.log('uiData', uiData);
-
-  // Estat per l'edició
-  const [data, setData] = useState(uiData);
+  const [data, setData] = useState<HydrantUiFields>(props.ui_fields);
 
   const canEdit =
     user &&
     (user.role === 'admin' ||
       (user.role === 'editor' && user.adf_id === activeAdf?.id));
 
-  let displayId = String(feature.id);
-  let osmId = props.osm_id;
-
-  if (displayId.includes('/')) {
-    displayId = displayId.split('/')[1];
-  } else if (displayId.startsWith('osm-')) {
-    displayId = displayId.replace('osm-', '');
-  }
-
-  const translatedTags = {
-    'Data de revisió': props['survey:date'],
-    Estat: data.estat,
-    Tipus: data.type === 'pillar' ? 'Columna' : data.type === 'underground' ? 'Subterrani' : (data.type || 'Desconegut'),
-    Posició: data.position === 'lane' ? 'Calçada' : data.position === 'sidewalk' ? 'Vorera' : data.position === 'green' ? 'Verd' : (data.position || 'Desconegut'),
-    Acoblaments: data.couplings || 'Desconegut',
-    Diàmetres: Number(data.diameters) || 'Desconegut',
-    Pressió: data.pressure || 'Desconeguda',
-    Adreça: `${data.street ?? ''} ${data.num ?? ''} ${
-      data.urbanitzacio ? '(' + data.urbanitzacio + ')' : ''
-    }`,
-  };
+  const osmId = props.osm_id;
+  const displayData = getHydrantDisplayData(data);
 
   const poi = {
     lat: feature.geometry.coordinates[1],
     lng: feature.geometry.coordinates[0],
   };
 
-  const handleSend = async (feature: HidrantFeature) => {
-    console.log('feature', feature.properties.osm_id);
-
+  const handleSend = async () => {
     try {
       await sendToTelegram({
         lat: poi.lat,
         lon: poi.lng,
-        tags: feature?.properties,
+        tags: props,
         message,
       });
 
       toast.success('Missatge enviat!');
       setMessage('');
     } catch (err) {
-      console.log(err);
       toast.error('Error enviant el missatge');
     }
   };
@@ -101,21 +76,6 @@ export const NodeWithForm = ({
   const handleSave = async () => {
     if (!activeAdf) return;
     try {
-      const {
-        id: _id,
-        osm_id: _osm_id,
-        private_tags: _private_tags,
-        sync_status: _sync_status,
-        updated_at: _updated_at,
-        ...osmTags
-      } = props;
-
-      const newTags: HydrantOsmTags = {
-        ...osmTags,
-        ...ui2Osm(data),
-      };
-      console.log('newTags', newTags);
-
       const response = await fetch(
         `/api/hidrants/${feature.id}?adf=${activeAdf.id}`,
         {
@@ -124,7 +84,7 @@ export const NodeWithForm = ({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            osm_tags: newTags,
+            ui_fields: data,
           }),
         }
       );
@@ -132,7 +92,6 @@ export const NodeWithForm = ({
       if (!response.ok) throw new Error('Error actualitzant dades');
 
       toast.success('Canvis desats correctament');
-
       setIsEditing(false);
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
@@ -154,30 +113,18 @@ export const NodeWithForm = ({
 
     try {
       const today = new Date().toISOString().split('T')[0];
-      const {
-        id: _id,
-        osm_id: _osm_id,
-        private_tags: _private_tags,
-        sync_status: _sync_status,
-        updated_at: _updated_at,
-        ...newTags
-      } = props;
-
-      newTags['survey:date'] = today;
-      if (isOperative) {
-        newTags['emergency'] = 'fire_hydrant';
-        delete newTags['disused:emergency'];
-      } else {
-        newTags['disused:emergency'] = 'fire_hydrant';
-        delete newTags['emergency'];
-      }
+      const newData: HydrantUiFields = {
+        ...data,
+        surveyDate: today,
+        estat: isOperative ? 'Operatiu' : 'Fora de servei',
+      };
 
       const response = await fetch(
         `/api/hidrants/${feature.id}?adf=${activeAdf.id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ osm_tags: newTags }),
+          body: JSON.stringify({ ui_fields: newData }),
         }
       );
 
@@ -185,7 +132,6 @@ export const NodeWithForm = ({
       toast.success(`Hidrant actualitzat a ${statusText}`);
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
-      console.error(err);
       toast.error('Error en l’actualització ràpida');
     }
   };
@@ -193,16 +139,14 @@ export const NodeWithForm = ({
   return (
     <Popup>
       <div style={{ minWidth: '220px' }}>
-        <strong>Id:</strong> {displayId}
+        <strong>Id:</strong> {osmId || feature.id}
         <br />
         {!isEditing ? (
           <>
-            {Object.entries(translatedTags).map(([key, value]) => (
-              <div key={key}>
-                <strong>{key}: </strong>
-                {typeof value === 'string' || typeof value === 'number'
-                  ? value
-                  : JSON.stringify(value)}
+            {displayData.map(({ label, value }) => (
+              <div key={label}>
+                <strong>{label}: </strong>
+                {value}
               </div>
             ))}
             {osmId && (
@@ -333,7 +277,11 @@ export const NodeWithForm = ({
               marginTop: '0.5rem',
             }}
           >
-            <HydrantFormFields data={data} onChange={setData} showSurveyDateAndStatus={true} />
+            <HydrantFormFields
+              data={data}
+              onChange={setData}
+              showSurveyDateAndStatus={true}
+            />
 
             <div style={{ display: 'flex', gap: '5px', marginTop: '0.5rem' }}>
               <button
@@ -386,7 +334,7 @@ export const NodeWithForm = ({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            handleSend(feature);
+            handleSend();
           }}
           style={{
             ...primaryButtonStyle,

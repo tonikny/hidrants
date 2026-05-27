@@ -15,7 +15,7 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
 }) => {
   const currentDiameters = data.diameters ? data.diameters.split(';') : [];
   const numCouplings = Number(data.couplings) || 0;
-  
+
   // Assegurar que tenim prou diàmetres segons el nombre de couplings
   while (currentDiameters.length < numCouplings) {
     currentDiameters.push('');
@@ -123,7 +123,7 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
       {/* Diàmetres dinàmics */}
       {numCouplings > 0 && (
         <label style={{ fontSize: '0.75rem', fontStyle: 'italic' }}>
-          Diàmetres (mm):
+          Diàmetre{numCouplings > 1 ? 's' : ''} (mm):
           <div
             style={{
               display: 'flex',
@@ -164,7 +164,7 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
         />
       </label>
 
-      {/* Número i Urbanització */}
+      {/* Número i Barri/Urbanització */}
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         <label style={{ flex: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
           Núm:
@@ -176,11 +176,11 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
           />
         </label>
         <label style={{ flex: 2, fontSize: '0.75rem', fontStyle: 'italic' }}>
-          Urbanització:
+          Barri/Urbanització:
           <input
             type="text"
-            value={data.urbanitzacio}
-            onChange={(e) => handleFieldChange('urbanitzacio', e.target.value)}
+            value={data.barri}
+            onChange={(e) => handleFieldChange('barri', e.target.value)}
             style={inputStyle}
           />
         </label>

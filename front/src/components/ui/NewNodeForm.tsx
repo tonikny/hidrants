@@ -8,7 +8,7 @@ import {
   primaryButtonStyle,
   secondaryButtonStyle,
 } from '../../styles/uiStyles';
-import { HydrantUiFields, ui2Osm } from '../../utils/osmConversion';
+import { HydrantUiFields } from '../../utils/osmConversion';
 import { HydrantFormFields } from './HydrantFormFields';
 
 type NodeFormProps = {
@@ -26,7 +26,7 @@ export const NewNodeForm = ({
 }: NodeFormProps) => {
   const [message, setMessage] = useState('');
 
-  const uiData: HydrantUiFields = {
+  const [data, setData] = useState<HydrantUiFields>({
     type: '',
     position: '',
     couplings: '',
@@ -34,22 +34,19 @@ export const NewNodeForm = ({
     pressure: '',
     street: '',
     num: '',
-    urbanitzacio: '',
-    estat: '',
-    surveyDate: '',
-  };
-  const [data, setData] = useState(uiData);
+    barri: '',
+    estat: 'Operatiu',
+    surveyDate: new Date().toISOString().split('T')[0],
+  });
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const tags = ui2Osm(data);
 
     try {
       await sendToTelegram({
         lat,
         lon,
-        tags,
+        tags: { ui_fields: data }, // En nous nodes només tenim els ui_fields
         message,
       });
       toast.success('Dades enviades!');
@@ -57,7 +54,6 @@ export const NewNodeForm = ({
       onClose();
       setNewNodeLatLng(null);
     } catch (err) {
-      console.log(err);
       toast.error('Error enviant les dades');
     }
   };

@@ -1,5 +1,6 @@
 import type { ApiHandler } from '../types.js';
 import { config } from '../config.js';
+import { ui2Osm } from '../utils/osmConversion.js';
 
 const handler: ApiHandler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -29,8 +30,22 @@ const handler: ApiHandler = async (req, res) => {
     let title = '🗺️ <b>Nou Hidrant:</b>';
     if (tags?.type === 'incidencia') {
       title = '⚠️ <b>Nova Incidència:</b>';
-    } else if (tags?.id) {
-      title = '📝 <b>Comentari:</b>';
+    } else if (tags?.osm_id || tags?.id) {
+      title = '📝 <b>Comentari de l\'hidrant:</b>';
+    }
+
+    const osmId = tags?.osm_id;
+
+    // Preparem una còpia neta per Telegram amb la info de la BD
+    const dbInfo = { ...tags };
+    
+    // Si ens arriben ui_fields (formulari), els convertim a tags d'OSM (pel cas de nous nodes)
+    // però sempre els eliminem del JSON final del missatge per no duplicar
+    if (dbInfo.ui_fields) {
+      if (!dbInfo.osm_tags || Object.keys(dbInfo.osm_tags).length === 0) {
+        dbInfo.osm_tags = ui2Osm(dbInfo.ui_fields);
+      }
+      delete dbInfo.ui_fields;
     }
 
     const text = `
@@ -38,10 +53,13 @@ ${title}
 
 📍 Coord: <code>${lat}, ${lon}</code>
 💬 Missatge: ${message || '(cap)'}
-${tags ? `🏷️ Tags: <pre>${JSON.stringify(tags, null, 2)}</pre>` : ''}
+
+🏷️ <b>Info BD:</b>
+<pre>${JSON.stringify(dbInfo, null, 2)}</pre>
+
 ${
-  tags?.osm_id && tags?.type !== 'incidencia'
-    ? `https://www.openstreetmap.org/node/${tags.osm_id}`
+  osmId && tags?.type !== 'incidencia'
+    ? `🔗 https://www.openstreetmap.org/node/${osmId}`
     : ''
 }
     `;

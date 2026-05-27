@@ -10,9 +10,9 @@ import {
   inputStyle,
   primaryButtonStyle,
   secondaryButtonStyle,
-  selectStyle,
 } from '../../styles/uiStyles';
 import { HydrantOsmTags, osm2Ui, ui2Osm } from '../../utils/osmConversion';
+import { HydrantFormFields } from './HydrantFormFields';
 
 type NodeFormProps = {
   feature: HidrantFeature;
@@ -56,8 +56,8 @@ export const NodeWithForm = ({
   const translatedTags = {
     'Data de revisió': props['survey:date'],
     Estat: data.estat,
-    Tipus: data.type,
-    Posició: data.position,
+    Tipus: data.type === 'pillar' ? 'Columna' : data.type === 'underground' ? 'Subterrani' : (data.type || 'Desconegut'),
+    Posició: data.position === 'lane' ? 'Calçada' : data.position === 'sidewalk' ? 'Vorera' : data.position === 'green' ? 'Verd' : (data.position || 'Desconegut'),
     Acoblaments: data.couplings || 'Desconegut',
     Diàmetres: Number(data.diameters) || 'Desconegut',
     Pressió: data.pressure || 'Desconeguda',
@@ -333,176 +333,7 @@ export const NodeWithForm = ({
               marginTop: '0.5rem',
             }}
           >
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <label style={{ flex: 1, fontSize: '0.75rem' }}>
-                Estat:
-                <select
-                  value={data.estat === 'Operatiu' ? 'true' : 'false'}
-                  // onChange={(e) => setEditOperative(e.target.value === 'true')}
-                  onChange={(e) =>
-                    setData((prev) => ({
-                      ...prev,
-                      estat: e.target.value ? 'Operatiu' : 'Fora de servei',
-                    }))
-                  }
-                  style={selectStyle}
-                >
-                  <option value="true">Operatiu</option>
-                  <option value="false">Fora de servei</option>
-                </select>
-              </label>
-              <label style={{ flex: 1, fontSize: '0.75rem' }}>
-                Data revisió:
-                <input
-                  type="date"
-                  value={data.surveyDate}
-                  onChange={(e) =>
-                    setData((prev) => ({ ...prev, surveyDate: e.target.value }))
-                  }
-                  style={{ ...inputStyle, padding: '2px' }}
-                />
-              </label>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <label style={{ flex: 1, fontSize: '0.75rem' }}>
-                Tipus:
-                <select
-                  value={data.type}
-                  onChange={(e) =>
-                    setData((prev) => ({ ...prev, type: e.target.value }))
-                  }
-                  style={selectStyle}
-                >
-                  <option value=""></option>
-                  <option value="Columna">Columna</option>
-                  <option value="Subterrani">Subterrani</option>
-                </select>
-              </label>
-              <label style={{ flex: 1, fontSize: '0.75rem' }}>
-                Posició:
-                <select
-                  value={data.position}
-                  onChange={(e) =>
-                    setData((prev) => ({ ...prev, position: e.target.value }))
-                  }
-                  style={selectStyle}
-                >
-                  <option value=""></option>
-                  <option value="Calçada">Calçada</option>
-                  <option value="Vorera">Vorera</option>
-                  <option value="Verd">Verd</option>
-                </select>
-              </label>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <label style={{ flex: 1, fontSize: '0.75rem' }}>
-                Acoblaments:
-                <select
-                  value={data.couplings}
-                  onChange={(e) =>
-                    setData((prev) => ({ ...prev, couplings: e.target.value }))
-                  }
-                  style={selectStyle}
-                >
-                  <option value=""></option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                </select>
-              </label>
-              <label style={{ flex: 1, fontSize: '0.75rem' }}>
-                Pressió (bar):
-                <input
-                  type="number"
-                  value={data.pressure}
-                  onChange={(e) =>
-                    setData((prev) => ({ ...prev, pressure: e.target.value }))
-                  }
-                  style={inputStyle}
-                />
-              </label>
-            </div>
-
-            {Number(data.couplings) > 0 && (
-              <label style={{ fontSize: '0.75rem' }}>
-                Diàmetres (mm):
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.3rem',
-                    marginTop: '0.2rem',
-                  }}
-                >
-                  {Array.from({ length: Number(data.couplings) }, (_, i) => (
-                    <select
-                      key={i}
-                      value={data.diameters.split(';')[i]}
-                      onChange={(e) => {
-                        const nd = [...data.diameters];
-                        nd[i] = e.target.value;
-                        setData((prev) => ({
-                          ...prev,
-                          diameters: nd.join(';'),
-                        }));
-                        setData((prev) => ({
-                          ...prev,
-                          diameters: e.target.value,
-                        }));
-                      }}
-                      style={{ ...selectStyle, flex: '1 1 30%' }}
-                    >
-                      <option value=""></option>
-                      <option value="45">45</option>
-                      <option value="70">70</option>
-                      <option value="100">100</option>
-                    </select>
-                  ))}
-                </div>
-              </label>
-            )}
-            <label style={{ fontSize: '0.75rem' }}>
-              Carrer:
-              <input
-                type="text"
-                value={data.street}
-                onChange={(e) =>
-                  setData((prev) => ({ ...prev, street: e.target.value }))
-                }
-                style={inputStyle}
-              />
-            </label>
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <label style={{ flex: 1, fontSize: '0.75rem' }}>
-                Núm:
-                <input
-                  type="text"
-                  value={data.num}
-                  onChange={(e) =>
-                    setData((prev) => ({ ...prev, num: e.target.value }))
-                  }
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ flex: 2, fontSize: '0.75rem' }}>
-                Urb:
-                <input
-                  type="text"
-                  value={data.urbanitzacio}
-                  onChange={(e) =>
-                    setData((prev) => ({
-                      ...prev,
-                      urbanitzacio: e.target.value,
-                    }))
-                  }
-                  style={inputStyle}
-                />
-              </label>
-            </div>
+            <HydrantFormFields data={data} onChange={setData} showSurveyDateAndStatus={true} />
 
             <div style={{ display: 'flex', gap: '5px', marginTop: '0.5rem' }}>
               <button

@@ -5,12 +5,11 @@ import { LatLng, point } from 'leaflet';
 import { toast } from 'react-toastify';
 import {
   inputStyle,
-  popupContainerStyle,
   primaryButtonStyle,
   secondaryButtonStyle,
-  selectStyle,
 } from '../../styles/uiStyles';
 import { HydrantUiFields, ui2Osm } from '../../utils/osmConversion';
+import { HydrantFormFields } from './HydrantFormFields';
 
 type NodeFormProps = {
   lat: number;
@@ -85,189 +84,20 @@ export const NewNodeForm = ({
         </strong>
       </div>
 
-      {/* Línia 1: Tipus - Posició */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '0.5rem',
-          fontStyle: 'italic',
-          marginBottom: '0.5rem',
-        }}
-      >
-        <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Tipus:
-          <select
-            value={data.type}
-            onChange={(e) =>
-              setData((prev) => ({ ...prev, type: e.target.value }))
-            }
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="pillar">Columna</option>
-            <option value="underground">Subterrani</option>
-          </select>
-        </label>
-        <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Posició:
-          <select
-            value={data.position}
-            onChange={(e) =>
-              setData((prev) => ({ ...prev, position: e.target.value }))
-            }
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="lane">Calçada</option>
-            <option value="sidewalk">Vorera</option>
-            <option value="green">Verd</option>
-          </select>
-        </label>
-      </div>
+      <HydrantFormFields
+        data={data}
+        onChange={setData}
+        showSurveyDateAndStatus={false}
+      />
 
-      {/* Línia 2: Acoblaments - Pressió */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '0.5rem',
-          fontStyle: 'italic',
-          marginBottom: '0.5rem',
-        }}
-      >
-        <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Acoblaments:
-          <select
-            value={data.couplings}
-            onChange={(e) =>
-              setData((prev) => ({ ...prev, couplings: e.target.value }))
-            }
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-          </select>
-        </label>
-        <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Pressió (bar):
-          <input
-            type="number"
-            value={data.pressure}
-            onChange={(e) =>
-              setData((prev) => ({ ...prev, pressure: e.target.value }))
-            }
-            style={inputStyle}
-          />
-        </label>
-      </div>
-
-      {/* Línia 3: Diàmetres dinàmics */}
-      {Number(data.couplings) > 0 && (
-        <label style={{ fontSize: '0.75rem' }}>
-          Diàmetres (mm):
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.3rem',
-              marginTop: '0.2rem',
-              marginBottom: '1rem',
-            }}
-          >
-            {Array.from({ length: Number(data.couplings) }, (_, i) => (
-              <select
-                key={i}
-                value={data.diameters.split(';')[i]}
-                onChange={(e) => {
-                  const nd = [...data.diameters];
-                  nd[i] = e.target.value;
-                  setData((prev) => ({
-                    ...prev,
-                    diameters: nd.join(';'),
-                  }));
-                  setData((prev) => ({
-                    ...prev,
-                    diameters: e.target.value,
-                  }));
-                }}
-                style={{ ...selectStyle, flex: '1 1 30%' }}
-              >
-                <option value=""></option>
-                <option value="45">45</option>
-                <option value="70">70</option>
-                <option value="100">100</option>
-              </select>
-            ))}
-          </div>
-        </label>
-      )}
-
-      {/* Línia 2: Carrer (100%) */}
+      {/* Comentari (100%) */}
       <label
         style={{
           fontSize: '0.8rem',
           width: '100%',
           fontStyle: 'italic',
           marginBottom: '1rem',
-        }}
-      >
-        Carrer:
-        <input
-          type="text"
-          value={data.street}
-          onChange={(e) =>
-            setData((prev) => ({ ...prev, street: e.target.value }))
-          }
-          style={{ ...inputStyle, width: '100%' }}
-        />
-      </label>
-
-      {/* Línia 3: Número (1/3) i Urbanització (2/3) */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '0.5rem',
-          fontStyle: 'italic',
-          marginBottom: '1rem',
-        }}
-      >
-        <label style={{ flex: 1, fontSize: '0.8rem' }}>
-          Número:
-          <input
-            type="text"
-            value={data.num}
-            onChange={(e) =>
-              setData((prev) => ({ ...prev, num: e.target.value }))
-            }
-            style={inputStyle}
-          />
-        </label>
-        <label style={{ flex: 2, fontSize: '0.8rem' }}>
-          Urbanització:
-          <select
-            value={data.urbanitzacio}
-            onChange={(e) =>
-              setData((prev) => ({ ...prev, urbanitzacio: e.target.value }))
-            }
-            style={selectStyle}
-          >
-            <option value=""></option>
-            <option value="urb1">Urb1</option>
-            <option value="urb2">Urb2</option>
-            <option value="urb3">Urb3</option>
-          </select>
-        </label>
-      </div>
-
-      {/* Línia 4: Comentari (100%) */}
-      <label
-        style={{
-          fontSize: '0.8rem',
-          width: '100%',
-          fontStyle: 'italic',
-          marginBottom: '1rem',
+          marginTop: '0.5rem',
         }}
       >
         Comentari:

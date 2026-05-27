@@ -42,27 +42,32 @@ function toOsmCouplings(diameters: string): string {
     .join('; ');
 }
 
-const posicioHidrants = (key: string) => {
+const posicioOsmKey = (key: string) => {
   switch (key) {
+    case 'Calçada':
     case 'lane':
-      return 'Calçada';
+      return 'lane';
+    case 'Vorera':
     case 'sidewalk':
-      return 'Vorera';
+      return 'sidewalk';
+    case 'Verd':
     case 'green':
-      return 'Verd';
+      return 'green';
     default:
-      return 'Desconegut';
+      return key || '';
   }
 };
 
-const tipusHidrants = (key: string) => {
+const tipusOsmKey = (key: string) => {
   switch (key) {
+    case 'Subterrani':
     case 'underground':
-      return 'Subterrani';
+      return 'underground';
+    case 'Columna':
     case 'pillar':
-      return 'Columna';
+      return 'pillar';
     default:
-      return 'Desconegut';
+      return key || '';
   }
 };
 
@@ -74,8 +79,8 @@ const estatHidrants = (props: Record<string, string | undefined>) => {
 
 export function osm2Ui(osmTags: HydrantOsmTags): HydrantUiFields {
   const uiFields: HydrantUiFields = {
-    position: posicioHidrants(osmTags['fire_hydrant:position']) || '',
-    type: tipusHidrants(osmTags['fire_hydrant:type']),
+    position: posicioOsmKey(osmTags['fire_hydrant:position']) || '',
+    type: tipusOsmKey(osmTags['fire_hydrant:type']),
     couplings: osmTags['couplings'] || '',
     diameters: fromOsmCouplings(osmTags['couplings:diameters'] || ''),
     pressure: osmTags['fire_hydrant:pressure'] || '',

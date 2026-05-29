@@ -74,6 +74,7 @@ export function LeafletMap() {
   const { user, logout } = useAuth();
   const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null);
   const [mapZoom, setMapZoom] = useState<number>(14);
+  const [activeTechnicalLayer, setActiveTechnicalLayer] = useState<string | null>(null);
 
   const handleMapStateChange = useCallback((bounds: [number, number, number, number], zoom: number) => {
     setMapBounds(prev => {
@@ -123,8 +124,11 @@ export function LeafletMap() {
         <MapStateListener
           onStateChange={handleMapStateChange}
         />
-        <MaskedAreaMap />
-        <Layers />
+        <MaskedAreaMap hidden={!!activeTechnicalLayer} />
+        <Layers 
+          activeTechnicalLayer={activeTechnicalLayer} 
+          setActiveTechnicalLayer={setActiveTechnicalLayer} 
+        />
         <MapRightClickHandler setClickedPosition={setClickedPosition} setActiveForm={setActiveForm} user={user} />
         <HydrantMarkerList 
           features={features} 

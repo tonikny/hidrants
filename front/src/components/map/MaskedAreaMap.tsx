@@ -4,7 +4,7 @@ import * as turf from '@turf/turf';
 import type { Feature, Polygon, MultiPolygon } from 'geojson';
 import { useAdf } from '../../contexts/AdfContext';
 
-export default function MaskedAreaMap() {
+export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) {
   const { activeAdf } = useAdf();
   const map = useMap();
   const [mask, setMask] = useState<Feature<Polygon | MultiPolygon> | null>(
@@ -93,7 +93,7 @@ export default function MaskedAreaMap() {
     };
   }, [map, activeAdf]); // Traiem hasFittedBounds de les dependencies per evitar bucles infinits
 
-  if (!activeAdf) return null;
+  if (!activeAdf || hidden) return null;
 
   return (
     <>

@@ -139,7 +139,7 @@ export const NodeWithForm = ({
   return (
     <Popup>
       <div style={{ minWidth: '220px' }}>
-        <strong>Id:</strong> {osmId || feature.id}
+        <strong>Id:</strong> {feature.id}
         <br />
         {!isEditing ? (
           <>

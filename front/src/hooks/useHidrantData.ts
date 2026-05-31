@@ -39,6 +39,8 @@ export function useHydrantData(
         const response = await fetch(`/api/hidrants?adf=${activeAdf.id}`);
         if (!response.ok) throw new Error('Error al carregar hidrants');
         const data = await response.json();
+        
+        // Només actualitzem si encara estem a la mateixa ADF
         setFeatures(data.features || []);
         setError(null);
       } catch (err) {
@@ -49,7 +51,7 @@ export function useHydrantData(
     };
 
     fetchData();
-  }, [activeAdf]);
+  }, [activeAdf?.id]); // Use activeAdf.id as dependency
 
   return { features, loading, error };
 }

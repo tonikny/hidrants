@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLng } from 'leaflet';
 import { MapClickHandler, NewNodeForm } from '../ui/NewNodeForm';
@@ -15,6 +15,7 @@ import { RouteLayer } from './RouteLayer';
 import { useAdf } from '../../contexts/AdfContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { HydrantMarkerList } from './markers/HydrantMarkerList';
+import { MapUrlHandler } from './MapUrlHandler';
 import { MapUIOverlays } from '../controls/MapUIOverlays';
 import { LocationMarker } from './LocationMarker';
 
@@ -36,17 +37,20 @@ function MapStateListener({
     },
   });
 
-  // Inicialitzem l'estat en muntar-se
+  // Inicialitzem l'estat en muntar-se, però amb un petit delay per evitar loops de render
   useEffect(() => {
-    // @ts-ignore
-    if (map && map._loaded && map.getContainer()) {
-      const b = map.getBounds();
-      onStateChange(
-        [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
-        map.getZoom()
-      );
-    }
-  }, [map, onStateChange]);
+    const timer = setTimeout(() => {
+      // @ts-ignore
+      if (map && map._loaded && map.getContainer()) {
+        const b = map.getBounds();
+        onStateChange(
+          [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
+          map.getZoom()
+        );
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [map]); 
 
   return null;
 }
@@ -121,6 +125,8 @@ export function LeafletMap() {
           className="leaflet-map"
       >
         <FixMapSize />
+        {/* Gestiona l'obertura de nodes via URL (?node=ID) */}
+        <MapUrlHandler features={features} />
         <MapStateListener
           onStateChange={handleMapStateChange}
         />

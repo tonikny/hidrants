@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 export interface AdfData {
@@ -37,6 +37,17 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const data = await response.json();
         setAdfs(data);
         
+        // Prioritat 0: Paràmetre ADF a la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAdfId = urlParams.get('adf');
+        if (urlAdfId) {
+          const urlAdf = data.find((a: AdfData) => a.id === Number(urlAdfId));
+          if (urlAdf) {
+            setActiveAdfState(urlAdf);
+            return;
+          }
+        }
+
         // Prioritat 1: Recuperar de localStorage (el que l'usuari estava veient realment)
         const savedAdfId = localStorage.getItem('active_adf_id');
         if (savedAdfId) {
@@ -64,18 +75,23 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     fetchAdfs();
   }, [user]); // Re-executem si l'usuari canvia (login/logout)
 
-  const setActiveAdf = (adf: AdfData | null) => {
+  const setActiveAdf = useCallback((adf: AdfData | null) => {
     setActiveAdfState(adf);
+    const url = new URL(window.location.href);
     if (adf) {
       localStorage.setItem('active_adf_id', adf.id.toString());
       document.title = `Hidrants - ${adf.nom}`;
+      url.searchParams.set('adf', adf.id.toString());
     } else {
       localStorage.removeItem('active_adf_id');
       document.title = 'Mapa d\'hidrants';
+      url.searchParams.delete('adf');
+      url.searchParams.delete('node');
     }
-  };
+    window.history.replaceState({}, '', url.toString());
+  }, []);
 
-  const value = useMemo(() => ({ activeAdf, setActiveAdf, adfs, isLoading, error }), [activeAdf, adfs, isLoading, error]);
+  const value = useMemo(() => ({ activeAdf, setActiveAdf, adfs, isLoading, error }), [activeAdf, setActiveAdf, adfs, isLoading, error]);
 
   return <AdfContext.Provider value={value}>{children}</AdfContext.Provider>;
 };

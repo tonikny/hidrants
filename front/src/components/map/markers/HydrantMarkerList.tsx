@@ -1,7 +1,5 @@
-import { Marker } from 'react-leaflet';
-import { latLng, LatLng } from 'leaflet';
-import getHydrantIcon from '../../../utils/icons';
-import { NodeWithForm } from '../../ui/NodeForm';
+import { LatLng } from 'leaflet';
+import { HydrantMarker } from './HydrantMarker';
 
 interface HydrantMarkerListProps {
   features: any[];
@@ -18,27 +16,16 @@ export function HydrantMarkerList({
 }: HydrantMarkerListProps) {
   return (
     <>
-      {features.map((feature) => {
-        const coords = feature.geometry.coordinates;
-        return (
-          <Marker
-            key={feature.id}
-            position={[coords[1], coords[0]]}
-            icon={getHydrantIcon(feature.properties)}
-            eventHandlers={{
-              click: () => {
-                setPoi(latLng(coords[1], coords[0]));
-              },
-            }}
-          >
-            <NodeWithForm
-              feature={feature}
-              showRoute={showRoute}
-              setShowRoute={setShowRoute}
-            />
-          </Marker>
-        );
-      })}
+      {features.map((feature) => (
+        /* Renderitza cada marcador d'hidrant de forma independent */
+        <HydrantMarker
+          key={feature.id}
+          feature={feature}
+          setPoi={setPoi}
+          showRoute={showRoute}
+          setShowRoute={setShowRoute}
+        />
+      ))}
     </>
   );
 }

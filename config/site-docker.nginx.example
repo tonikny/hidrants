@@ -34,6 +34,9 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    
+    # CSP: Permetem scripts propis, estils, imatges de tiles de diversos proveïdors i Panoramax
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.openstreetmap.org https://*.opentopomap.org https://*.idee.es https://maps.effis.emergency.copernicus.eu https://api.panoramax.xyz https://panoramax.mapcomplete.org https://geoserveis.icgc.cat; connect-src 'self' https://overpass-api.de;" always;
 
     # FRONTEND (Docker)
     location / {
@@ -46,7 +49,7 @@ server {
 
     # API / BACKEND (Docker)
     location /api/ {
-        proxy_pass http://127.0.0.1:3034/api/;
+        proxy_pass http://127.0.0.1:3034;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -64,12 +67,13 @@ server {
         proxy_set_header Host $host;
     }
 
-    # TILES CACHE (Exemple OSM)
-    location /tiles/osm/ {
-        proxy_pass https://tile.openstreetmap.org/;
+    # EXEMPLE PROXY TILES AMB SNI (IGN)
+    location /tiles/ign-raster/ {
+        proxy_pass https://tms-mapa-raster.ign.es/1.0.0/mapa-raster/;
+        proxy_ssl_server_name on;
+        proxy_set_header User-Agent "LaTevaApp/1.0";
         proxy_cache tiles_cache;
         proxy_cache_valid 200 30d;
         add_header X-Cache-Status $upstream_cache_status;
-        proxy_set_header User-Agent "LaTevaApp/1.0";
     }
 }

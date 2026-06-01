@@ -23,6 +23,7 @@ type NodeFormProps = {
   showRoute: boolean;
   setShowRoute: (value: boolean) => void;
   refreshHidrants?: () => Promise<void>;
+  hasLocation?: boolean;
 };
 
 export const NodeWithForm = ({
@@ -30,6 +31,7 @@ export const NodeWithForm = ({
   showRoute,
   setShowRoute,
   refreshHidrants,
+  hasLocation,
 }: NodeFormProps) => {
   const [message, setMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -70,6 +72,10 @@ export const NodeWithForm = ({
   };
 
   const handleShowRoute = () => {
+    if (!showRoute && !hasLocation) {
+      toast.info('Cal activar el seguiment GPS per veure la ruta');
+      return;
+    }
     setShowRoute(!showRoute);
   };
 

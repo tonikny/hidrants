@@ -142,6 +142,7 @@ export function LeafletMap() {
           showRoute={showRoute} 
           setShowRoute={setShowRoute} 
           refreshHidrants={refreshHidrants}
+          hasLocation={!!position}
         />
         {user && (
           <MapClickHandler

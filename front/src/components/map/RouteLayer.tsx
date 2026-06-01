@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Polyline, Tooltip, useMap } from 'react-leaflet';
 import L, { LatLngExpression } from 'leaflet';
+import { toast } from 'react-toastify';
 
 interface RouteLayerProps {
   from: L.LatLng;
@@ -13,34 +14,73 @@ export function RouteLayer({ from, to, color = '#0077ff' }: RouteLayerProps) {
   const [coords, setCoords] = useState<LatLngExpression[]>([]);
   const [distance, setDistance] = useState<number | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
+  
+  const lastFetchPos = useRef<L.LatLng | null>(null);
+  const lastDest = useRef<string>('');
+  const hasFittedBounds = useRef<string>('');
 
   useEffect(() => {
     let isMounted = true;
-    const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+    
+    // Identificador únic del destí
+    const destId = `${to.lat},${to.lng}`;
+    
+    // 1. Decidir si cal fer una nova petició al servidor
+    // Cal fer petició si:
+    // - No tenim una posició anterior
+    // - El destí ha canviat
+    // - Ens hem mogut més de 20 metres
+    const shouldFetch = 
+      !lastFetchPos.current || 
+      lastDest.current !== destId || 
+      lastFetchPos.current.distanceTo(from) > 20;
+
+    if (!shouldFetch) return;
+
+    const url = `/api/route?from=${from.lat},${from.lng}&to=${to.lat},${to.lng}`;
     
     fetch(url)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Error al servidor de rutes');
+        return res.json();
+      })
       .then((data) => {
         if (!isMounted) return;
-        if (data.routes?.length > 0) {
-          const route = data.routes[0];
-          const points: LatLngExpression[] = route.geometry.coordinates.map(
+        
+        if (data.paths && data.paths.length > 0) {
+          const route = data.paths[0];
+          const points: LatLngExpression[] = route.points.coordinates.map(
             ([lng, lat]: [number, number]) => [lat, lng]
           );
+          
           setCoords(points);
           setDistance(route.distance / 1000);
-          setDuration(route.duration / 60);
+          setDuration(route.time / 60000);
           
-          // @ts-ignore
-          if (map && map._loaded && map.getContainer()) {
-            map.fitBounds(points as L.LatLngBoundsExpression, {
-              padding: [50, 50],
-            });
+          // Guardem l'estat de la petició actual
+          lastFetchPos.current = from;
+          lastDest.current = destId;
+          
+          // 2. Decidir si cal ajustar el zoom del mapa
+          // Només ho fem la primera vegada que es carrega la ruta cap a aquest destí
+          if (hasFittedBounds.current !== destId) {
+            // @ts-ignore
+            if (map && map._loaded && map.getContainer()) {
+              map.fitBounds(points as L.LatLngBoundsExpression, {
+                padding: [50, 50],
+              });
+              hasFittedBounds.current = destId;
+            }
           }
+        } else if (data.error) {
+          throw new Error(data.error);
         }
       })
       .catch((err) => {
-        if (isMounted) console.error('Error carregant ruta:', err);
+        if (isMounted) {
+          console.error('Error carregant ruta:', err);
+          toast.error('No s’ha pogut calcular la ruta.');
+        }
       });
 
     return () => {

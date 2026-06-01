@@ -10,13 +10,14 @@ export interface HydrantMarkerProps {
   showRoute: boolean;
   setShowRoute: (show: boolean) => void;
   refreshHidrants?: () => Promise<void>;
+  hasLocation?: boolean;
 }
 
 /**
  * Marcador d'hidrant que gestiona la seva pròpia aparició a la URL
  * i respon a l'esdeveniment de centratge del mapa.
  */
-export function HydrantMarker({ feature, setPoi, showRoute, setShowRoute, refreshHidrants }: HydrantMarkerProps) {
+export function HydrantMarker({ feature, setPoi, showRoute, setShowRoute, refreshHidrants, hasLocation }: HydrantMarkerProps) {
   const markerRef = useRef<L.Marker>(null);
   const coords = feature.geometry.coordinates;
 
@@ -69,6 +70,7 @@ export function HydrantMarker({ feature, setPoi, showRoute, setShowRoute, refres
         showRoute={showRoute}
         setShowRoute={setShowRoute}
         refreshHidrants={refreshHidrants}
+        hasLocation={hasLocation}
       />
     </Marker>
   );

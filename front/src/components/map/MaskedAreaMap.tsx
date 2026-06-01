@@ -13,27 +13,11 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
   useEffect(() => {
     let isMounted = true;
     const urlParams = new URLSearchParams(window.location.search);
-    const hasNodeParam = !!urlParams.get('node');
+    const nodeId = urlParams.get('node');
 
     if (!activeAdf) {
       setMask(null);
       fittedAdfId.current = null;
-      return;
-    }
-
-    // Si ja tenim la màscara d'aquesta ADF, comprovem si hem de fer el fitBounds
-    if (mask && mask.id === activeAdf.id) {
-      if (!hasNodeParam && fittedAdfId.current !== activeAdf.id) {
-        // En teoria això ja s'hauria de haver fet al setMask, però per si de cas:
-        // @ts-ignore
-        if (map && map._loaded && map.getContainer().clientWidth > 0) {
-           const bbox = activeAdf.bbox;
-           if (bbox) {
-             map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);
-             fittedAdfId.current = activeAdf.id;
-           }
-        }
-      }
       return;
     }
 
@@ -58,7 +42,7 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
         if (masked && isMounted) {
           setMask({ id: activeAdf.id, data: masked as any });
 
-          if (!hasNodeParam && fittedAdfId.current !== activeAdf.id) {
+          if (!nodeId && fittedAdfId.current !== activeAdf.id) {
             // @ts-ignore
             const container = map.getContainer();
             // @ts-ignore
@@ -71,7 +55,7 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
               );
               fittedAdfId.current = activeAdf.id;
             }
-          } else if (hasNodeParam) {
+          } else {
             fittedAdfId.current = activeAdf.id;
           }
         }
@@ -82,14 +66,15 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
 
     fetchAndMaskArea();
     return () => { isMounted = false; };
-  }, [map, activeAdf?.id, mask]); 
+  }, [map, activeAdf?.id]); 
 
   if (!activeAdf || hidden) return null;
 
   return (
     <>
-      {mask && (
+      {mask && mask.id === activeAdf.id && (
         <GeoJSON
+          key={`mask-${mask.id}`}
           data={mask.data}
           pathOptions={{
             fillColor: 'rgba(0, 0, 0, 0.6)',

@@ -27,54 +27,6 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Carregar llista d'ADFs inicial
-  useEffect(() => {
-    const fetchAdfs = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/adfs'); 
-        if (!response.ok) throw new Error('Error carregant ADFs');
-        const data = await response.json();
-        setAdfs(data);
-        
-        // Prioritat 0: Paràmetre ADF a la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlAdfId = urlParams.get('adf');
-        if (urlAdfId) {
-          const urlAdf = data.find((a: AdfData) => a.id === Number(urlAdfId));
-          if (urlAdf) {
-            setActiveAdfState(urlAdf);
-            return;
-          }
-        }
-
-        // Prioritat 1: Recuperar de localStorage (el que l'usuari estava veient realment)
-        const savedAdfId = localStorage.getItem('active_adf_id');
-        if (savedAdfId) {
-          const savedAdf = data.find((a: AdfData) => a.id === Number(savedAdfId));
-          if (savedAdf) {
-            setActiveAdfState(savedAdf);
-            return;
-          }
-        }
-
-        // Prioritat 2: ADF de l'usuari si és editor (només si no hi ha res guardat)
-        if (user && user.role === 'editor' && user.adf_id) {
-          const userAdf = data.find((a: AdfData) => a.id === user.adf_id);
-          if (userAdf) {
-            setActiveAdfState(userAdf);
-            return;
-          }
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchAdfs();
-  }, [user]); // Re-executem si l'usuari canvia (login/logout)
-
   const setActiveAdf = useCallback((adf: AdfData | null) => {
     setActiveAdfState(adf);
     const url = new URL(window.location.href);
@@ -90,6 +42,60 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     window.history.replaceState({}, '', url.toString());
   }, []);
+
+  // Carregar llista d'ADFs inicial
+  useEffect(() => {
+    const fetchAdfs = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/adfs'); 
+        if (!response.ok) throw new Error('Error carregant ADFs');
+        const data = await response.json();
+        setAdfs(data);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAdfId = urlParams.get('adf');
+
+        // Prioritat 0: Paràmetre ADF a la URL
+        if (urlAdfId) {
+          const urlAdf = data.find((a: AdfData) => a.id === Number(urlAdfId));
+          if (urlAdf) {
+            setActiveAdf(urlAdf);
+            return;
+          }
+        }
+
+        // Prioritat 1: Recuperar de localStorage (el que l'usuari estava veient realment)
+        const savedAdfId = localStorage.getItem('active_adf_id');
+        if (savedAdfId) {
+          const savedAdf = data.find((a: AdfData) => a.id === Number(savedAdfId));
+          if (savedAdf) {
+            setActiveAdf(savedAdf);
+            return;
+          }
+        }
+
+        // Prioritat 2: ADF de l'usuari si és editor (només si no hi ha res guardat)
+        if (user && user.role === 'editor' && user.adf_id) {
+          const userAdf = data.find((a: AdfData) => a.id === user.adf_id);
+          if (userAdf) {
+            setActiveAdf(userAdf);
+            return;
+          }
+        }
+
+        // Si teníem un adf a la URL però no era vàlid, el netegem
+        if (urlAdfId) {
+          setActiveAdf(null);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAdfs();
+  }, [user, setActiveAdf]); 
 
   const value = useMemo(() => ({ activeAdf, setActiveAdf, adfs, isLoading, error }), [activeAdf, setActiveAdf, adfs, isLoading, error]);
 

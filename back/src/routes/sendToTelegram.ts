@@ -1,6 +1,7 @@
 import type { ApiHandler } from '../types.js';
 import { config } from '../config.js';
 import { ui2Osm } from '../utils/osmConversion.js';
+import { HidrantsService } from '../services/hidrantsService.js';
 
 const handler: ApiHandler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,7 +19,7 @@ const handler: ApiHandler = async (req, res) => {
   }
 
   try {
-    const { lat, lon, tags, message } = req.body;
+    const { lat, lon, tags, message, adf_id } = req.body;
     const TELEGRAM_BOT_TOKEN = config.TELEGRAM_BOT_TOKEN;
     const TELEGRAM_CHAT_ID = config.TELEGRAM_CHAT_ID;
 
@@ -28,16 +29,40 @@ const handler: ApiHandler = async (req, res) => {
     }
 
     let title = '🗺️ <b>Nou Hidrant:</b>';
+    let isNewHydrant = false;
+
     if (tags?.type === 'incidencia') {
       title = '⚠️ <b>Nova Incidència:</b>';
     } else if (tags?.osm_id || tags?.id) {
       title = '📝 <b>Comentari de l\'hidrant:</b>';
+    } else {
+      isNewHydrant = true;
+    }
+
+    // Si és un nou hidrant i tenim adf_id, el guardem a la BD
+    let dbResult = null;
+    if (isNewHydrant && adf_id) {
+      try {
+        dbResult = HidrantsService.createLocal(
+          Number(adf_id),
+          lat,
+          lon,
+          tags?.ui_fields,
+          {}
+        );
+      } catch (dbErr) {
+        console.error('Error saving to DB:', dbErr);
+      }
     }
 
     const osmId = tags?.osm_id;
 
     // Preparem una còpia neta per Telegram amb la info de la BD
     const dbInfo = { ...tags };
+    if (dbResult) {
+      dbInfo.id = dbResult.id;
+      dbInfo.sync_status = dbResult.sync_status;
+    }
     
     // Si ens arriben ui_fields (formulari), els convertim a tags d'OSM (pel cas de nous nodes)
     // però sempre els eliminem del JSON final del missatge per no duplicar

@@ -17,14 +17,33 @@ function getHydrantIcon(properties: Record<string, any>): L.Icon {
   const isActive = ui.estat === 'Operatiu';
   const isOutOfService = ui.estat === 'Fora de servei';
 
-  // Ruta a les icones (Leaflet en porta una per defecte)
+  // Ruta a les icones
   let iconUrl = '';
 
-  if (isActive && isCurrentYear) iconUrl = hidrant_op_rev;
-  else if (isActive) iconUrl = hidrant_op_nrev;
-  else if (isOutOfService && isCurrentYear) iconUrl = hidrant_nop_rev;
-  else if (isOutOfService) iconUrl = hidrant_nop_nrev;
-  else iconUrl = hidrant_no_info;
+  // Cas 1: No hi ha data de revisió -> Gris (No info)
+  if (!surveyDate) {
+    iconUrl = hidrant_no_info;
+  } 
+  // Cas 2: Operatiu i d'aquest any -> Blau intens
+  else if (isActive && isCurrentYear) {
+    iconUrl = hidrant_op_rev;
+  }
+  // Cas 3: Operatiu però d'anys anteriors -> Blau apagat
+  else if (isActive) {
+    iconUrl = hidrant_op_nrev;
+  }
+  // Cas 4: Fora de servei i d'aquest any -> Vermell intens
+  else if (isOutOfService && isCurrentYear) {
+    iconUrl = hidrant_nop_rev;
+  }
+  // Cas 5: Fora de servei d'anys anteriors -> Vermell apagat
+  else if (isOutOfService) {
+    iconUrl = hidrant_nop_nrev;
+  }
+  // Cas 6: Qualsevol altre cas (ex: Desconegut amb data) -> Gris
+  else {
+    iconUrl = hidrant_no_info;
+  }
 
   return new L.Icon({
     iconUrl,

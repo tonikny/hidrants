@@ -60,13 +60,19 @@ export function ui2Osm(uiFields: HydrantUiFields): HydrantOsmTags {
     'addr:street': uiFields.street,
     'addr:housenumber': uiFields.num,
     'addr:neighbourhood': uiFields.barri,
-    'survey:date': uiFields.surveyDate,
   };
+
+  if (uiFields.surveyDate) {
+    osmTags['survey:date'] = uiFields.surveyDate;
+  }
 
   if (uiFields.estat === 'Operatiu') {
     osmTags['emergency'] = 'fire_hydrant';
   } else if (uiFields.estat === 'Fora de servei') {
     osmTags['disused:emergency'] = 'fire_hydrant';
+  } else {
+    // Si és desconegut, el marquem com a hidrant genèric
+    osmTags['emergency'] = 'fire_hydrant';
   }
 
   return osmTags;

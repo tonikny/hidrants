@@ -3,6 +3,7 @@ type SendPayload = {
   lon: number;
   tags?: Record<string, any>;
   message?: string;
+  adf_id?: number;
 };
 
 export async function sendToTelegram(data: SendPayload): Promise<void> {

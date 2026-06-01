@@ -10,12 +10,14 @@ import {
 } from '../../styles/uiStyles';
 import { HydrantUiFields } from '../../utils/osmConversion';
 import { HydrantFormFields } from './HydrantFormFields';
+import { useAdf } from '../../contexts/AdfContext';
 
 type NodeFormProps = {
   lat: number;
   lon: number;
   onClose: () => void;
   setNewNodeLatLng: (latlng: LatLng | null) => void;
+  refreshHidrants?: () => Promise<void>;
 };
 
 export const NewNodeForm = ({
@@ -23,8 +25,11 @@ export const NewNodeForm = ({
   lon,
   onClose,
   setNewNodeLatLng,
+  refreshHidrants,
 }: NodeFormProps) => {
   const [message, setMessage] = useState('');
+  const { activeAdf } = useAdf();
+  const [isInspected, setIsInspected] = useState(false);
 
   const [data, setData] = useState<HydrantUiFields>({
     type: '',
@@ -35,9 +40,26 @@ export const NewNodeForm = ({
     street: '',
     num: '',
     barri: '',
-    estat: 'Operatiu',
-    surveyDate: new Date().toISOString().split('T')[0],
+    estat: 'Desconegut',
+    surveyDate: '',
   });
+
+  const handleInspectedChange = (checked: boolean) => {
+    setIsInspected(checked);
+    if (checked) {
+      setData((prev) => ({
+        ...prev,
+        estat: 'Operatiu',
+        surveyDate: new Date().toISOString().split('T')[0],
+      }));
+    } else {
+      setData((prev) => ({
+        ...prev,
+        estat: 'Desconegut',
+        surveyDate: '',
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,13 +70,17 @@ export const NewNodeForm = ({
         lon,
         tags: { ui_fields: data }, // En nous nodes només tenim els ui_fields
         message,
+        adf_id: activeAdf?.id,
       });
-      toast.success('Dades enviades!');
+      toast.success('Hidrant afegit');
       setMessage('');
+      if (refreshHidrants) {
+        await refreshHidrants();
+      }
       onClose();
       setNewNodeLatLng(null);
     } catch (err) {
-      toast.error('Error enviant les dades');
+      toast.error("Error en afegir l'hidrant");
     }
   };
 
@@ -80,10 +106,33 @@ export const NewNodeForm = ({
         </strong>
       </div>
 
+      <div style={{ marginBottom: '0.5rem' }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            background: isInspected ? '#e8f5e9' : '#f5f5f5',
+            padding: '8px',
+            borderRadius: '4px',
+            border: `1px solid ${isInspected ? '#2e7d32' : '#ccc'}`,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={isInspected}
+            onChange={(e) => handleInspectedChange(e.target.checked)}
+          />
+          <span>🔍 He revisat l'estat ara mateix</span>
+        </label>
+      </div>
+
       <HydrantFormFields
         data={data}
         onChange={setData}
-        showSurveyDateAndStatus={false}
+        showSurveyDateAndStatus={isInspected}
       />
 
       {/* Comentari (100%) */}

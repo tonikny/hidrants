@@ -27,31 +27,30 @@ export function useHydrantData(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!activeAdf) {
       setFeatures([]);
       return;
     }
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/hidrants?adf=${activeAdf.id}`);
+      if (!response.ok) throw new Error('Error al carregar hidrants');
+      const data = await response.json();
+      
+      // Només actualitzem si encara estem a la mateixa ADF
+      setFeatures(data.features || []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconegut');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/hidrants?adf=${activeAdf.id}`);
-        if (!response.ok) throw new Error('Error al carregar hidrants');
-        const data = await response.json();
-        
-        // Només actualitzem si encara estem a la mateixa ADF
-        setFeatures(data.features || []);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconegut');
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchData();
   }, [activeAdf?.id]); // Use activeAdf.id as dependency
 
-  return { features, loading, error };
+  return { features, loading, error, mutate: fetchData };
 }

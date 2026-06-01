@@ -46,9 +46,17 @@ export const HidrantsRepository = {
       ).get() as HidrantData | undefined;
   },
 
+  findByOsmId(osmId: number): HidrantData | undefined {
+    return db.select()
+      .from(hidrants)
+      .where(eq(hidrants.osm_id, osmId))
+      .get() as HidrantData | undefined;
+  },
+
   create(data: Omit<HidrantData, 'created_at' | 'updated_at'>): void {
     db.insert(hidrants).values({
       id: data.id,
+      osm_id: data.osm_id,
       adf_id: data.adf_id,
       lat: data.lat,
       lon: data.lon,

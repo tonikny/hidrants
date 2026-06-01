@@ -2,6 +2,8 @@ import { db } from '../db/index.js';
 import { adfs, hidrants } from '../db/schema.js';
 import { eq, notInArray, and } from 'drizzle-orm';
 import { queryOverpass } from './overpass.js';
+import { v4 as uuidv4 } from 'uuid';
+import { HidrantsRepository } from '../db/repositories/hidrantsRepository.js';
 
 /**
  * Sincronitza els hidrants d'una ADF des d'OpenStreetMap (Overpass)
@@ -38,13 +40,19 @@ export async function syncAdfFromOSM(adfId: number) {
     }
   }
 
-  console.log(`[OSM Sync] Rebuts ${allElements.length} hidrants d'OSM per a ADF ${adfId}`);
+  // Eliminem duplicats per id de node d'OSM si n'hi ha
+  const uniqueElements = Array.from(new Map(allElements.map(node => [node.id, node])).values());
+
+  console.log(`[OSM Sync] Rebuts ${uniqueElements.length} hidrants d'OSM (únics) per a ADF ${adfId}`);
 
   const syncTimestamp = new Date().toISOString();
 
   db.transaction((tx) => {
-    for (const node of allElements) {
-      const id = `osm-${node.id}`;
+    for (const node of uniqueElements) {
+      // Busquem si ja existeix per osm_id
+      const existing = HidrantsRepository.findByOsmId(node.id);
+      const id = existing ? existing.id : uuidv4();
+
       tx.insert(hidrants).values({
         id,
         osm_id: node.id,
@@ -66,7 +74,7 @@ export async function syncAdfFromOSM(adfId: number) {
       }).run();
     }
 
-    const currentOsmIds = allElements.map((n: any) => n.id);
+    const currentOsmIds = uniqueElements.map((n: any) => n.id);
     
     if (currentOsmIds.length > 0) {
       tx.delete(hidrants).where(

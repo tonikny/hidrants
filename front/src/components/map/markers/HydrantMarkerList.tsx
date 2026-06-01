@@ -6,6 +6,7 @@ interface HydrantMarkerListProps {
   setPoi: (latlng: LatLng) => void;
   showRoute: boolean;
   setShowRoute: (show: boolean) => void;
+  refreshHidrants?: () => Promise<void>;
 }
 
 export function HydrantMarkerList({
@@ -13,6 +14,7 @@ export function HydrantMarkerList({
   setPoi,
   showRoute,
   setShowRoute,
+  refreshHidrants,
 }: HydrantMarkerListProps) {
   return (
     <>
@@ -24,6 +26,7 @@ export function HydrantMarkerList({
           setPoi={setPoi}
           showRoute={showRoute}
           setShowRoute={setShowRoute}
+          refreshHidrants={refreshHidrants}
         />
       ))}
     </>

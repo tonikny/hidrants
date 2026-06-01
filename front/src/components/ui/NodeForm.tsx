@@ -16,17 +16,20 @@ import {
   HydrantUiFields,
 } from '../../utils/osmConversion';
 import { HydrantFormFields } from './HydrantFormFields';
+import { ShareIcon, OsmIcon } from './Icons';
 
 type NodeFormProps = {
   feature: HidrantFeature;
   showRoute: boolean;
   setShowRoute: (value: boolean) => void;
+  refreshHidrants?: () => Promise<void>;
 };
 
 export const NodeWithForm = ({
   feature,
   showRoute,
   setShowRoute,
+  refreshHidrants,
 }: NodeFormProps) => {
   const [message, setMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -56,12 +59,13 @@ export const NodeWithForm = ({
         lon: poi.lng,
         tags: props,
         message,
+        adf_id: activeAdf?.id,
       });
 
-      toast.success('Missatge enviat!');
+      toast.success('Notificació enviada');
       setMessage('');
     } catch (err) {
-      toast.error('Error enviant el missatge');
+      toast.error('Error enviant la notificació');
     }
   };
 
@@ -91,12 +95,16 @@ export const NodeWithForm = ({
 
       if (!response.ok) throw new Error('Error actualitzant dades');
 
-      toast.success('Canvis desats correctament');
+      toast.success('Hidrant actualitzat');
       setIsEditing(false);
-      setTimeout(() => window.location.reload(), 1000);
+      if (refreshHidrants) {
+        await refreshHidrants();
+      } else {
+        setTimeout(() => window.location.reload(), 1000);
+      }
     } catch (err) {
       console.error(err);
-      toast.error('No s’han pogut desar els canvis');
+      toast.error('Error en actualitzar l\'hidrant');
     }
   };
 
@@ -130,17 +138,64 @@ export const NodeWithForm = ({
 
       if (!response.ok) throw new Error('Error actualitzant');
       toast.success(`Hidrant actualitzat a ${statusText}`);
-      setTimeout(() => window.location.reload(), 1000);
+      if (refreshHidrants) {
+        await refreshHidrants();
+      } else {
+        setTimeout(() => window.location.reload(), 1000);
+      }
     } catch (err) {
       toast.error('Error en l’actualització ràpida');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!activeAdf) return;
+    if (!window.confirm('Estàs segur que vols esborrar aquest hidrant?')) return;
+
+    try {
+      const response = await fetch(
+        `/api/hidrants/${feature.id}?adf=${activeAdf.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) throw new Error('Error esborrant l\'hidrant');
+
+      toast.success('Hidrant esborrat');
+
+      // Netegem el paràmetre de la URL si era el d'aquest hidrant
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('node') === feature.id) {
+        url.searchParams.delete('node');
+        window.history.replaceState({}, '', url.toString());
+      }
+
+      if (refreshHidrants) {
+        await refreshHidrants();
+      } else {
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error en esborrar l\'hidrant');
+    }
+  };
+
+  const handleShare = async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('node', feature.id);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      toast.success('Enllaç copiat al porta-retalls');
+    } catch (err) {
+      toast.error('Error al copiar l\'enllaç');
     }
   };
 
   return (
     <Popup>
       <div style={{ minWidth: '220px' }}>
-        <strong>Id:</strong> {feature.id}
-        <br />
         {!isEditing ? (
           <>
             {displayData.map(({ label, value }) => (
@@ -149,66 +204,15 @@ export const NodeWithForm = ({
                 {value}
               </div>
             ))}
-            {osmId && (
-              <>
-                <strong>Info: </strong>
-                <a
-                  href={`https://www.openstreetmap.org/node/${osmId}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Veure en OSM
-                </a>
-              </>
-            )}
 
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '5px',
-                marginTop: '0.5rem',
+                marginTop: '0.8rem',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: '5px',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShowRoute();
-                  }}
-                  style={{
-                    ...secondaryButtonStyle,
-                    flex: 1,
-                    fontSize: '0.75rem',
-                    padding: '6px',
-                  }}
-                >
-                  {showRoute ? 'Tanca ruta' : 'Ruta'}
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenMaps();
-                  }}
-                  style={{
-                    ...secondaryButtonStyle,
-                    flex: 1,
-                    fontSize: '0.75rem',
-                    padding: '6px',
-                  }}
-                >
-                  Mapes
-                </button>
-              </div>
-
               {canEdit && (
                 <>
                   <button
@@ -260,12 +264,127 @@ export const NodeWithForm = ({
                       ...primaryButtonStyle,
                       padding: '6px',
                       fontSize: '0.75rem',
+                      marginTop: '2px',
                     }}
                   >
                     ✏️ Editar dades
                   </button>
+                  {user?.role === 'admin' && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete();
+                      }}
+                      style={{
+                        ...primaryButtonStyle,
+                        backgroundColor: '#c0392b',
+                        padding: '6px',
+                        fontSize: '0.75rem',
+                        marginTop: '2px',
+                      }}
+                    >
+                      🗑️ Esborrar hidrant
+                    </button>
+                  )}
                 </>
               )}
+
+              {/* Icones d'acció centrades */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '20px',
+                  marginTop: '10px',
+                  padding: '5px 0',
+                }}
+              >
+                {/* Compartir */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShare();
+                  }}
+                  title="Compartir ubicació"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <ShareIcon />
+                </button>
+
+                {/* Ruta */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShowRoute();
+                  }}
+                  title={showRoute ? 'Tanca ruta' : 'Mostra ruta'}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '1.4rem',
+                    padding: '0',
+                    filter: showRoute ? 'none' : 'grayscale(100%)',
+                  }}
+                >
+                  🛣️
+                </button>
+
+                {/* Mapes Externs */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenMaps();
+                  }}
+                  title="Obrir en navegador GPS"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '1.4rem',
+                    padding: '0',
+                  }}
+                >
+                  🚕
+                </button>
+
+                {/* OpenStreetMap (Només Admin) */}
+                {user?.role === 'admin' && osmId && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(
+                        `https://www.openstreetmap.org/node/${osmId}`,
+                        '_blank'
+                      );
+                    }}
+                    title="Veure a OpenStreetMap"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <OsmIcon />
+                  </button>
+                )}
+              </div>
             </div>
           </>
         ) : (

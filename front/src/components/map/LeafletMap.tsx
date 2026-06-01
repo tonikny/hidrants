@@ -96,7 +96,7 @@ export function LeafletMap() {
     setMapZoom(prev => prev === zoom ? prev : zoom);
   }, []);
 
-  const { features, loading: loadingHidrants, error: hidrantsError } = useHydrantData(mapBounds, mapZoom);
+  const { features, loading: loadingHidrants, error: hidrantsError, mutate: refreshHidrants } = useHydrantData(mapBounds, mapZoom);
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
 
   const [activeForm, setActiveForm] = useState<'selection' | 'hydrant' | 'incident' | null>(null);
@@ -141,6 +141,7 @@ export function LeafletMap() {
           setPoi={setPoi} 
           showRoute={showRoute} 
           setShowRoute={setShowRoute} 
+          refreshHidrants={refreshHidrants}
         />
         {user && (
           <MapClickHandler
@@ -228,6 +229,7 @@ export function LeafletMap() {
                 setActiveForm(null);
               }}
               setNewNodeLatLng={setClickedPosition}
+              refreshHidrants={refreshHidrants}
             />
           )}
           {activeForm === 'incident' && (

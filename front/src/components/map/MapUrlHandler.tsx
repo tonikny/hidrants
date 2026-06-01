@@ -17,7 +17,7 @@ export function MapUrlHandler({ features }: MapUrlHandlerProps) {
   const lastNodeId = useRef<string | null>(null);
   const fittedAdfId = useRef<number | null>(null);
 
-  useEffect(() => {
+  const checkUrl = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const nodeId = urlParams.get('node');
     
@@ -72,6 +72,18 @@ export function MapUrlHandler({ features }: MapUrlHandlerProps) {
         }
       }
     }
+  };
+
+  useEffect(() => {
+    checkUrl();
+    
+    const handleForcedCheck = () => {
+      lastNodeId.current = null; // Reset per permetre re-centrar si cal
+      checkUrl();
+    };
+
+    window.addEventListener('map-force-url-check', handleForcedCheck);
+    return () => window.removeEventListener('map-force-url-check', handleForcedCheck);
   }, [features, map, activeAdf]);
 
   return null;

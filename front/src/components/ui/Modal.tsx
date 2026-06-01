@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { modalOverlayStyle, popupContainerStyle } from '../../styles/uiStyles';
 
 interface ModalProps {
@@ -7,6 +8,7 @@ interface ModalProps {
   title?: string;
   showClose?: boolean;
   nonBlocking?: boolean;
+  containerStyle?: React.CSSProperties;
 }
 
 export const Modal: React.FC<ModalProps> = ({ 
@@ -14,9 +16,10 @@ export const Modal: React.FC<ModalProps> = ({
   onClose, 
   title, 
   showClose = true,
-  nonBlocking = false
+  nonBlocking = false,
+  containerStyle = {}
 }) => {
-  return (
+  const content = (
     <div 
       style={{
         ...modalOverlayStyle, 
@@ -28,7 +31,8 @@ export const Modal: React.FC<ModalProps> = ({
       <div 
         style={{
           ...popupContainerStyle, 
-          pointerEvents: 'auto'
+          pointerEvents: 'auto',
+          ...containerStyle
         }} 
         onClick={(e) => e.stopPropagation()}
       >
@@ -49,4 +53,6 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 };

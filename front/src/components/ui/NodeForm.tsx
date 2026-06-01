@@ -104,7 +104,7 @@ export const NodeWithForm = ({
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error en actualitzar l\'hidrant');
+      toast.error("Error en actualitzar l'hidrant");
     }
   };
 
@@ -150,7 +150,8 @@ export const NodeWithForm = ({
 
   const handleDelete = async () => {
     if (!activeAdf) return;
-    if (!window.confirm('Estàs segur que vols esborrar aquest hidrant?')) return;
+    if (!window.confirm('Estàs segur que vols esborrar aquest hidrant?'))
+      return;
 
     try {
       const response = await fetch(
@@ -160,7 +161,7 @@ export const NodeWithForm = ({
         }
       );
 
-      if (!response.ok) throw new Error('Error esborrant l\'hidrant');
+      if (!response.ok) throw new Error("Error esborrant l'hidrant");
 
       toast.success('Hidrant esborrat');
 
@@ -178,7 +179,7 @@ export const NodeWithForm = ({
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error en esborrar l\'hidrant');
+      toast.error("Error en esborrar l'hidrant");
     }
   };
 
@@ -189,7 +190,7 @@ export const NodeWithForm = ({
       await navigator.clipboard.writeText(url.toString());
       toast.success('Enllaç copiat al porta-retalls');
     } catch (err) {
-      toast.error('Error al copiar l\'enllaç');
+      toast.error("Error al copiar l'enllaç");
     }
   };
 
@@ -438,7 +439,7 @@ export const NodeWithForm = ({
         )}
         <hr style={{ margin: '0.5rem 0', border: '1px solid #ccc' }} />
         <textarea
-          placeholder="Comentaris ..."
+          placeholder="Enviar informació sobre aquest hidrant ..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={2}
@@ -447,6 +448,8 @@ export const NodeWithForm = ({
             width: '100%',
             marginTop: '0.2rem',
             padding: '4px',
+            fontSize: '0.75rem',
+            fontFamily: 'inherit',
           }}
         />
         <button

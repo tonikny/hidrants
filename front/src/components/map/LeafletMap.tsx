@@ -192,6 +192,7 @@ export function LeafletMap() {
           onLocateEdit={user ? openFormAtPosition : undefined}
           setLocatePosition={setPosition}
           setLocateAccuracy={setAccuracy}
+          features={features}
         />
       </MapContainer>
 

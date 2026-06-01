@@ -3,6 +3,7 @@ import { FullscreenButton } from './FullscreenButton';
 import { SyncButton } from './SyncButton';
 import { Login } from '../ui/Login';
 import { LegendModal } from '../ui/LegendModal';
+import { HydrantListModal } from '../ui/HydrantListModal';
 import { NewNodeButton } from './NewNodeButton';
 import { CoordinateModal } from '../ui/CoordinateModal';
 import { LocateButton } from './LocateButton';
@@ -30,6 +31,7 @@ interface MapUIOverlaysProps {
   onLocateEdit?: (latlng: L.LatLng) => void;
   setLocatePosition: (latlng: L.LatLng | null) => void;
   setLocateAccuracy?: (accuracy: number | null) => void;
+  features: any[];
 }
 
 export function MapUIOverlays({
@@ -47,6 +49,7 @@ export function MapUIOverlays({
   onLocateEdit,
   setLocatePosition,
   setLocateAccuracy,
+  features,
 }: MapUIOverlaysProps) {
   const [showAdfSelector, setShowAdfSelector] = useState(!activeAdf);
   const isAdmin = user?.role === 'admin';
@@ -158,6 +161,10 @@ export function MapUIOverlays({
         </div>
 
         <div style={controlItemStyle}>
+          <HydrantListModal style={floatingButtonStyle} features={features} />
+        </div>
+
+        <div style={controlItemStyle}>
           <LegendModal style={floatingButtonStyle} />
         </div>
 
@@ -168,8 +175,8 @@ export function MapUIOverlays({
         )}
       </div>
 
-      {/* Bottom Right: Zoom Display (Above Attribution) */}
-      <div style={{ ...controlContainerStyle, bottom: '25px', right: '10px' }}>
+      {/* Bottom Left: Zoom Display (Above Attribution if it were there, but on the left) */}
+      <div style={{ ...controlContainerStyle, bottom: '5px', left: '5px' }}>
         <div style={controlItemStyle}>
           <ZoomDisplay />
         </div>

@@ -7,9 +7,8 @@ export const hidrant_nop_nrev = '/images/icons/hidrant_nop_nrev.png';
 export const hidrant_no_info = '/images/icons/hidrant_no_info.png';
 export const hidrant_shadow = '/images/icons/marker-shadow.png';
 
-function getHydrantIcon(properties: Record<string, any>): L.Icon {
+export function getHydrantStatus(ui: any) {
   const currentYear = new Date().getFullYear();
-  const ui = properties.ui_fields || {};
   const surveyDate = ui.surveyDate;
   const year = Number(surveyDate?.split('-')[0]);
   const isCurrentYear = year === currentYear;
@@ -17,33 +16,28 @@ function getHydrantIcon(properties: Record<string, any>): L.Icon {
   const isActive = ui.estat === 'Operatiu';
   const isOutOfService = ui.estat === 'Fora de servei';
 
-  // Ruta a les icones
-  let iconUrl = '';
+  if (!surveyDate) return 'no_info';
+  if (isActive && isCurrentYear) return 'op_rev';
+  if (isActive) return 'op_nrev';
+  if (isOutOfService && isCurrentYear) return 'nop_rev';
+  if (isOutOfService) return 'nop_nrev';
+  return 'no_info';
+}
 
-  // Cas 1: No hi ha data de revisió -> Gris (No info)
-  if (!surveyDate) {
-    iconUrl = hidrant_no_info;
-  } 
-  // Cas 2: Operatiu i d'aquest any -> Blau intens
-  else if (isActive && isCurrentYear) {
-    iconUrl = hidrant_op_rev;
+export function getHydrantIconUrl(status: string) {
+  switch (status) {
+    case 'op_rev': return hidrant_op_rev;
+    case 'op_nrev': return hidrant_op_nrev;
+    case 'nop_rev': return hidrant_nop_rev;
+    case 'nop_nrev': return hidrant_nop_nrev;
+    default: return hidrant_no_info;
   }
-  // Cas 3: Operatiu però d'anys anteriors -> Blau apagat
-  else if (isActive) {
-    iconUrl = hidrant_op_nrev;
-  }
-  // Cas 4: Fora de servei i d'aquest any -> Vermell intens
-  else if (isOutOfService && isCurrentYear) {
-    iconUrl = hidrant_nop_rev;
-  }
-  // Cas 5: Fora de servei d'anys anteriors -> Vermell apagat
-  else if (isOutOfService) {
-    iconUrl = hidrant_nop_nrev;
-  }
-  // Cas 6: Qualsevol altre cas (ex: Desconegut amb data) -> Gris
-  else {
-    iconUrl = hidrant_no_info;
-  }
+}
+
+function getHydrantIcon(properties: Record<string, any>): L.Icon {
+  const ui = properties.ui_fields || {};
+  const status = getHydrantStatus(ui);
+  const iconUrl = getHydrantIconUrl(status);
 
   return new L.Icon({
     iconUrl,

@@ -8,6 +8,7 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
   const { activeAdf } = useAdf();
   const map = useMap();
   const [mask, setMask] = useState<{ id: number; data: Feature<Polygon | MultiPolygon> } | null>(null);
+  const [boundary, setBoundary] = useState<{ id: number; data: Feature<Polygon | MultiPolygon> } | null>(null);
   const fittedAdfId = useRef<number | null>(null);
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
 
     if (!activeAdf) {
       setMask(null);
+      setBoundary(null);
       fittedAdfId.current = null;
       return;
     }
@@ -41,6 +43,7 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
 
         if (masked && isMounted) {
           setMask({ id: activeAdf.id, data: masked as any });
+          setBoundary({ id: activeAdf.id, data: areaFeature });
 
           if (!nodeId && fittedAdfId.current !== activeAdf.id) {
             // @ts-ignore
@@ -68,11 +71,11 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
     return () => { isMounted = false; };
   }, [map, activeAdf?.id]); 
 
-  if (!activeAdf || hidden) return null;
+  if (!activeAdf) return null;
 
   return (
     <>
-      {mask && mask.id === activeAdf.id && (
+      {mask && mask.id === activeAdf.id && !hidden && (
         <GeoJSON
           key={`mask-${mask.id}`}
           data={mask.data}
@@ -80,6 +83,19 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
             fillColor: 'rgba(0, 0, 0, 0.6)',
             fillOpacity: 0.6,
             color: 'none',
+          }}
+        />
+      )}
+      {boundary && boundary.id === activeAdf.id && hidden && (
+        <GeoJSON
+          key={`boundary-${boundary.id}`}
+          data={boundary.data}
+          pathOptions={{
+            fillColor: 'none',
+            color: '#333',
+            weight: 3,
+            dashArray: '5, 10',
+            opacity: 0.6,
           }}
         />
       )}

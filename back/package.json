@@ -11,7 +11,8 @@
     "db:reset": "tsx src/scripts/resetDb.ts",
     "db:reset-hidrants": "tsx src/scripts/cleanHidrants.ts && npm run db:import-osm",
     "db:seed": "tsx src/scripts/seed.ts",
-    "db:import-osm": "tsx src/scripts/importOsm.ts"
+    "db:import-osm": "tsx src/scripts/importOsm.ts",
+    "db:export-osm": "tsx src/scripts/exportAllToOsm.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

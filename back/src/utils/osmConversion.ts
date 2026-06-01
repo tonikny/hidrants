@@ -68,11 +68,14 @@ export function ui2Osm(uiFields: HydrantUiFields): HydrantOsmTags {
 
   if (uiFields.estat === 'Operatiu') {
     osmTags['emergency'] = 'fire_hydrant';
+    osmTags['disused:emergency'] = ''; // Eliminar tag de desús si s'activa
   } else if (uiFields.estat === 'Fora de servei') {
     osmTags['disused:emergency'] = 'fire_hydrant';
+    osmTags['emergency'] = ''; // Eliminar tag d'emergència si es posa en desús
   } else {
     // Si és desconegut, el marquem com a hidrant genèric
     osmTags['emergency'] = 'fire_hydrant';
+    osmTags['disused:emergency'] = '';
   }
 
   return osmTags;

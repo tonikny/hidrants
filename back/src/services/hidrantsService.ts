@@ -88,10 +88,16 @@ export const HidrantsService = {
     let osm_tags = undefined;
     if (ui_fields) {
       const currentOsmTags = JSON.parse(current.osm_tags || '{}');
-      osm_tags = {
+      const newTags = ui2Osm(ui_fields);
+      const merged = {
         ...currentOsmTags,
-        ...ui2Osm(ui_fields)
+        ...newTags
       };
+      
+      // Netegem tags que s'han marcat per eliminar (valor buit)
+      osm_tags = Object.fromEntries(
+        Object.entries(merged).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+      );
     }
 
     HidrantsRepository.update(id, adfId, {

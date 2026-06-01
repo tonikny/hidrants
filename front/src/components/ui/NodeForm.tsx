@@ -1,5 +1,5 @@
 import { Popup } from 'react-leaflet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { sendToTelegram } from '../../utils/sendToTelegram';
 import { toast } from 'react-toastify';
 import { HidrantFeature } from '../../hooks/useHidrantData';
@@ -42,6 +42,10 @@ export const NodeWithForm = ({
 
   const props = feature.properties;
   const [data, setData] = useState<HydrantUiFields>(props.ui_fields);
+
+  useEffect(() => {
+    setData(props.ui_fields);
+  }, [props.ui_fields]);
 
   const canEdit =
     user &&
@@ -146,6 +150,7 @@ export const NodeWithForm = ({
 
       if (!response.ok) throw new Error('Error actualitzant');
       toast.success(`Hidrant actualitzat a ${statusText}`);
+      setData(newData);
       if (refreshHidrants) {
         await refreshHidrants();
       } else {

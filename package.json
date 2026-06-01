@@ -14,6 +14,7 @@
     "db:reset": "npm run db:reset --prefix back",
     "db:seed": "npm run db:seed --prefix back",
     "db:import-osm": "npm run db:import-osm --prefix back",
+    "db:export-osm": "npm run db:export-osm --prefix back",
     "db:reset-hidrants": "npm run db:reset-hidrants --prefix back",
     "db:setup": "npm run db:reset && npm run db:seed && npm run db:import-osm && npm run update:boundaries"
   },

@@ -13,9 +13,11 @@ import {
 } from '../../styles/uiStyles';
 import {
   getHydrantDisplayData,
+  getHydrantImages,
   HydrantUiFields,
 } from '../../utils/osmConversion';
 import { HydrantFormFields } from './HydrantFormFields';
+import { HydrantImages } from './HydrantImages';
 import { ShareIcon, OsmIcon } from './Icons';
 
 type NodeFormProps = {
@@ -202,15 +204,20 @@ export const NodeWithForm = ({
 
   return (
     <Popup>
-      <div style={{ minWidth: '220px' }}>
+      <div style={{ minWidth: '280px' }}>
         {!isEditing ? (
           <>
-            {displayData.map(({ label, value }) => (
-              <div key={label}>
-                <strong>{label}: </strong>
-                {value}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                {displayData.map(({ label, value }) => (
+                  <div key={label} style={{ fontSize: '0.85rem', marginBottom: '2px' }}>
+                    <strong>{label}: </strong>
+                    {value}
+                  </div>
+                ))}
               </div>
-            ))}
+              <HydrantImages images={getHydrantImages(props.osm_tags)} />
+            </div>
 
             <div
               style={{

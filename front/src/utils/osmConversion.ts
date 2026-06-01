@@ -56,3 +56,48 @@ export function getHydrantDisplayData(uiFields: HydrantUiFields) {
     },
   ];
 }
+
+export interface HydrantImage {
+  url: string;
+  thumbnail: string;
+  type: 'image' | 'panoramax';
+}
+
+export function getHydrantImages(osmTags: Record<string, string>): HydrantImage[] {
+  if (!osmTags) return [];
+  const images: HydrantImage[] = [];
+
+  Object.keys(osmTags).forEach((key) => {
+    const value = osmTags[key];
+    if (!value) return;
+
+    if (key === 'image' || key.match(/^image:\d+$/)) {
+      if (value.startsWith('http')) {
+        images.push({
+          url: value,
+          thumbnail: value,
+          type: 'image',
+        });
+      }
+    } else if (key === 'panoramax' || key.match(/^panoramax:\d+$/)) {
+      const uuid = value.trim();
+      // Si és un UUID (no URL)
+      if (uuid && !uuid.startsWith('http')) {
+        images.push({
+          url: `https://api.panoramax.xyz/api/pictures/${uuid}/hd.jpg`,
+          thumbnail: `https://api.panoramax.xyz/api/pictures/${uuid}/sd.jpg`,
+          type: 'panoramax',
+        });
+      } else if (uuid.startsWith('http')) {
+        // Si ja és una URL, la tractem com a image
+        images.push({
+          url: uuid,
+          thumbnail: uuid,
+          type: 'image',
+        });
+      }
+    }
+  });
+
+  return images;
+}

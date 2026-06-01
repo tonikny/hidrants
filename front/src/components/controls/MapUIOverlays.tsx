@@ -195,14 +195,14 @@ export function MapUIOverlays({
       {loadingHidrants && (
         <div
           style={{
-            position: 'fixed',
+            position: 'absolute',
             top: '4rem',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'rgba(255, 255, 255, 0.8)',
             padding: '0.5rem 1rem',
             borderRadius: '20px',
-            zIndex: 1000,
+            zIndex: 990,
             boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
             fontSize: '0.8rem',
             pointerEvents: 'none',
@@ -215,7 +215,7 @@ export function MapUIOverlays({
       {hidrantsError && (
         <div
           style={{
-            position: 'fixed',
+            position: 'absolute',
             top: '6rem',
             left: '50%',
             transform: 'translateX(-50%)',
@@ -223,7 +223,7 @@ export function MapUIOverlays({
             color: 'white',
             padding: '0.5rem 1rem',
             borderRadius: '8px',
-            zIndex: 1000,
+            zIndex: 990,
             fontSize: '0.8rem',
           }}
         >

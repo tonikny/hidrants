@@ -8,7 +8,6 @@ import MapRightClickHandler from './MapRightClickHandler';
 import { LocateButton } from '../controls/LocateButton';
 import { Layers } from './Layers';
 import { ZoomDisplay } from '../controls/ZoomDisplay';
-import { useHydrantData } from '../../hooks/useHidrantData';
 import { floatingButtonStyle } from '../../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
@@ -20,12 +19,16 @@ import { MapUIOverlays } from '../controls/MapUIOverlays';
 import { LocationMarker } from './LocationMarker';
 
 import { Modal } from '../ui/Modal';
+import { useHydrantData } from '../../hooks/useHidrantData';
 
 // ✅ Component per escoltar canvis al mapa i informar al pare
 function MapStateListener({
   onStateChange,
 }: {
-  onStateChange: (bounds: [number, number, number, number], zoom: number) => void;
+  onStateChange: (
+    bounds: [number, number, number, number],
+    zoom: number
+  ) => void;
 }) {
   const map = useMapEvents({
     moveend: () => {
@@ -50,7 +53,7 @@ function MapStateListener({
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, [map]); 
+  }, [map]);
 
   return null;
 }
@@ -76,30 +79,44 @@ function FixMapSize() {
 export function LeafletMap() {
   const { activeAdf, isLoading, setActiveAdf } = useAdf();
   const { user, logout } = useAuth();
-  const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null);
+  const [mapBounds, setMapBounds] = useState<
+    [number, number, number, number] | null
+  >(null);
   const [mapZoom, setMapZoom] = useState<number>(14);
-  const [activeTechnicalLayer, setActiveTechnicalLayer] = useState<string | null>(null);
+  const [activeTechnicalLayer, setActiveTechnicalLayer] = useState<
+    string | null
+  >(null);
 
-  const handleMapStateChange = useCallback((bounds: [number, number, number, number], zoom: number) => {
-    setMapBounds(prev => {
-      if (!prev) return bounds;
-      const threshold = 0.00001;
-      const hasMovedSignificantly = 
-        Math.abs(prev[0] - bounds[0]) > threshold ||
-        Math.abs(prev[1] - bounds[1]) > threshold ||
-        Math.abs(prev[2] - bounds[2]) > threshold ||
-        Math.abs(prev[3] - bounds[3]) > threshold;
+  const handleMapStateChange = useCallback(
+    (bounds: [number, number, number, number], zoom: number) => {
+      setMapBounds((prev) => {
+        if (!prev) return bounds;
+        const threshold = 0.00001;
+        const hasMovedSignificantly =
+          Math.abs(prev[0] - bounds[0]) > threshold ||
+          Math.abs(prev[1] - bounds[1]) > threshold ||
+          Math.abs(prev[2] - bounds[2]) > threshold ||
+          Math.abs(prev[3] - bounds[3]) > threshold;
 
-      return hasMovedSignificantly ? bounds : prev;
-    });
+        return hasMovedSignificantly ? bounds : prev;
+      });
 
-    setMapZoom(prev => prev === zoom ? prev : zoom);
-  }, []);
+      setMapZoom((prev) => (prev === zoom ? prev : zoom));
+    },
+    []
+  );
 
-  const { features, loading: loadingHidrants, error: hidrantsError, mutate: refreshHidrants } = useHydrantData(mapBounds, mapZoom);
+  const {
+    features,
+    loading: loadingHidrants,
+    error: hidrantsError,
+    mutate: refreshHidrants,
+  } = useHydrantData(mapBounds, mapZoom);
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
 
-  const [activeForm, setActiveForm] = useState<'selection' | 'hydrant' | 'incident' | null>(null);
+  const [activeForm, setActiveForm] = useState<
+    'selection' | 'hydrant' | 'incident' | null
+  >(null);
   const [showCoordModal, setShowCoordModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
@@ -120,27 +137,29 @@ export function LeafletMap() {
   return (
     <>
       <MapContainer
-          center={activeAdf?.center || [41.56, 1.72]}
-          zoom={activeAdf ? 14 : 11}
-          className="leaflet-map"
+        center={activeAdf?.center || [41.56, 1.72]}
+        zoom={activeAdf ? 14 : 11}
+        className="leaflet-map"
       >
         <FixMapSize />
         {/* Gestiona l'obertura de nodes via URL (?node=ID) */}
         <MapUrlHandler features={features} />
-        <MapStateListener
-          onStateChange={handleMapStateChange}
-        />
+        <MapStateListener onStateChange={handleMapStateChange} />
         <MaskedAreaMap hidden={!!activeTechnicalLayer} />
-        <Layers 
-          activeTechnicalLayer={activeTechnicalLayer} 
-          setActiveTechnicalLayer={setActiveTechnicalLayer} 
+        <Layers
+          activeTechnicalLayer={activeTechnicalLayer}
+          setActiveTechnicalLayer={setActiveTechnicalLayer}
         />
-        <MapRightClickHandler setClickedPosition={setClickedPosition} setActiveForm={setActiveForm} user={user} />
-        <HydrantMarkerList 
-          features={features} 
-          setPoi={setPoi} 
-          showRoute={showRoute} 
-          setShowRoute={setShowRoute} 
+        <MapRightClickHandler
+          setClickedPosition={setClickedPosition}
+          setActiveForm={setActiveForm}
+          user={user}
+        />
+        <HydrantMarkerList
+          features={features}
+          setPoi={setPoi}
+          showRoute={showRoute}
+          setShowRoute={setShowRoute}
           refreshHidrants={refreshHidrants}
           hasLocation={!!position}
         />
@@ -171,9 +190,13 @@ export function LeafletMap() {
         {poi && position && showRoute && (
           <RouteLayer from={position} to={poi} />
         )}
-        <LocationMarker position={position} accuracy={accuracy} onEdit={user ? openFormAtPosition : undefined} />
-        
-        <MapUIOverlays 
+        <LocationMarker
+          position={position}
+          accuracy={accuracy}
+          onEdit={user ? openFormAtPosition : undefined}
+        />
+
+        <MapUIOverlays
           user={user}
           logout={logout}
           activeAdf={activeAdf}
@@ -198,14 +221,14 @@ export function LeafletMap() {
       </MapContainer>
 
       {clickedPosition && activeForm && user && (
-        <Modal 
+        <Modal
           title={
-            activeForm === 'selection' 
-              ? "📍 Selecciona una acció" 
-              : activeForm === 'hydrant' 
-                ? "📍 Nou hidrant" 
-                : "⚠️ Nova incidència"
-          } 
+            activeForm === 'selection'
+              ? '📍 Selecciona una acció'
+              : activeForm === 'hydrant'
+              ? '📍 Nou hidrant'
+              : '⚠️ Nova incidència'
+          }
           onClose={() => {
             setClickedPosition(null);
             setActiveForm(null);

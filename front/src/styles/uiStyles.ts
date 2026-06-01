@@ -41,7 +41,7 @@ export const controlBarButtonStyle: React.CSSProperties = {
 };
 
 export const controlContainerStyle: React.CSSProperties = {
-  position: 'fixed',
+  position: 'absolute',
   display: 'flex',
   flexDirection: 'column',
   gap: '10px',
@@ -111,5 +111,5 @@ export const modalOverlayStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  zIndex: 2000,
+  zIndex: 6000,
 };

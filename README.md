@@ -52,9 +52,10 @@ npm run dev
 
 ### Deploy amb Docker
 
+Per a un desplegament automatitzat que inclou l'actualització del codi, de les dependències i de la base de dades:
+
 ```bash
-npm run docker:build
-npm run docker:up
+npm run docker:deploy
 ```
 
 ---

@@ -15,8 +15,12 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
 - **Mapa interactiu**: Basat en Leaflet amb suport per a:
   - Visualització de limits territorials.
   - Creació i edició d'hidrants locals.
-  - Càlcul de rutes a hidrants.
-  - Enviament de notificacions a Telegram.
+  - Vista d'imatges des d'urls incloses a OSM
+  - Llista detallada d'hidrants i cerca ràpida.
+  - Càlcul de rutes a hidrants mitjançant GraphHopper.
+  - Enviament de notificacions i alertes a Telegram.
+  - URLs compartibles per a la localització exacta de cada hidrant.
+- **Exportació OSM**: Possibilitat d'exportar els canvis realitzats en format OSM per actualitzar la cartografia pública.
 
 ## Stack Tecnològic
 
@@ -34,6 +38,7 @@ L'aplicació inclou scripts per gestionar la base de dades fàcilment des de l'a
 - `npm run db:reset-hidrants`: Esborra només els hidrants i els torna a baixar d'OSM.
 - `npm run db:seed`: Crea les ADFs inicials i els usuaris administradors.
 - `npm run db:import-osm`: Sincronitza els hidrants des d'OSM per a totes les ADFs.
+- `npm run db:export-osm`: Genera un fitxer amb els canvis realitzats per a la seva exportació a OSM.
 - `npm run update:boundaries`: Descarrega i desa les fronteres geogràfiques a la base de dades.
 
 ## Instal·lació i Ús

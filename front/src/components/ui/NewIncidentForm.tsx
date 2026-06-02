@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { sendToTelegram } from '../../utils/sendToTelegram';
+import { useIncidencies } from '../../hooks/useIncidencies';
 import { toast } from 'react-toastify';
 import {
   inputStyle,
@@ -19,10 +19,11 @@ export const NewIncidentForm = ({
   lon,
   onClose,
 }: NewIncidentFormProps) => {
-  const [type, setType] = useState('foc');
-  const [severity, setSeverity] = useState('mitjana');
-  const [description, setDescription] = useState('');
-  const [message, setMessage] = useState('');
+  const { createIncident } = useIncidencies();
+  const [type, setType] = useState('FOC');
+  const [priority, setPriority] = useState('MITJANA');
+  const [titol, setTitol] = useState('');
+  const [comentari, setComentari] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,16 +31,13 @@ export const NewIncidentForm = ({
     setIsSubmitting(true);
 
     try {
-      await sendToTelegram({
+      await createIncident({
+        titol,
+        tipus: type,
+        prioritat: priority,
         lat,
         lon,
-        tags: {
-          type: 'incidencia',
-          incident_type: type,
-          severity: severity,
-          description: description,
-        },
-        message: message,
+        comentari
       });
       toast.success('Incidència reportada amb èxit!');
       onClose();
@@ -73,6 +71,19 @@ export const NewIncidentForm = ({
         </strong>
       </div>
 
+      {/* Títol */}
+      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+        Títol de la incidència:
+        <input
+          type="text"
+          value={titol}
+          onChange={(e) => setTitol(e.target.value)}
+          placeholder="Ex: Fum a prop de Can Gall"
+          style={inputStyle}
+          required
+        />
+      </label>
+
       {/* Tipus d'Incidència */}
       <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
         Tipus d'incidència:
@@ -82,57 +93,39 @@ export const NewIncidentForm = ({
           style={selectStyle}
           required
         >
-          <option value="foc">🔥 Foc de vegetació / forestal</option>
-          <option value="obstacle">🚧 Obstacle a la pista / camí</option>
-          <option value="aigua">💧 Problema punt d'aigua / canonada</option>
-          <option value="altre">⚠️ Altres incidències / Anomalies</option>
+          <option value="FOC">🔥 Foc de vegetació / forestal</option>
+          <option value="FUM">💨 Columna de fum</option>
+          <option value="ACCIDENT">🚗 Accident de trànsit</option>
+          <option value="ALTRA">⚠️ Altres incidències / Anomalies</option>
         </select>
       </label>
 
-      {/* Gravetat */}
+      {/* Prioritat */}
       <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
-        Gravetat:
+        Prioritat:
         <select
-          value={severity}
-          onChange={(e) => setSeverity(e.target.value)}
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
           style={selectStyle}
           required
         >
-          <option value="baixa">🟢 Baixa (No urgent)</option>
-          <option value="mitjana">🟡 Mitjana (Cal atenció)</option>
-          <option value="alta">🔴 Alta (Urgent! Perillós)</option>
+          <option value="BAIXA">🟢 Baixa (No urgent)</option>
+          <option value="MITJANA">🟡 Mitjana (Cal atenció)</option>
+          <option value="ALTA">🔴 Alta (Urgent! Perillós)</option>
         </select>
       </label>
 
-      {/* Descripció / Detalls */}
-      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
-        Detalls / Descripció de l'incident:
+      {/* Comentari inicial */}
+      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.75rem' }}>
+        Observacions inicials:
         <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Ex: Pista tallada per pi caigut, necessitem motoserra..."
+          value={comentari}
+          onChange={(e) => setComentari(e.target.value)}
+          placeholder="Més detalls..."
           style={{
             ...inputStyle,
             fontFamily: 'inherit',
             height: '60px',
-            resize: 'vertical',
-            padding: '4px 6px',
-          }}
-          required
-        />
-      </label>
-
-      {/* Missatge de Telegram addicional */}
-      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.75rem' }}>
-        Missatge per a Telegram (opcional):
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Ex: Avís passat a ADF 204..."
-          style={{
-            ...inputStyle,
-            fontFamily: 'inherit',
-            height: '40px',
             resize: 'vertical',
             padding: '4px 6px',
           }}
@@ -155,13 +148,13 @@ export const NewIncidentForm = ({
             ...primaryButtonStyle,
             backgroundColor: '#dc3545', // Vermell intens per a incidències
             flex: 1,
-            padding: '6px',
-            fontSize: '0.75rem',
+            padding: '8px',
+            fontSize: '0.8rem',
             opacity: isSubmitting ? 0.7 : 1,
             cursor: isSubmitting ? 'not-allowed' : 'pointer',
           }}
         >
-          {isSubmitting ? 'Enviant...' : 'Enviar Incidència'}
+          {isSubmitting ? 'Enviant...' : 'Reportar Incidència'}
         </button>
         <button
           type="button"
@@ -169,8 +162,8 @@ export const NewIncidentForm = ({
           style={{
             ...secondaryButtonStyle,
             flex: 1,
-            padding: '6px',
-            fontSize: '0.75rem',
+            padding: '8px',
+            fontSize: '0.8rem',
           }}
         >
           Cancel·la

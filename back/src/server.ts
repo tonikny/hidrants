@@ -12,6 +12,7 @@ import municipi from './routes/municipi.js';
 import municipisList from './routes/municipis.js';
 import boundary from './routes/boundary.js';
 import hidrants from './routes/hidrants.js';
+import incidencies from './routes/incidencies.js';
 import { login, me, logout } from './routes/auth.js';
 
 import { ApiHandler, ApiRequest } from './types.js';
@@ -174,10 +175,14 @@ const routes = [
   { path: '/api/adf', handler: municipi },
   { path: '/api/adfs', handler: municipisList },
   { path: '/api/adf/boundary', handler: boundary },
+  { path: '/api/incidencies', handler: incidencies },
+  { path: '/api/incidencies/:id', handler: incidencies },
+  { path: '/api/incidencies/:id/events', handler: incidencies },
 ];
 
 routes.forEach((r) => {
-  const isMutation = r.path.includes('/hidrants') && r.handler === hidrants;
+  const isMutation = (r.path.includes('/hidrants') || r.path.includes('/incidencies')) && 
+    (r.handler === hidrants || r.handler === incidencies);
 
   app.all(r.path, async (request, reply) => {
     const needsAuth =

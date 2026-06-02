@@ -1,7 +1,7 @@
 import type { ApiHandler } from '../types.js';
-import { config } from '../config.js';
 import { ui2Osm } from '../utils/osmConversion.js';
 import { HidrantsService } from '../services/hidrantsService.js';
+import { sendTelegramMessage } from '../utils/telegram.js';
 
 const handler: ApiHandler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,13 +20,6 @@ const handler: ApiHandler = async (req, res) => {
 
   try {
     const { lat, lon, tags, message, adf_id } = req.body;
-    const TELEGRAM_BOT_TOKEN = config.TELEGRAM_BOT_TOKEN;
-    const TELEGRAM_CHAT_ID = config.TELEGRAM_CHAT_ID;
-
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-      res.status(500).json({ error: 'Missing environment variables' });
-      return;
-    }
 
     let title = '🗺️ <b>Nou Hidrant:</b>';
     let isNewHydrant = false;
@@ -64,8 +57,6 @@ const handler: ApiHandler = async (req, res) => {
       dbInfo.sync_status = dbResult.sync_status;
     }
     
-    // Si ens arriben ui_fields (formulari), els convertim a tags d'OSM (pel cas de nous nodes)
-    // però sempre els eliminem del JSON final del missatge per no duplicar
     if (dbInfo.ui_fields) {
       if (!dbInfo.osm_tags || Object.keys(dbInfo.osm_tags).length === 0) {
         dbInfo.osm_tags = ui2Osm(dbInfo.ui_fields);
@@ -89,25 +80,7 @@ ${
 }
     `;
 
-    const response = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text,
-          parse_mode: 'HTML',
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      res.status(500).json({ error: `Telegram error: ${errorText}` });
-      return;
-    }
-
+    await sendTelegramMessage(text);
     res.status(200).json({ ok: true });
   } catch (error) {
     res

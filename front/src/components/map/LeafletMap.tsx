@@ -20,6 +20,8 @@ import { LocationMarker } from './LocationMarker';
 
 import { Modal } from '../ui/Modal';
 import { useHydrantData } from '../../hooks/useHidrantData';
+import { useIncidencies } from '../../hooks/useIncidencies';
+import { IncidentMarkerList } from './markers/IncidentMarkerList';
 
 // ✅ Component per escoltar canvis al mapa i informar al pare
 function MapStateListener({
@@ -112,6 +114,12 @@ export function LeafletMap() {
     error: hidrantsError,
     mutate: refreshHidrants,
   } = useHydrantData(mapBounds, mapZoom);
+
+  const {
+    features: incidentFeatures,
+    refresh: refreshIncidencies
+  } = useIncidencies();
+
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
 
   const [activeForm, setActiveForm] = useState<
@@ -161,6 +169,14 @@ export function LeafletMap() {
           showRoute={showRoute}
           setShowRoute={setShowRoute}
           refreshHidrants={refreshHidrants}
+          hasLocation={!!position}
+        />
+        <IncidentMarkerList
+          features={incidentFeatures}
+          setPoi={setPoi}
+          showRoute={showRoute}
+          setShowRoute={setShowRoute}
+          refreshIncidencies={refreshIncidencies}
           hasLocation={!!position}
         />
         {user && (
@@ -264,6 +280,7 @@ export function LeafletMap() {
               onClose={() => {
                 setClickedPosition(null);
                 setActiveForm(null);
+                refreshIncidencies();
               }}
             />
           )}

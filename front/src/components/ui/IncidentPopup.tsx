@@ -9,6 +9,7 @@ import {
   selectStyle
 } from '../../styles/uiStyles';
 import { toast } from 'react-toastify';
+import { openInNativeMaps } from '../../utils/geoMaps';
 
 interface IncidentPopupProps {
   incidentId: string;
@@ -52,6 +53,7 @@ export const IncidentPopup = ({
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!newComment && newStatus === incident?.estat) return;
 
     setIsSubmitting(true);
@@ -81,15 +83,27 @@ export const IncidentPopup = ({
     }
   };
 
-  if (loading) return <div>Carregant incidència...</div>;
-  if (!incident) return <div>No s'ha trobat la incidència</div>;
+  const handleOpenMaps = () => {
+    if (incident) {
+      openInNativeMaps(incident.lat, incident.lon, incident.titol);
+    }
+  };
+
+  if (loading) return <div style={{ minWidth: '280px', padding: '1rem' }}>Carregant incidència...</div>;
+  if (!incident) return <div style={{ minWidth: '280px', padding: '1rem' }}>No s'ha trobat la incidència</div>;
 
   const emojiPrioritat = incident.prioritat === 'ALTA' ? '🔴' : incident.prioritat === 'MITJANA' ? '🟠' : '🟡';
 
   return (
-    <div style={{ padding: '0.5rem' }}>
+    <div style={{ minWidth: '280px', padding: '0.2rem' }}>
       <div style={{ marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>
-        <h3 style={{ margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <h3 style={{ 
+          margin: '0 0 0.5rem 0', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.5rem',
+          fontSize: '1.1rem'
+        }}>
           <span>{emojiPrioritat}</span>
           {incident.titol}
         </h3>
@@ -118,40 +132,82 @@ export const IncidentPopup = ({
         </div>
       </div>
 
-      <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '1rem' }}>
+      <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '1rem' }}>
         <Timeline events={incident.events} />
       </div>
 
       {!showAddEvent ? (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          gap: '30px', 
+          marginTop: '10px',
+          padding: '5px 0'
+        }}>
           <button 
-            onClick={() => setShowAddEvent(true)}
-            style={{ ...primaryButtonStyle, flex: 2, padding: '8px', fontSize: '0.8rem' }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowAddEvent(true);
+            }}
+            title="Actualitzar / Comentar"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem', padding: 0 }}
           >
-            Actualitzar / Comentar
+            ✏️
           </button>
+          
           <button
-            onClick={() => setShowRoute(!showRoute)}
-            disabled={!hasLocation}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!showRoute && !hasLocation) {
+                toast.info('Cal activar el seguiment GPS per veure la ruta');
+                return;
+              }
+              setShowRoute(!showRoute);
+            }}
+            title={showRoute ? 'Treure Ruta' : 'Com anar-hi'}
             style={{ 
-              ...secondaryButtonStyle, 
-              flex: 1, 
-              padding: '8px', 
-              fontSize: '0.8rem',
-              opacity: !hasLocation ? 0.5 : 1
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer', 
+              fontSize: '1.5rem',
+              padding: 0,
+              filter: (showRoute || hasLocation) ? 'none' : 'grayscale(100%)',
+              opacity: (showRoute || hasLocation) ? 1 : 0.5
             }}
           >
-            {showRoute ? 'Treure Ruta' : 'Com anar-hi'}
+            🛣️
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleOpenMaps();
+            }}
+            title="Obrir en navegador GPS"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '1.5rem',
+              padding: '0',
+            }}
+          >
+            🚕
           </button>
         </div>
       ) : (
-        <form onSubmit={handleAddEvent}>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Nou estat:</label>
+        <form onSubmit={handleAddEvent} onClick={(e) => e.stopPropagation()}>
+          <div style={{ marginBottom: '0.8rem' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nou estat:</label>
             <select 
               value={newStatus} 
               onChange={(e) => setNewStatus(e.target.value)}
-              style={{ ...selectStyle, marginBottom: '0.5rem' }}
+              style={{ ...selectStyle, marginBottom: '0.5rem', padding: '6px' }}
             >
               <option value="OBERT">OBERT</option>
               <option value="EN_PROGRES">EN PROGRÉS</option>
@@ -159,16 +215,22 @@ export const IncidentPopup = ({
               <option value="TANCAT">TANCAT</option>
             </select>
           </div>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Comentari:</label>
+          <div style={{ marginBottom: '0.8rem' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Comentari:</label>
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Afegeix una observació..."
-              style={{ ...inputStyle, height: '60px', resize: 'none' }}
+              style={{ 
+                ...inputStyle, 
+                height: '80px', 
+                resize: 'none', 
+                padding: '8px',
+                fontFamily: 'inherit'
+              }}
             />
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button 
               type="submit" 
               disabled={isSubmitting}
@@ -178,7 +240,11 @@ export const IncidentPopup = ({
             </button>
             <button 
               type="button" 
-              onClick={() => setShowAddEvent(false)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowAddEvent(false);
+              }}
               style={{ ...secondaryButtonStyle, flex: 1, padding: '8px' }}
             >
               Cancel·lar

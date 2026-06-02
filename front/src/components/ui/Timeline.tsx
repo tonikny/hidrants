@@ -28,32 +28,32 @@ export const Timeline = ({ events }: TimelineProps) => {
         return (
           <div>
             <strong>Creat l'incident</strong>
-            {dades.comentari && <p style={{ margin: '4px 0 0 0', fontStyle: 'italic' }}>"{dades.comentari}"</p>}
+            {dades.comentari && <p style={{ margin: '4px 0 0 0', fontStyle: 'italic', fontFamily: 'inherit' }}>"{dades.comentari}"</p>}
           </div>
         );
       case 'CANVI_ESTAT':
         return (
-          <div>
+          <div style={{ fontFamily: 'inherit' }}>
             Estat: <s>{dades.anterior}</s> ➡️ <strong>{dades.nou}</strong>
           </div>
         );
       case 'OBSERVACIO':
         return (
-          <div>
+          <div style={{ fontFamily: 'inherit' }}>
             <strong>Observació:</strong>
-            <p style={{ margin: '4px 0 0 0' }}>{dades.comentari}</p>
+            <p style={{ margin: '4px 0 0 0', fontFamily: 'inherit' }}>{dades.comentari}</p>
           </div>
         );
       case 'CANVI_UBICACIO':
-        return <div>Ubicació actualitzada</div>;
+        return <div style={{ fontFamily: 'inherit' }}>Ubicació actualitzada</div>;
       case 'CANVI_TIPUS':
         return (
-          <div>
+          <div style={{ fontFamily: 'inherit' }}>
             Tipus: <s>{dades.anterior}</s> ➡️ <strong>{dades.nou}</strong>
           </div>
         );
       default:
-        return <div>{tipus_event}</div>;
+        return <div style={{ fontFamily: 'inherit' }}>{tipus_event}</div>;
     }
   };
 
@@ -81,14 +81,16 @@ export const Timeline = ({ events }: TimelineProps) => {
           <div style={{ color: '#888', fontSize: '0.7rem', marginBottom: '2px' }}>
             {formatData(event.creat_at)} - {event.nom_usuari || 'Anònim'}
           </div>
-          <div style={{ 
-            backgroundColor: '#f8f9fa', 
-            padding: '6px 10px', 
-            borderRadius: '6px',
-            border: '1px solid #eee'
-          }}>
-            {renderEventContent(event)}
-          </div>
+      <div style={{ 
+        backgroundColor: '#f8f9fa', 
+        padding: '6px 10px', 
+        borderRadius: '6px',
+        border: '1px solid #eee',
+        fontFamily: 'inherit'
+      }}>
+        {renderEventContent(event)}
+      </div>
+
         </div>
       ))}
     </div>

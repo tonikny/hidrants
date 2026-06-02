@@ -36,7 +36,7 @@ export function IncidentMarker({
         }
       }}
     >
-      <Popup minWidth={300} maxWidth={400}>
+      <Popup minWidth={320} maxWidth={450}>
         <IncidentPopup 
           incidentId={feature.id}
           showRoute={showRoute}

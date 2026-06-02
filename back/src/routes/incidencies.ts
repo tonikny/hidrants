@@ -37,9 +37,10 @@ const handler: ApiHandler = async (req, res) => {
 
   // --- GET /api/incidencies: Llistar incidències (GeoJSON) ---
   if (method === 'GET' && !req.params?.id) {
+    const includeClosed = req.query?.incloure_tancades === 'true';
     // Si és admin i no hi ha adf_id, passarem undefined per veure-les totes
     const queryAdf = (!adf_id && isAdmin) ? undefined : adf_id;
-    const geoJson = await IncidenciesService.getIncidenciesGeoJson(queryAdf);
+    const geoJson = await IncidenciesService.getIncidenciesGeoJson(queryAdf, includeClosed);
     return res.json(geoJson);
   }
 

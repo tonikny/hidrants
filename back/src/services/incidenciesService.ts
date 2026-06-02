@@ -5,12 +5,12 @@ import { NotFoundError } from '../errors.js';
 import { sendTelegramMessage } from '../utils/telegram.js';
 
 export const IncidenciesService = {
-  getIncidencies(adfId?: number) {
-    return IncidenciesRepository.findAll(adfId);
+  getIncidencies(adfId?: number, includeClosed: boolean = false) {
+    return IncidenciesRepository.findAll(adfId, includeClosed);
   },
 
-  getIncidenciesGeoJson(adfId?: number) {
-    const rows = IncidenciesRepository.findAll(adfId);
+  getIncidenciesGeoJson(adfId?: number, includeClosed: boolean = false) {
+    const rows = IncidenciesRepository.findAll(adfId, includeClosed);
     const features = rows.map(row => ({
       type: 'Feature',
       id: row.id,

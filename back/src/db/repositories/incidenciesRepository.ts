@@ -1,15 +1,26 @@
 import { db } from '../index.js';
 import { incidencies, incidencia_events, users } from '../schema.js';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, ne, sql, desc } from 'drizzle-orm';
 import { Incident, IncidentEvent } from '../../types.js';
 
 export const IncidenciesRepository = {
-  findAll(adfId?: number): Incident[] {
+  findAll(adfId?: number, includeClosed: boolean = false): Incident[] {
     let query = db.select().from(incidencies);
+    const conditions = [];
+
     if (adfId !== undefined) {
-      // @ts-ignore
-      query = query.where(eq(incidencies.adf_id, adfId));
+      conditions.push(eq(incidencies.adf_id, adfId));
     }
+
+    if (!includeClosed) {
+      conditions.push(ne(incidencies.estat, 'TANCAT'));
+    }
+
+    if (conditions.length > 0) {
+      // @ts-ignore
+      query = query.where(and(...conditions));
+    }
+
     return query.orderBy(desc(incidencies.actualitzat_at)).all() as Incident[];
   },
 

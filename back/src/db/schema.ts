@@ -41,3 +41,31 @@ export const users = sqliteTable('users', {
   adfIdx: index('idx_users_adf').on(t.adf_id),
   unq: unique().on(t.username, t.adf_id)
 }));
+
+export const incidencies = sqliteTable('incidencies', {
+  id: text('id').primaryKey(), // UUID
+  titol: text('titol').notNull(),
+  tipus: text('tipus').notNull(),
+  estat: text('estat', { enum: ['OBERT', 'EN_PROGRES', 'RESOLT', 'TANCAT'] }).default('OBERT'),
+  prioritat: text('prioritat', { enum: ['BAIXA', 'MITJANA', 'ALTA'] }).default('MITJANA'),
+  adf_id: integer('adf_id').references(() => adfs.id),
+  lat: real('lat').notNull(),
+  lon: real('lon').notNull(),
+  precisio: text('precisio', { enum: ['DESCONEGUDA', 'MUNICIPI', 'AREA', 'EXACTA'] }).default('DESCONEGUDA'),
+  creat_at: text('creat_at').default(sql`CURRENT_TIMESTAMP`),
+  actualitzat_at: text('actualitzat_at').default(sql`CURRENT_TIMESTAMP`)
+}, (t) => ({
+  adfIdx: index('idx_incidencies_adf').on(t.adf_id),
+  estatIdx: index('idx_incidencies_estat').on(t.estat)
+}));
+
+export const incidencia_events = sqliteTable('incidencia_events', {
+  id: text('id').primaryKey(), // UUID
+  incidencia_id: text('incidencia_id').notNull().references(() => incidencies.id),
+  usuari_id: text('usuari_id').references(() => users.id),
+  tipus_event: text('tipus_event').notNull(),
+  dades: text('dades').default('{}'), // JSON
+  creat_at: text('creat_at').default(sql`CURRENT_TIMESTAMP`)
+}, (t) => ({
+  incidenciaIdx: index('idx_events_incidencia').on(t.incidencia_id)
+}));

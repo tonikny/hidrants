@@ -1,0 +1,1 @@
+ALTER TABLE `hidrants` ADD `osm_version` integer;

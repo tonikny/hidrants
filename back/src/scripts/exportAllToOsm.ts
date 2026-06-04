@@ -156,7 +156,8 @@ async function run() {
     }
 
     const xmlNodeId = h.osm_id || newNodeId--;
-    osmContent += `  <node id='${xmlNodeId}' visible='true' lat='${lat}' lon='${lon}'${actionAttr}>\n`;
+    const versionAttr = h.osm_id ? ` version='${h.osm_version || 1}'` : "";
+    osmContent += `  <node id='${xmlNodeId}'${versionAttr} visible='true' lat='${lat}' lon='${lon}'${actionAttr}>\n`;
 
     for (const [k, v] of Object.entries(finalTags)) {
       if (v !== null && v !== undefined && v !== '') {

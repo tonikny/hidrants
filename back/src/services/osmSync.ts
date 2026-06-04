@@ -29,7 +29,7 @@ export async function syncAdfFromOSM(adfId: number) {
         node(area.searchArea)["emergency"="fire_hydrant"];
         node(area.searchArea)["disused:emergency"="fire_hydrant"];
       );
-      out center tags;
+      out meta;
     `.trim();
 
     console.log(`[OSM Sync] Descarregant dades d'OSM per a relació ${rel}...`);
@@ -56,6 +56,7 @@ export async function syncAdfFromOSM(adfId: number) {
       tx.insert(hidrants).values({
         id,
         osm_id: node.id,
+        osm_version: node.version,
         adf_id: adfId,
         lat: node.lat,
         lon: node.lon,
@@ -67,6 +68,7 @@ export async function syncAdfFromOSM(adfId: number) {
         set: {
           lat: node.lat,
           lon: node.lon,
+          osm_version: node.version,
           osm_tags: JSON.stringify(node.tags || {}),
           updated_at: syncTimestamp
         },

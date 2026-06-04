@@ -14,6 +14,7 @@ export const adfs = sqliteTable('adfs', {
 export const hidrants = sqliteTable('hidrants', {
   id: text('id').primaryKey(),
   osm_id: integer('osm_id'),
+  osm_version: integer('osm_version'),
   adf_id: integer('adf_id').references(() => adfs.id),
   municipi: text('municipi'), // Mantinguem el nom del municipi per info visual
   lat: real('lat').notNull(),

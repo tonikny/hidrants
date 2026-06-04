@@ -207,6 +207,21 @@ export const NodeWithForm = ({
     }
   };
 
+  const formatSyncStatus = (status: string) => {
+    switch (status) {
+      case 'SYNCED':
+        return '🟢 Sincronitzat';
+      case 'PENDING_CREATE':
+        return '🟡 Pendent de crear (local)';
+      case 'PENDING_UPDATE':
+        return '🔵 Pendent d\'actualitzar';
+      case 'PENDING_DELETE':
+        return '🔴 Pendent d\'esborrar';
+      default:
+        return status;
+    }
+  };
+
   return (
     <Popup>
       <div style={{ minWidth: '280px' }}>
@@ -220,6 +235,11 @@ export const NodeWithForm = ({
                     {value}
                   </div>
                 ))}
+                {user?.role === 'admin' && (
+                  <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '8px', borderTop: '1px dotted #ccc', paddingTop: '4px' }}>
+                    <strong>Sync:</strong> {formatSyncStatus(props.sync_status)}
+                  </div>
+                )}
               </div>
               <HydrantImages images={getHydrantImages(props.osm_tags)} />
             </div>

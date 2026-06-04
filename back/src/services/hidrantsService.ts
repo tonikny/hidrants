@@ -124,5 +124,9 @@ export const HidrantsService = {
     }
 
     return { success: true };
+  },
+
+  getSyncStats(adfId: number) {
+    return HidrantsRepository.getSyncStats(adfId);
   }
 };

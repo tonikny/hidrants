@@ -105,5 +105,37 @@ export const HidrantsRepository = {
       sync_status: 'PENDING_DELETE',
       updated_at: sql`CURRENT_TIMESTAMP`,
     }).where(eq(hidrants.id, id)).run();
+  },
+
+  getSyncStats(adfId: number) {
+    const results = db.select({
+      status: hidrants.sync_status,
+      count: count(),
+    })
+      .from(hidrants)
+      .where(eq(hidrants.adf_id, adfId))
+      .groupBy(hidrants.sync_status)
+      .all();
+
+    const stats = {
+      SYNCED: 0,
+      PENDING_CREATE: 0,
+      PENDING_UPDATE: 0,
+      PENDING_DELETE: 0,
+      total_pending: 0
+    };
+
+    for (const res of results) {
+      const status = res.status as keyof typeof stats;
+      if (status in stats) {
+        // @ts-ignore
+        stats[status] = res.count;
+        if (status !== 'SYNCED') {
+          stats.total_pending += res.count;
+        }
+      }
+    }
+
+    return stats;
   }
 };

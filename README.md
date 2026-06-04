@@ -37,9 +37,10 @@ L'aplicació inclou scripts per gestionar la base de dades fàcilment des de l'a
 - `npm run db:reset`: Buida completament la base de dades (usuaris i hidrants).
 - `npm run db:reset-hidrants`: Esborra només els hidrants i els torna a baixar d'OSM.
 - `npm run db:seed`: Crea les ADFs inicials i els usuaris administradors.
-- `npm run db:import-osm`: Sincronitza els hidrants des d'OSM per a totes les ADFs.
-- `npm run db:export-osm`: Genera un fitxer amb els canvis realitzats per a la seva exportació a OSM.
-- `npm run update:boundaries`: Descarrega i desa les fronteres geogràfiques a la base de dades.
+- `npm run db:import-osm`: Sincronitza els hidrants des d'OSM (totes les ADFs o una d'específica: `npm run db:import-osm -- ID_ADF`).
+- `npm run db:export-osm`: Genera fitxer OSM per a JOSM amb canvis locals (totes les ADFs o una d'específica: `npm run db:export-osm -- ID_ADF`).
+- `npm run update:boundaries`: Descarrega i desa les fronteres geogràfiques (totes les ADFs o una d'específica: `npm run update:boundaries -- ID_ADF`).
+
 
 ## Instal·lació i Ús
 

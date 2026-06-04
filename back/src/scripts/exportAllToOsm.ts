@@ -3,6 +3,7 @@ import { adfs, hidrants } from '../db/schema.js';
 import { syncAdfFromOSM } from '../services/osmSync.js';
 import fs from 'fs';
 import path from 'path';
+import { eq } from 'drizzle-orm';
 
 async function log(message: string, fileStream?: fs.WriteStream) {
   const timestamp = new Date().toISOString();
@@ -48,6 +49,7 @@ function parsePrivateDescription(desc: any) {
 }
 
 async function run() {
+  const adfIdArg = process.argv[2];
   const logFile = path.join(process.cwd(), '..', 'export_osm.log');
   const oldLogFile = path.join(process.cwd(), '..', 'export_osm_old.log');
   const outputFile = path.join(process.cwd(), '..', 'scripts', 'full_export.osm');
@@ -63,8 +65,19 @@ async function run() {
   await log('--- INICIANT PROCÉS D\'EXPORTACIÓ COMPLETA ---', logStream);
 
   // 1. Sincronització de baixada (Downstream)
-  const allAdfs = db.select().from(adfs).all();
-  await log(`Pas 1: Sincronitzant dades des d'OSM per a ${allAdfs.length} ADFs...`, logStream);
+  let allAdfs;
+  if (adfIdArg) {
+    const adfId = parseInt(adfIdArg);
+    allAdfs = db.select().from(adfs).where(eq(adfs.id, adfId)).all();
+    if (allAdfs.length === 0) {
+      await log(`❌ ADF amb ID ${adfId} no trobada.`, logStream);
+      process.exit(1);
+    }
+    await log(`Pas 1: Sincronitzant dades des d'OSM NOMÉS per a l'ADF ${allAdfs[0].nom}...`, logStream);
+  } else {
+    allAdfs = db.select().from(adfs).all();
+    await log(`Pas 1: Sincronitzant dades des d'OSM per a ${allAdfs.length} ADFs...`, logStream);
+  }
 
   for (const adf of allAdfs) {
     try {
@@ -78,7 +91,13 @@ async function run() {
 
   // 2. Generació del fitxer OSM (Upstream)
   await log('Pas 2: Generant fitxer XML amb NOMÉS els canvis pendents...', logStream);
-  const allHidrants = db.select().from(hidrants).all();
+  
+  let allHidrants;
+  if (adfIdArg) {
+    allHidrants = db.select().from(hidrants).where(eq(hidrants.adf_id, parseInt(adfIdArg))).all();
+  } else {
+    allHidrants = db.select().from(hidrants).all();
+  }
   
   let osmContent = `<?xml version='1.0' encoding='UTF-8'?>\n<osm version='0.6' generator='JOSM'>\n`;
   let newNodeId = -1;

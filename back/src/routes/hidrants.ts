@@ -33,6 +33,13 @@ const handler: ApiHandler = async (req, res) => {
     return res.json({ success: true, message: `Sincronitzats ${count} hidrants d'OSM.` });
   }
 
+  // --- GET /api/hidrants/stats: Obtenir estadístiques de sincronització ---
+  const isStatsPath = url?.split('?')[0].endsWith('/stats');
+  if (method === 'GET' && isStatsPath) {
+    const stats = HidrantsService.getSyncStats(adf_id);
+    return res.json(stats);
+  }
+
   // --- GET: Llistar hidrants (GeoJSON) ---
   if (method === 'GET') {
     const geoJson = await HidrantsService.getGeoJson(adf_id);

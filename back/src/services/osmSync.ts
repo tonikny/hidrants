@@ -69,23 +69,20 @@ export async function syncAdfFromOSM(adfId: number) {
       }
 
       // 3. Comparació de dates si existeix
+      let skipUpdate = false;
       if (existing && (existing.sync_status === 'PENDING_UPDATE' || existing.sync_status === 'PENDING_DELETE')) {
         const localTime = new Date(existing.updated_at || 0).getTime();
         const osmTime = new Date(node.timestamp || 0).getTime();
 
-        // Si la data d'OSM és posterior a la nostra última edició local, 
-        // vol dir que algú (nosaltres o un altre) ha pujat canvis més nous.
-        // En aquest cas, acceptem la versió d'OSM com a definitiva.
         if (osmTime > localTime) {
           console.log(`[OSM Sync] Hidrant ${node.id}: OSM té dades més recents (${node.timestamp}) que la BD local (${existing.updated_at}). Sincronitzant.`);
-        } else {
-          // Si el canvi local és més nou, NO el sobreescrivim encara (esperem a exportar-lo)
-          // EXCEPTE si forcem la sincronització (que és el que fa aquest script)
-          // Per seguretat, com que l'usuari ha demanat "comparar dates", si local és més nou, 
-          // podríem saltar aquest node o avisar. 
-          // Però normalment després de JOSM, OSM serà >= Local.
+        } else if (osmTime < localTime) {
+          console.log(`[OSM Sync] Hidrant ${node.id}: La BD local té canvis més recents (${existing.updated_at}) que OSM (${node.timestamp}). Es manté l'estat PENDING.`);
+          skipUpdate = true;
         }
       }
+
+      if (skipUpdate) continue;
 
       const id = existing ? existing.id : uuidv4();
 

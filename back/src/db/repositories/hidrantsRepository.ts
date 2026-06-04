@@ -53,6 +53,20 @@ export const HidrantsRepository = {
       .get() as HidrantData | undefined;
   },
 
+  findNearbyPending(lat: number, lon: number, adfId: number, threshold = 0.00003): HidrantData | undefined {
+    // Busquem hidrants PENDING_CREATE propers (aprox 3m de marge: 0.00003 ~ 3.3m)
+    return db.select()
+      .from(hidrants)
+      .where(
+        and(
+          eq(hidrants.adf_id, adfId),
+          eq(hidrants.sync_status, 'PENDING_CREATE'),
+          sql`abs(${hidrants.lat} - ${lat}) < ${threshold}`,
+          sql`abs(${hidrants.lon} - ${lon}) < ${threshold}`
+        )
+      ).get() as HidrantData | undefined;
+  },
+
   create(data: Omit<HidrantData, 'created_at' | 'updated_at'>): void {
     db.insert(hidrants).values({
       id: data.id,

@@ -33,3 +33,8 @@ opencode.json
 
 *.md
 !README.md
+
+# SQLite databases
+*.db
+*.db-wal
+*.db-shm

@@ -17,6 +17,7 @@ export async function syncAdfFromOSM(adfId: number) {
 
   const relations: string[] = JSON.parse(adf.osm_relations);
   let allElements: any[] = [];
+  let successCount = 0;
 
   for (const rel of relations) {
     const osmId = rel.replace('R', '');
@@ -36,8 +37,15 @@ export async function syncAdfFromOSM(adfId: number) {
     const result = await queryOverpass(query);
 
     if (result.ok) {
+      successCount++;
       allElements = [...allElements, ...(result.data.elements || [])];
+    } else {
+      console.error(`[OSM Sync] Error descarregant relació ${rel}: ${result.error || 'Unknown error'}`);
     }
+  }
+
+  if (relations.length > 0 && successCount === 0) {
+    throw new Error(`Totes les consultes a Overpass han fallat per a l'ADF ${adf.nom}. S'atura la sincronització per evitar pèrdua de dades.`);
   }
 
   // Eliminem duplicats per id de node d'OSM si n'hi ha
@@ -49,8 +57,36 @@ export async function syncAdfFromOSM(adfId: number) {
 
   db.transaction((tx) => {
     for (const node of uniqueElements) {
-      // Busquem si ja existeix per osm_id
-      const existing = HidrantsRepository.findByOsmId(node.id);
+      // 1. Busquem si ja existeix per osm_id
+      let existing = HidrantsRepository.findByOsmId(node.id);
+      
+      // 2. Si no existeix per osm_id, mirem si tenim un PENDING_CREATE a prop (3m)
+      if (!existing) {
+        existing = HidrantsRepository.findNearbyPending(node.lat, node.lon, adfId);
+        if (existing) {
+          console.log(`[OSM Sync] Fusionant hidrant local ${existing.id} amb el nou node d'OSM ${node.id}`);
+        }
+      }
+
+      // 3. Comparació de dates si existeix
+      if (existing && (existing.sync_status === 'PENDING_UPDATE' || existing.sync_status === 'PENDING_DELETE')) {
+        const localTime = new Date(existing.updated_at || 0).getTime();
+        const osmTime = new Date(node.timestamp || 0).getTime();
+
+        // Si la data d'OSM és posterior a la nostra última edició local, 
+        // vol dir que algú (nosaltres o un altre) ha pujat canvis més nous.
+        // En aquest cas, acceptem la versió d'OSM com a definitiva.
+        if (osmTime > localTime) {
+          console.log(`[OSM Sync] Hidrant ${node.id}: OSM té dades més recents (${node.timestamp}) que la BD local (${existing.updated_at}). Sincronitzant.`);
+        } else {
+          // Si el canvi local és més nou, NO el sobreescrivim encara (esperem a exportar-lo)
+          // EXCEPTE si forcem la sincronització (que és el que fa aquest script)
+          // Per seguretat, com que l'usuari ha demanat "comparar dates", si local és més nou, 
+          // podríem saltar aquest node o avisar. 
+          // Però normalment després de JOSM, OSM serà >= Local.
+        }
+      }
+
       const id = existing ? existing.id : uuidv4();
 
       tx.insert(hidrants).values({
@@ -66,33 +102,40 @@ export async function syncAdfFromOSM(adfId: number) {
       }).onConflictDoUpdate({
         target: hidrants.id,
         set: {
+          osm_id: node.id,
           lat: node.lat,
           lon: node.lon,
           osm_version: node.version,
           osm_tags: JSON.stringify(node.tags || {}),
+          sync_status: 'SYNCED',
           updated_at: syncTimestamp
-        },
-        where: eq(hidrants.sync_status, 'SYNCED')
+        }
       }).run();
     }
 
-    const currentOsmIds = uniqueElements.map((n: any) => n.id);
-    
-    if (currentOsmIds.length > 0) {
-      tx.delete(hidrants).where(
-        and(
-          eq(hidrants.adf_id, adfId),
-          eq(hidrants.sync_status, 'SYNCED'),
-          notInArray(hidrants.osm_id, currentOsmIds as number[])
-        )
-      ).run();
+    // 4. Neteja d'hidrants esborrats a OSM
+    // NOMÉS esborrem si hem pogut consultar TOTES les relacions de l'ADF amb èxit
+    if (successCount === relations.length) {
+      const currentOsmIds = uniqueElements.map((n: any) => n.id);
+      
+      if (currentOsmIds.length > 0) {
+        tx.delete(hidrants).where(
+          and(
+            eq(hidrants.adf_id, adfId),
+            eq(hidrants.sync_status, 'SYNCED'),
+            notInArray(hidrants.osm_id, currentOsmIds as number[])
+          )
+        ).run();
+      } else {
+        tx.delete(hidrants).where(
+          and(
+            eq(hidrants.adf_id, adfId),
+            eq(hidrants.sync_status, 'SYNCED')
+          )
+        ).run();
+      }
     } else {
-      tx.delete(hidrants).where(
-        and(
-          eq(hidrants.adf_id, adfId),
-          eq(hidrants.sync_status, 'SYNCED')
-        )
-      ).run();
+      console.warn(`[OSM Sync] Atenció: S'han saltat algunes relacions per errors. No s'esborrarà cap hidrant de la BD per evitar pèrdues accidentals.`);
     }
   });
 

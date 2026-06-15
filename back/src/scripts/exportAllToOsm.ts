@@ -113,8 +113,14 @@ async function run() {
     const lat = h.lat;
     const lon = h.lon;
     
-    // Si és per esborrar, li posem l'atribut action='delete'
-    const actionAttr = h.sync_status === 'PENDING_DELETE' ? " action='delete'" : "";
+    // Determinem l'acció per a JOSM segons l'estat de sincronització
+    let actionAttr = "";
+    if (h.sync_status === 'PENDING_DELETE') {
+      actionAttr = " action='delete'";
+    } else if (h.sync_status === 'PENDING_UPDATE') {
+      actionAttr = " action='modify'";
+    }
+    // Per a PENDING_CREATE no cal action si l'id és negatiu, JOSM ja ho interpreta com a nou.
 
     // Combinar tags
     const osmTags = JSON.parse(h.osm_tags || '{}');

@@ -59,7 +59,7 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
               </div>
               <div style={itemStyle}>
                 <img src={hidrant_op_nrev} alt="Verd apagat" style={imgStyle} />
-                <span>Operatiu (no revisat)</span>
+                <span>Operatiu (no revisat {currentYear})</span>
               </div>
               <div style={itemStyle}>
                 <img src={hidrant_nop_rev} alt="Vermell" style={imgStyle} />
@@ -71,7 +71,7 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
                   alt="Vermell apagat"
                   style={imgStyle}
                 />
-                <span>Fora de servei (no revisat)</span>
+                <span>Fora de servei (no revisat {currentYear})</span>
               </div>
               <div style={itemStyle}>
                 <img src={hidrant_no_info} alt="Negre" style={imgStyle} />

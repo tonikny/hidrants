@@ -5,6 +5,7 @@ import {
   hidrant_nop_rev,
   hidrant_op_nrev,
   hidrant_op_rev,
+  hidrant_no_info,
 } from '../../utils/icons';
 
 export function LegendModal({ style }: { style?: React.CSSProperties }) {
@@ -42,23 +43,40 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
       {/* Finestra modal centrada */}
       {open && (
         <Modal title="Llegenda" onClose={() => setOpen(false)}>
-          <div style={{ padding: '0.5rem 0' }}>
-            <h4 style={{ marginTop: 0 }}>Hidrants</h4>
-            <div style={itemStyle}>
-              <img src={hidrant_op_rev} alt="Verd" style={imgStyle} />
-              <span>Operatiu (revisat {currentYear})</span>
-            </div>
-            <div style={itemStyle}>
-              <img src={hidrant_op_nrev} alt="Verd apagat" style={imgStyle} />
-              <span>Operatiu (no revisat)</span>
-            </div>
-            <div style={itemStyle}>
-              <img src={hidrant_nop_rev} alt="Vermell" style={imgStyle} />
-              <span>Fora de servei ({currentYear})</span>
-            </div>
-            <div style={itemStyle}>
-              <img src={hidrant_nop_nrev} alt="Vermell apagat" style={imgStyle} />
-              <span>Fora de servei (no revisat)</span>
+          <div
+            style={{
+              padding: '0.5rem 0',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <div style={{ textAlign: 'left', width: 'fit-content' }}>
+              <h4 style={{ marginTop: 0 }}>Hidrants</h4>
+              <div style={itemStyle}>
+                <img src={hidrant_op_rev} alt="Verd" style={imgStyle} />
+                <span>Operatiu (revisat {currentYear})</span>
+              </div>
+              <div style={itemStyle}>
+                <img src={hidrant_op_nrev} alt="Verd apagat" style={imgStyle} />
+                <span>Operatiu (no revisat)</span>
+              </div>
+              <div style={itemStyle}>
+                <img src={hidrant_nop_rev} alt="Vermell" style={imgStyle} />
+                <span>Fora de servei ({currentYear})</span>
+              </div>
+              <div style={itemStyle}>
+                <img
+                  src={hidrant_nop_nrev}
+                  alt="Vermell apagat"
+                  style={imgStyle}
+                />
+                <span>Fora de servei (no revisat)</span>
+              </div>
+              <div style={itemStyle}>
+                <img src={hidrant_no_info} alt="Negre" style={imgStyle} />
+                <span>Sense data de revisió coneguda</span>
+              </div>
             </div>
           </div>
         </Modal>

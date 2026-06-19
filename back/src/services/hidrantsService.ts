@@ -80,11 +80,14 @@ export const HidrantsService = {
     const current = HidrantsRepository.findByIdAndAdf(id, adfId);
     if (!current) throw new NotFoundError('Hydrant not found');
 
-    let newSyncStatus = current.sync_status;
-    if (current.sync_status === 'SYNCED') {
-      newSyncStatus = 'PENDING_UPDATE';
-    }
-
+    // Determinem si hi ha canvis que afecten OSM (lat, lon, osm_tags)
+    let hasOsmChanges = false;
+    
+    // Comprovar canvis de posició
+    if (lat !== undefined && lat !== current.lat) hasOsmChanges = true;
+    if (lon !== undefined && lon !== current.lon) hasOsmChanges = true;
+    
+    // Comprovar canvis en osm_tags
     let osm_tags = undefined;
     if (ui_fields) {
       const currentOsmTags = JSON.parse(current.osm_tags || '{}');
@@ -98,6 +101,17 @@ export const HidrantsService = {
       osm_tags = Object.fromEntries(
         Object.entries(merged).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
       );
+      
+      // Comparar si realment han canviat els tags
+      if (JSON.stringify(osm_tags) !== JSON.stringify(currentOsmTags)) {
+        hasOsmChanges = true;
+      }
+    }
+
+    // Només canviar sync_status si hi ha canvis que afecten OSM
+    let newSyncStatus = current.sync_status;
+    if (hasOsmChanges && current.sync_status === 'SYNCED') {
+      newSyncStatus = 'PENDING_UPDATE';
     }
 
     HidrantsRepository.update(id, adfId, {

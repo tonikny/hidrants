@@ -42,10 +42,12 @@ export const NodeWithForm = ({
 
   const props = feature.properties;
   const [data, setData] = useState<HydrantUiFields>(props.ui_fields);
+  const [observacions, setObservacions] = useState(props.private_tags?.observacions || '');
 
   useEffect(() => {
     setData(props.ui_fields);
-  }, [props.ui_fields]);
+    setObservacions(props.private_tags?.observacions || '');
+  }, [props.ui_fields, props.private_tags]);
 
   const canEdit =
     user &&
@@ -101,6 +103,10 @@ export const NodeWithForm = ({
           },
           body: JSON.stringify({
             ui_fields: data,
+            private_tags: {
+              ...props.private_tags,
+              observacions: observacions.trim() || undefined,
+            },
           }),
         }
       );
@@ -238,6 +244,12 @@ export const NodeWithForm = ({
                 {user?.role === 'admin' && (
                   <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '8px', borderTop: '1px dotted #ccc', paddingTop: '4px' }}>
                     <strong>Sync:</strong> {formatSyncStatus(props.sync_status)}
+                  </div>
+                )}
+                {props.private_tags?.observacions && (
+                  <div style={{ fontSize: '0.85rem', marginTop: '8px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
+                    <strong>Observacions:</strong><br/>
+                    <span style={{ whiteSpace: 'pre-wrap' }}>{props.private_tags.observacions}</span>
                   </div>
                 )}
               </div>
@@ -440,6 +452,17 @@ export const NodeWithForm = ({
               onChange={setData}
               showSurveyDateAndStatus={true}
             />
+
+            <label style={{ fontSize: '0.75rem', fontStyle: 'italic', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              Observacions:
+              <textarea
+                value={observacions}
+                onChange={(e) => setObservacions(e.target.value)}
+                rows={3}
+                style={{ ...inputStyle, width: '100%', resize: 'vertical', fontSize: '0.75rem', padding: '4px' }}
+                placeholder="Observacions internes de l'hidrant..."
+              />
+            </label>
 
             <div style={{ display: 'flex', gap: '5px', marginTop: '0.5rem' }}>
               <button

@@ -23,6 +23,11 @@ const handler: ApiHandler = async (req, res) => {
   const isAdmin = user?.role === 'admin';
   const adf_id = Number(req.query?.adf || req.body?.adf_id || user?.adf_id);
 
+  // Inferir URL base del client per a missatges de Telegram
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers.host || 'hidrants.adfcongost.cat';
+  const clientBaseUrl = `${protocol}://${host}`;
+
   // --- GET /api/incidencies/:id: Detall d'una incidència ---
   // Aquest va primer perquè no necessita estrictament adf_id
   if (method === 'GET' && req.params?.id) {
@@ -55,7 +60,8 @@ const handler: ApiHandler = async (req, res) => {
       adf_id: adf_id || 0, // Fallback segur per admin
       usuari_id: user?.id || 'anonymous',
       nom_usuari: user?.username || 'Anònim',
-      comentari: parsed.data.comentari
+      comentari: parsed.data.comentari,
+      clientBaseUrl
     });
     return res.status(201).json(result);
   }
@@ -71,7 +77,8 @@ const handler: ApiHandler = async (req, res) => {
       user?.id || 'anonymous',
       user?.username || 'Anònim',
       parsed.data.tipus_event as any,
-      parsed.data.dades
+      parsed.data.dades,
+      clientBaseUrl
     );
     return res.status(201).json(result);
   }

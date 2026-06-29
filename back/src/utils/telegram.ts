@@ -19,6 +19,10 @@ export async function sendTelegramMessage(text: string) {
           chat_id: TELEGRAM_CHAT_ID,
           text,
           parse_mode: 'HTML',
+          link_preview_options: {
+            is_disabled: false,
+            prefer_large_media: true
+          }
         }),
       }
     );

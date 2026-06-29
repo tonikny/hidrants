@@ -91,14 +91,20 @@ export const HidrantsService = {
     let osm_tags = undefined;
     if (ui_fields) {
       const currentOsmTags = JSON.parse(current.osm_tags || '{}');
-      const newTags = ui2Osm(ui_fields); // Ja ve net des de ui2Osm()
+      const newTags = ui2Osm(ui_fields);
+
+      if (ui_fields.estat) {
+        delete currentOsmTags['emergency'];
+        delete currentOsmTags['disused:emergency'];
+      }
+
       osm_tags = {
         ...currentOsmTags,
         ...newTags
       };
       
       // Comparar si realment han canviat els tags
-      if (JSON.stringify(osm_tags) !== JSON.stringify(currentOsmTags)) {
+      if (JSON.stringify(osm_tags) !== JSON.stringify(JSON.parse(current.osm_tags || '{}'))) {
         hasOsmChanges = true;
       }
     }

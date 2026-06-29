@@ -3,6 +3,15 @@ import { ui2Osm } from '../utils/osmConversion.js';
 import { HidrantsService } from '../services/hidrantsService.js';
 import { sendTelegramMessage } from '../utils/telegram.js';
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const handler: ApiHandler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -65,21 +74,22 @@ const handler: ApiHandler = async (req, res) => {
       delete dbInfo.ui_fields;
     }
 
-    // Generar URL de l'aplicació dinàmicament
+    // Generar URL de l'aplicació dinàmicament utilitzant les capçaleres de la petició
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers.host || 'hidrants.adfcongost.cat';
     const nodeId = tags?.id || dbResult?.id;
-    const appUrl = nodeId ? `${protocol}://${host}?node=${nodeId}` : null;
+    const adfParam = adf_id ? `adf=${adf_id}&` : '';
+    const appUrl = nodeId ? `${protocol}://${host}/?${adfParam}node=${nodeId}` : null;
 
     const text = `
 ${title}
 
 ${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ''}
 📍 Coord: <code>${lat}, ${lon}</code>
-💬 Missatge: ${message || '(cap)'}
+💬 Missatge: ${escapeHtml(message || '(cap)')}
 
 🏷️ <b>Info BD:</b>
-<pre>${JSON.stringify(dbInfo, null, 2)}</pre>
+<pre>${escapeHtml(JSON.stringify(dbInfo, null, 2))}</pre>
     `;
 
     await sendTelegramMessage(text);

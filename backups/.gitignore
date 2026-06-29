@@ -1,0 +1,6 @@
+# Ignorar tots els backups
+*.tar.gz
+*.backup_*
+
+# Mantenir l'estructura de directoris
+!.gitkeep

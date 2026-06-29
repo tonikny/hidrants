@@ -91,16 +91,11 @@ export const HidrantsService = {
     let osm_tags = undefined;
     if (ui_fields) {
       const currentOsmTags = JSON.parse(current.osm_tags || '{}');
-      const newTags = ui2Osm(ui_fields);
-      const merged = {
+      const newTags = ui2Osm(ui_fields); // Ja ve net des de ui2Osm()
+      osm_tags = {
         ...currentOsmTags,
         ...newTags
       };
-      
-      // Netegem tags que s'han marcat per eliminar (valor buit)
-      osm_tags = Object.fromEntries(
-        Object.entries(merged).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
-      );
       
       // Comparar si realment han canviat els tags
       if (JSON.stringify(osm_tags) !== JSON.stringify(currentOsmTags)) {

@@ -27,7 +27,9 @@ CONTAINER_NAME="hidrants-back"
 # Carregar variables d'entorn per Telegram (opcional)
 ENV_FILE="$PROJECT_DIR/back/.env"
 if [ -f "$ENV_FILE" ]; then
-    source "$ENV_FILE"
+    set -a  # Exportar automàticament les variables
+    source <(grep -v '^#' "$ENV_FILE" | grep -v '^$' | sed 's/^/export /')
+    set +a
 fi
 
 # Colors per output

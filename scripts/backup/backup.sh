@@ -32,7 +32,7 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 ENV_FILE="$PROJECT_DIR/back/.env"
 if [ -f "$ENV_FILE" ]; then
     set -a  # Exportar automàticament les variables
-    source <(grep -v '^#' "$ENV_FILE" | grep -v '^$' | sed 's/^/export /')
+    source <(grep -E '^[A-Z_]+[A-Z0-9_]*=' "$ENV_FILE")
     set +a
 fi
 

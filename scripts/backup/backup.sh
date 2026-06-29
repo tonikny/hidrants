@@ -71,7 +71,8 @@ send_telegram() {
         curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
             -d "chat_id=$TELEGRAM_CHAT_ID" \
             -d "text=$ENCODED_MESSAGE" \
-            -d "parse_mode=HTML" > /dev/null 2>&1
+            -d "parse_mode=HTML" \
+            -d "disable_notification=true" > /dev/null 2>&1
     fi
 }
 

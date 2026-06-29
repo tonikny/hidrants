@@ -135,20 +135,19 @@ sqlite_checkpoint() {
 create_backup() {
     local BACKUP_TYPE="$1"
     local BACKUP_DIR="$BACKUP_BASE_DIR/$BACKUP_TYPE"
-    local BACKUP_FILE="$BACKUP_DIR/hidrants_${BACKUP_TYPE}_${TIMESTAMP}.tar.gz"
+    CREATED_BACKUP_FILE="$BACKUP_DIR/hidrants_${BACKUP_TYPE}_${TIMESTAMP}.tar.gz"
     
     # Crear directori si no existeix
     mkdir -p "$BACKUP_DIR"
     
     log_info "Creant backup $BACKUP_TYPE..."
     log_info "Origen: $DATA_DIR"
-    log_info "Destí: $BACKUP_FILE"
+    log_info "Destí: $CREATED_BACKUP_FILE"
     
     # Crear backup comprimit
-    if tar -czf "$BACKUP_FILE" -C "$(dirname "$DATA_DIR")" "$(basename "$DATA_DIR")" 2>/dev/null; then
-        local SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+    if tar -czf "$CREATED_BACKUP_FILE" -C "$(dirname "$DATA_DIR")" "$(basename "$DATA_DIR")" 2>/dev/null; then
+        local SIZE=$(du -h "$CREATED_BACKUP_FILE" | cut -f1)
         log_success "Backup creat correctament ($SIZE)"
-        echo "$BACKUP_FILE" >&3  # Retornar per file descriptor 3
         return 0
     else
         log_error "Error creant el backup"
@@ -241,11 +240,10 @@ main() {
     # Checkpoint de SQLite
     sqlite_checkpoint
     
-    # Crear backup (usar file descriptor 3 per capturar el path)
-    exec 3>&1
-    BACKUP_FILE=$(create_backup "$BACKUP_TYPE")
-    exec 3>&-
+    # Crear backup (usa variable global CREATED_BACKUP_FILE)
+    create_backup "$BACKUP_TYPE"
     BACKUP_SUCCESS=$?
+    BACKUP_FILE="$CREATED_BACKUP_FILE"
     
     # Reiniciar contenidor si estava en marxa
     if [ "$CONTAINER_WAS_RUNNING" = true ]; then

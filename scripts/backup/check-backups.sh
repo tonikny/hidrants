@@ -67,10 +67,12 @@ log_header() {
 send_telegram() {
     local MESSAGE="$1"
     if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+        # URL-encode el missatge per evitar problemes amb caràcters especials
+        local ENCODED_MESSAGE=$(printf '%s' "$MESSAGE" | jq -sRr @uri)
         curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-            -d chat_id="$TELEGRAM_CHAT_ID" \
-            -d text="$MESSAGE" \
-            -d parse_mode="Markdown" > /dev/null 2>&1
+            -d "chat_id=$TELEGRAM_CHAT_ID" \
+            -d "text=$ENCODED_MESSAGE" \
+            -d "parse_mode=HTML" > /dev/null 2>&1
     fi
 }
 
@@ -282,10 +284,10 @@ generate_summary() {
     
     if [ $TOTAL_ISSUES -eq 0 ]; then
         log_success "✅ Tot correcte! No s'han detectat problemes"
-        send_telegram "✅ *Hidrants Backups Check*: Tot correcte!"
+        send_telegram "✅ <b>Hidrants Backups Check</b>: Tot correcte!"
     else
         log_warning "⚠️  S'han detectat $TOTAL_ISSUES problema(es)"
-        send_telegram "⚠️ *Hidrants Backups Check*: S'han detectat $TOTAL_ISSUES problema(es). Revisa els backups."
+        send_telegram "⚠️ <b>Hidrants Backups Check</b>: S'han detectat $TOTAL_ISSUES problema(es). Revisa els backups."
     fi
     
     echo ""

@@ -66,10 +66,12 @@ log_error() {
 send_telegram() {
     local MESSAGE="$1"
     if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+        # URL-encode el missatge per evitar problemes amb caràcters especials
+        local ENCODED_MESSAGE=$(printf '%s' "$MESSAGE" | jq -sRr @uri)
         curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-            -d chat_id="$TELEGRAM_CHAT_ID" \
-            -d text="$MESSAGE" \
-            -d parse_mode="Markdown" > /dev/null 2>&1
+            -d "chat_id=$TELEGRAM_CHAT_ID" \
+            -d "text=$ENCODED_MESSAGE" \
+            -d "parse_mode=HTML" > /dev/null 2>&1
     fi
 }
 
@@ -255,7 +257,7 @@ main() {
             log_success "El contenidor està operatiu"
         else
             log_error "El contenidor no s'ha pogut reiniciar correctament!"
-            send_telegram "⚠️ *Hidrants Backup ERROR*: El contenidor no s'ha reiniciat després del backup $BACKUP_TYPE"
+            send_telegram "⚠️ <b>Hidrants Backup ERROR</b>: El contenidor no s'ha reiniciat després del backup $BACKUP_TYPE"
         fi
     fi
     
@@ -268,7 +270,8 @@ main() {
         log_info "=========================================="
         
         # Notificació Telegram
-        send_telegram "✅ *Hidrants Backup OK*: Backup $BACKUP_TYPE completat correctament
+        send_telegram "✅ <b>Hidrants Backup OK</b>
+Tipus: $BACKUP_TYPE
 📁 $(basename "$BACKUP_FILE")
 📊 $(du -h "$BACKUP_FILE" | cut -f1)
 🕐 $(date '+%Y-%m-%d %H:%M:%S')"
@@ -276,7 +279,7 @@ main() {
         exit 0
     else
         log_error "El backup ha fallat"
-        send_telegram "❌ *Hidrants Backup ERROR*: El backup $BACKUP_TYPE ha fallat!"
+        send_telegram "❌ <b>Hidrants Backup ERROR</b>: El backup $BACKUP_TYPE ha fallat!"
         exit 1
     fi
 }

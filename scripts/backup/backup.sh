@@ -148,7 +148,7 @@ create_backup() {
     if tar -czf "$BACKUP_FILE" -C "$(dirname "$DATA_DIR")" "$(basename "$DATA_DIR")" 2>/dev/null; then
         local SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
         log_success "Backup creat correctament ($SIZE)"
-        echo "$BACKUP_FILE"
+        echo "$BACKUP_FILE" >&3  # Retornar per file descriptor 3
         return 0
     else
         log_error "Error creant el backup"
@@ -241,8 +241,10 @@ main() {
     # Checkpoint de SQLite
     sqlite_checkpoint
     
-    # Crear backup
+    # Crear backup (usar file descriptor 3 per capturar el path)
+    exec 3>&1
     BACKUP_FILE=$(create_backup "$BACKUP_TYPE")
+    exec 3>&-
     BACKUP_SUCCESS=$?
     
     # Reiniciar contenidor si estava en marxa

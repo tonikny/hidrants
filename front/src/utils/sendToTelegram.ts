@@ -4,6 +4,7 @@ type SendPayload = {
   tags?: Record<string, any>;
   message?: string;
   adf_id?: number;
+  isEdit?: boolean;
 };
 
 export async function sendToTelegram(data: SendPayload): Promise<void> {

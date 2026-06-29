@@ -19,7 +19,7 @@ const handler: ApiHandler = async (req, res) => {
   }
 
   try {
-    const { lat, lon, tags, message, adf_id } = req.body;
+    const { lat, lon, tags, message, adf_id, isEdit } = req.body;
 
     let title = '🗺️ <b>Nou Hidrant:</b>';
     let isNewHydrant = false;
@@ -27,7 +27,10 @@ const handler: ApiHandler = async (req, res) => {
     if (tags?.type === 'incidencia') {
       title = '⚠️ <b>Nova Incidència:</b>';
     } else if (tags?.osm_id || tags?.id) {
-      title = '📝 <b>Comentari de l\'hidrant:</b>';
+      // Diferenciar entre edició i comentari
+      title = isEdit 
+        ? '✏️ <b>Edició d\'hidrant:</b>' 
+        : '💬 <b>Comentari de l\'hidrant:</b>';
     } else {
       isNewHydrant = true;
     }
@@ -48,8 +51,6 @@ const handler: ApiHandler = async (req, res) => {
       }
     }
 
-    const osmId = tags?.osm_id;
-
     // Preparem una còpia neta per Telegram amb la info de la BD
     const dbInfo = { ...tags };
     if (dbResult) {
@@ -64,20 +65,21 @@ const handler: ApiHandler = async (req, res) => {
       delete dbInfo.ui_fields;
     }
 
+    // Generar URL de l'aplicació dinàmicament
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers.host || 'hidrants.adfcongost.cat';
+    const nodeId = tags?.id || dbResult?.id;
+    const appUrl = nodeId ? `${protocol}://${host}?node=${nodeId}` : null;
+
     const text = `
 ${title}
 
+${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ''}
 📍 Coord: <code>${lat}, ${lon}</code>
 💬 Missatge: ${message || '(cap)'}
 
 🏷️ <b>Info BD:</b>
 <pre>${JSON.stringify(dbInfo, null, 2)}</pre>
-
-${
-  osmId && tags?.type !== 'incidencia'
-    ? `🔗 https://www.openstreetmap.org/node/${osmId}`
-    : ''
-}
     `;
 
     await sendTelegramMessage(text);

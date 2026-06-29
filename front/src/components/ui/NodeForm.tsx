@@ -70,6 +70,7 @@ export const NodeWithForm = ({
         tags: props,
         message,
         adf_id: activeAdf?.id,
+        isEdit: false,
       });
 
       toast.success('Notificació enviada');
@@ -114,6 +115,24 @@ export const NodeWithForm = ({
       if (!response.ok) throw new Error('Error actualitzant dades');
 
       toast.success('Hidrant actualitzat');
+
+      // Enviar notificació de l'edició
+      await sendToTelegram({
+        lat: poi.lat,
+        lon: poi.lng,
+        tags: {
+          ...props,
+          ui_fields: data,
+          private_tags: {
+            ...props.private_tags,
+            observacions: observacions.trim() || undefined,
+          },
+        },
+        message: 'Dades actualitzades',
+        adf_id: activeAdf.id,
+        isEdit: true,
+      });
+
       setIsEditing(false);
       if (refreshHidrants) {
         await refreshHidrants();
@@ -156,6 +175,20 @@ export const NodeWithForm = ({
 
       if (!response.ok) throw new Error('Error actualitzant');
       toast.success(`Hidrant actualitzat a ${statusText}`);
+
+      // Enviar notificació del canvi d'estat
+      await sendToTelegram({
+        lat: poi.lat,
+        lon: poi.lng,
+        tags: {
+          ...props,
+          ui_fields: newData,
+        },
+        message: `Estat canviat a: ${statusText}`,
+        adf_id: activeAdf.id,
+        isEdit: true,
+      });
+
       setData(newData);
       if (refreshHidrants) {
         await refreshHidrants();
@@ -437,6 +470,43 @@ export const NodeWithForm = ({
                 )}
               </div>
             </div>
+
+            {/* Formulari de notificació (només en mode visualització) */}
+            <hr style={{ margin: '0.5rem 0', border: '1px solid #ccc' }} />
+            <textarea
+              placeholder="Enviar informació sobre aquest hidrant ..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={2}
+              style={{
+                ...inputStyle,
+                width: '100%',
+                marginTop: '0.2rem',
+                padding: '4px',
+                fontSize: '0.75rem',
+                fontFamily: 'inherit',
+              }}
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSend();
+              }}
+              style={{
+                ...primaryButtonStyle,
+                width: '100%',
+                marginTop: '0.5rem',
+                padding: '6px',
+                fontSize: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+            >
+              Notificar <span style={{ fontSize: '1rem' }}>➤</span>
+            </button>
           </>
         ) : (
           <div
@@ -498,41 +568,6 @@ export const NodeWithForm = ({
             </div>
           </div>
         )}
-        <hr style={{ margin: '0.5rem 0', border: '1px solid #ccc' }} />
-        <textarea
-          placeholder="Enviar informació sobre aquest hidrant ..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={2}
-          style={{
-            ...inputStyle,
-            width: '100%',
-            marginTop: '0.2rem',
-            padding: '4px',
-            fontSize: '0.75rem',
-            fontFamily: 'inherit',
-          }}
-        />
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleSend();
-          }}
-          style={{
-            ...primaryButtonStyle,
-            width: '100%',
-            marginTop: '0.5rem',
-            padding: '6px',
-            fontSize: '0.75rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-          }}
-        >
-          Notificar <span style={{ fontSize: '1rem' }}>➤</span>
-        </button>
       </div>
     </Popup>
   );

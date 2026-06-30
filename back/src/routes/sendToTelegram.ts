@@ -68,9 +68,13 @@ const handler: ApiHandler = async (req, res) => {
     }
     
     if (dbInfo.ui_fields) {
-      if (!dbInfo.osm_tags || Object.keys(dbInfo.osm_tags).length === 0) {
-        dbInfo.osm_tags = ui2Osm(dbInfo.ui_fields);
+      const currentOsmTags = { ...(dbInfo.osm_tags || {}) };
+      const newOsmTags = ui2Osm(dbInfo.ui_fields);
+      if (dbInfo.ui_fields.estat) {
+        delete currentOsmTags['emergency'];
+        delete currentOsmTags['disused:emergency'];
       }
+      dbInfo.osm_tags = { ...currentOsmTags, ...newOsmTags };
       delete dbInfo.ui_fields;
     }
 

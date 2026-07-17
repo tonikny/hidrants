@@ -74,6 +74,7 @@ export const NewNodeForm = ({
             observacions: observacions.trim() || undefined,
           },
         },
+        message: 'Node creat',
         adf_id: activeAdf?.id,
       });
       toast.success('Hidrant afegit');

@@ -79,6 +79,13 @@ const handler: ApiHandler = async (req, res) => {
       delete dbInfo.ui_fields;
     }
 
+    // Reordenar per posar private_tags al final
+    if (dbInfo.private_tags) {
+      const privateTags = dbInfo.private_tags;
+      delete dbInfo.private_tags;
+      dbInfo.private_tags = privateTags;
+    }
+
     // Generar URL de l'aplicació dinàmicament utilitzant les capçaleres de la petició
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers.host || 'hidrants.adfcongost.cat';

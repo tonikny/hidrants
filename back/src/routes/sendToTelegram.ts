@@ -28,7 +28,8 @@ const handler: ApiHandler = async (req, res) => {
   }
 
   try {
-    const { lat, lon, tags, message, adf_id, isEdit } = req.body;
+    const { lat, lon, tags, message, originalData, changes, adf_id, isEdit } =
+      req.body;
 
     let title = '🗺️ <b>Nou Hidrant:</b>';
     let isNewHydrant = false;
@@ -90,6 +91,22 @@ const handler: ApiHandler = async (req, res) => {
     // Extreure observacions de private_tags
     const observacions = tags?.private_tags?.observacions || '';
 
+    let contentSection = '';
+    if (isEdit && originalData && changes && Object.keys(changes).length > 0) {
+      contentSection = `
+📋 <b>Dades originals:</b>
+<pre>${escapeHtml(JSON.stringify(originalData, null, 2))}</pre>
+
+✏️ <b>Canvis aplicats:</b>
+<pre>${escapeHtml(JSON.stringify(changes, null, 2))}</pre>
+`;
+    } else {
+      contentSection = `
+🏷️ <b>Info BD:</b>
+<pre>${escapeHtml(JSON.stringify(dbInfo, null, 2))}</pre>
+`;
+    }
+
     const text = `
 ${title}
 
@@ -97,8 +114,7 @@ ${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ''}
 📍 Coord: <code>${lat}, ${lon}</code>
 💬 Missatge: ${escapeHtml(message || '(cap)')}
 
-🏷️ <b>Info BD:</b>
-<pre>${escapeHtml(JSON.stringify(dbInfo, null, 2))}</pre>
+${contentSection}
     `;
 
     await sendTelegramMessage(text);

@@ -3,6 +3,8 @@ type SendPayload = {
   lon: number;
   tags?: Record<string, any>;
   message?: string;
+  originalData?: Record<string, any>;
+  changes?: Record<string, any>;
   adf_id?: number;
   isEdit?: boolean;
 };

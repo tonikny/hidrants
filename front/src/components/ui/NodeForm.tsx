@@ -28,6 +28,31 @@ type NodeFormProps = {
   hasLocation?: boolean;
 };
 
+function calculateChanges(
+  original: HydrantUiFields,
+  modified: HydrantUiFields,
+  originalObservacions: string,
+  modifiedObservacions: string
+) {
+  const changes: any = {};
+  const originalValues: any = {};
+
+  for (const key in modified) {
+    const k = key as keyof HydrantUiFields;
+    if (original[k] !== modified[k]) {
+      changes[k] = modified[k];
+      originalValues[k] = original[k];
+    }
+  }
+
+  if (originalObservacions !== modifiedObservacions) {
+    changes.observacions = modifiedObservacions;
+    originalValues.observacions = originalObservacions;
+  }
+
+  return { changes, originalValues };
+}
+
 export const NodeWithForm = ({
   feature,
   showRoute,
@@ -116,7 +141,13 @@ export const NodeWithForm = ({
 
       toast.success('Hidrant actualitzat');
 
-      // Enviar notificació de l'edició
+      const { changes, originalValues } = calculateChanges(
+        props.ui_fields,
+        data,
+        props.private_tags?.observacions || '',
+        observacions.trim()
+      );
+
       await sendToTelegram({
         lat: poi.lat,
         lon: poi.lng,
@@ -128,7 +159,8 @@ export const NodeWithForm = ({
             observacions: observacions.trim() || undefined,
           },
         },
-        message: 'Dades actualitzades',
+        originalData: originalValues,
+        changes: changes,
         adf_id: activeAdf.id,
         isEdit: true,
       });
@@ -176,7 +208,16 @@ export const NodeWithForm = ({
       if (!response.ok) throw new Error('Error actualitzant');
       toast.success(`Hidrant actualitzat a ${statusText}`);
 
-      // Enviar notificació del canvi d'estat
+      const originalValues: any = {
+        estat: props.ui_fields.estat,
+        surveyDate: props.ui_fields.surveyDate,
+      };
+
+      const changes: any = {
+        estat: isOperative ? 'Operatiu' : 'Fora de servei',
+        surveyDate: today,
+      };
+
       await sendToTelegram({
         lat: poi.lat,
         lon: poi.lng,
@@ -184,7 +225,8 @@ export const NodeWithForm = ({
           ...props,
           ui_fields: newData,
         },
-        message: `Estat canviat a: ${statusText}`,
+        originalData: originalValues,
+        changes: changes,
         adf_id: activeAdf.id,
         isEdit: true,
       });

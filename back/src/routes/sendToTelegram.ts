@@ -37,9 +37,9 @@ const handler: ApiHandler = async (req, res) => {
       title = '⚠️ <b>Nova Incidència:</b>';
     } else if (tags?.osm_id || tags?.id) {
       // Diferenciar entre edició i comentari
-      title = isEdit 
-        ? '✏️ <b>Edició d\'hidrant:</b>' 
-        : '💬 <b>Comentari de l\'hidrant:</b>';
+      title = isEdit
+        ? "✏️ <b>Edició d'hidrant:</b>"
+        : "💬 <b>Comentari de l'hidrant:</b>";
     } else {
       isNewHydrant = true;
     }
@@ -53,7 +53,7 @@ const handler: ApiHandler = async (req, res) => {
           lat,
           lon,
           tags?.ui_fields,
-          {}
+          tags?.private_tags || {}
         );
       } catch (dbErr) {
         console.error('Error saving to DB:', dbErr);
@@ -66,7 +66,7 @@ const handler: ApiHandler = async (req, res) => {
       dbInfo.id = dbResult.id;
       dbInfo.sync_status = dbResult.sync_status;
     }
-    
+
     if (dbInfo.ui_fields) {
       const currentOsmTags = { ...(dbInfo.osm_tags || {}) };
       const newOsmTags = ui2Osm(dbInfo.ui_fields);
@@ -83,7 +83,12 @@ const handler: ApiHandler = async (req, res) => {
     const host = req.headers.host || 'hidrants.adfcongost.cat';
     const nodeId = tags?.id || dbResult?.id;
     const adfParam = adf_id ? `adf=${adf_id}&` : '';
-    const appUrl = nodeId ? `${protocol}://${host}/?${adfParam}node=${nodeId}` : null;
+    const appUrl = nodeId
+      ? `${protocol}://${host}/?${adfParam}node=${nodeId}`
+      : null;
+
+    // Extreure observacions de private_tags
+    const observacions = tags?.private_tags?.observacions || '';
 
     const text = `
 ${title}

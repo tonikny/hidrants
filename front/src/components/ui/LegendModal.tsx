@@ -63,7 +63,7 @@ export function LegendModal({ style }: { style?: React.CSSProperties }) {
               </div>
               <div style={itemStyle}>
                 <img src={hidrant_nop_rev} alt="Vermell" style={imgStyle} />
-                <span>Fora de servei ({currentYear})</span>
+                <span>Fora de servei (revisat {currentYear})</span>
               </div>
               <div style={itemStyle}>
                 <img

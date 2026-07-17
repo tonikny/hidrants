@@ -27,7 +27,7 @@ export const NewNodeForm = ({
   setNewNodeLatLng,
   refreshHidrants,
 }: NodeFormProps) => {
-  const [message, setMessage] = useState('');
+  const [observacions, setObservacions] = useState('');
   const { activeAdf } = useAdf();
   const [isInspected, setIsInspected] = useState(false);
 
@@ -68,12 +68,16 @@ export const NewNodeForm = ({
       await sendToTelegram({
         lat,
         lon,
-        tags: { ui_fields: data }, // En nous nodes només tenim els ui_fields
-        message,
+        tags: { 
+          ui_fields: data,
+          private_tags: {
+            observacions: observacions.trim() || undefined,
+          },
+        },
         adf_id: activeAdf?.id,
       });
       toast.success('Hidrant afegit');
-      setMessage('');
+      setObservacions('');
       if (refreshHidrants) {
         await refreshHidrants();
       }
@@ -135,7 +139,7 @@ export const NewNodeForm = ({
         showSurveyDateAndStatus={isInspected}
       />
 
-      {/* Comentari (100%) */}
+      {/* Observacions (100%) */}
       <label
         style={{
           fontSize: '0.8rem',
@@ -145,11 +149,12 @@ export const NewNodeForm = ({
           marginTop: '0.5rem',
         }}
       >
-        Comentari:
+        Observacions:
         <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          value={observacions}
+          onChange={(e) => setObservacions(e.target.value)}
           rows={2}
+          placeholder="Observacions internes de l'hidrant..."
           style={{ ...inputStyle, width: '100%', resize: 'vertical' }}
         />
       </label>

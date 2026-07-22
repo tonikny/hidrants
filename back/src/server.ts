@@ -19,6 +19,9 @@ import { ApiHandler, ApiRequest } from './types.js';
 import { config } from './config.js';
 import { AppError } from './errors.js';
 
+// Iniciar servei MQTT
+import './services/mqtt.js';
+
 const app = Fastify({
   logger: { level: config.FASTIFY_LOGLEVEL },
 });

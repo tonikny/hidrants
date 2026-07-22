@@ -39,3 +39,8 @@ opencode.json
 *.db
 *.db-wal
 *.db-shm
+
+# Mqtt
+/mosquitto/config/passwords
+/mosquitto/config/mosquitto.prod.conf
+/mosquitto/config/acl

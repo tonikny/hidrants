@@ -5,6 +5,7 @@ import {
   EffisNfdrsIcLayer,
   IcgxBiomassLayer,
 } from './layers/MeteoLayers';
+import { TrackingLayer } from './TrackingLayer';
 
 const { BaseLayer } = LayersControl;
 
@@ -97,6 +98,10 @@ export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer }: Layers
         name="Biomassa Arbrat (ICGC)"
       >
         <IcgxBiomassLayer />
+      </LayersControl.Overlay>
+
+      <LayersControl.Overlay name="Tracking Usuaris (OwnTracks)">
+        <TrackingLayer />
       </LayersControl.Overlay>
     </LayersControl>
   );

@@ -13,6 +13,7 @@ import municipisList from './routes/municipis.js';
 import boundary from './routes/boundary.js';
 import hidrants from './routes/hidrants.js';
 import incidencies from './routes/incidencies.js';
+import tracking from './routes/tracking.js';
 import { login, me, logout } from './routes/auth.js';
 
 import { ApiHandler, ApiRequest } from './types.js';
@@ -181,6 +182,7 @@ const routes = [
   { path: '/api/incidencies', handler: incidencies },
   { path: '/api/incidencies/:id', handler: incidencies },
   { path: '/api/incidencies/:id/events', handler: incidencies },
+  { path: '/api/tracking', handler: tracking },
 ];
 
 routes.forEach((r) => {

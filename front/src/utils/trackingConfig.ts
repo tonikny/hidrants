@@ -1,0 +1,4 @@
+export const TRACKING_TIMEOUT_HOURS = 3;
+export const TRACKING_COLOR_GREEN_MINS = 15;
+export const TRACKING_COLOR_YELLOW_MINS = 60;
+export const TRACKING_COLOR_RED_MINS = 180;

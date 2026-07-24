@@ -70,3 +70,23 @@ export const incidencia_events = sqliteTable('incidencia_events', {
 }, (t) => ({
   incidenciaIdx: index('idx_events_incidencia').on(t.incidencia_id)
 }));
+
+export const ubicacions = sqliteTable('ubicacions', {
+  id: text('id').primaryKey(), // UUID
+  topic: text('topic').notNull(), // Topic MQTT (ex: owntracks/user/toni)
+  tracker_id: text('tracker_id'), // Tracker ID (ex: to)
+  lat: real('lat').notNull(),
+  lon: real('lon').notNull(),
+  timestamp: integer('timestamp').notNull(), // Unix timestamp d'OwnTracks
+  accuracy: real('accuracy'), // Precisió en metres
+  altitude: real('altitude'), // Altitud
+  battery: integer('battery'), // Bateria en percentatge
+  velocity: real('velocity'), // Velocitat en km/h
+  trigger: text('trigger'), // Trigger (p, u, t, etc.)
+  connection: text('connection'), // Tipus de connexió (w, m, o)
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`)
+}, (t) => ({
+  topicIdx: index('idx_ubicacions_topic').on(t.topic),
+  timestampIdx: index('idx_ubicacions_timestamp').on(t.timestamp),
+  trackerIdx: index('idx_ubicacions_tracker').on(t.tracker_id)
+}));

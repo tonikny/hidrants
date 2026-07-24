@@ -1,5 +1,8 @@
 import mqtt from 'mqtt';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
+import { db } from '../db/index.js';
+import { ubicacions } from '../db/schema.js';
 
 // Configuració des de variables d'entorn
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://mosquitto:1883';
@@ -79,7 +82,7 @@ function setupEventHandlers() {
   });
 
   // Event: Missatge rebut
-  client.on('message', (topic: string, payload: Buffer) => {
+  client.on('message', async (topic: string, payload: Buffer) => {
     try {
       // Intentar parsejar com JSON
       const payloadString = payload.toString();
@@ -98,8 +101,26 @@ function setupEventHandlers() {
         console.log('[MQTT]   Precisió:', location.acc ? `${location.acc}m` : 'N/A');
         console.log('[MQTT]   Bateria:', location.batt !== undefined ? `${location.batt}%` : 'N/A');
 
-        // TODO: Aquí es guardarà a la base de dades en un pas futur
-        // await saveLocationToDatabase(topic, location);
+        // Guardar a la base de dades
+        try {
+          await db.insert(ubicacions).values({
+            id: uuidv4(),
+            topic: topic,
+            tracker_id: location.tid || null,
+            lat: location.lat,
+            lon: location.lon,
+            timestamp: location.tst,
+            accuracy: location.acc || null,
+            altitude: location.alt || null,
+            battery: location.batt || null,
+            velocity: location.vel || null,
+            trigger: location.t || null,
+            connection: location.conn || null,
+          });
+          console.log('[MQTT]   ✅ Guardat a la base de dades');
+        } catch (dbError) {
+          console.error('[MQTT]   ❌ Error guardant a la BD:', dbError);
+        }
       } else {
         // Només mostrar warning per a tipus desconeguts, no per a tipus coneguts com "status"
         const messageType = data._type || 'desconegut';

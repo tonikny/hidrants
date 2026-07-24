@@ -22,6 +22,8 @@ import { Modal } from '../ui/Modal';
 import { useHydrantData } from '../../hooks/useHidrantData';
 import { useIncidencies } from '../../hooks/useIncidencies';
 import { IncidentMarkerList } from './markers/IncidentMarkerList';
+import { toast } from 'react-toastify';
+import { isPointInBoundary } from '../../utils/geo';
 
 // ✅ Component per escoltar canvis al mapa i informar al pare
 function MapStateListener({
@@ -79,7 +81,7 @@ function FixMapSize() {
 }
 
 export function LeafletMap() {
-  const { activeAdf, isLoading, setActiveAdf } = useAdf();
+  const { activeAdf, isLoading, setActiveAdf, boundaryGeojson } = useAdf();
   const { user, logout } = useAuth();
   const [mapBounds, setMapBounds] = useState<
     [number, number, number, number] | null
@@ -134,6 +136,10 @@ export function LeafletMap() {
 
   const openFormAtPosition = (latlng: L.LatLng) => {
     if (!user) return;
+    if (!isPointInBoundary(latlng.lat, latlng.lng, boundaryGeojson)) {
+      toast.warning('Coordenades fora del límit de l\'ADF');
+      return;
+    }
     setClickedPosition(latlng);
     setActiveForm('selection');
   };
@@ -162,6 +168,7 @@ export function LeafletMap() {
           setClickedPosition={setClickedPosition}
           setActiveForm={setActiveForm}
           user={user}
+          boundaryGeojson={boundaryGeojson}
         />
         <HydrantMarkerList
           features={features}
@@ -182,6 +189,10 @@ export function LeafletMap() {
         {user && (
           <MapClickHandler
             onClick={(latlng) => {
+              if (!isPointInBoundary(latlng.lat, latlng.lng, boundaryGeojson)) {
+                toast.warning('Coordenades fora del límit de l\'ADF');
+                return;
+              }
               setClickedPosition(latlng);
               setActiveForm('selection');
             }}
@@ -224,6 +235,10 @@ export function LeafletMap() {
           showCoordModal={showCoordModal}
           setShowCoordModal={setShowCoordModal}
           onCoordinateConfirm={(lat, lon) => {
+            if (!isPointInBoundary(lat, lon, boundaryGeojson)) {
+              toast.warning('Coordenades fora del límit de l\'ADF');
+              return;
+            }
             const latlng = L.latLng(lat, lon);
             setClickedPosition(latlng);
             setActiveForm('selection');

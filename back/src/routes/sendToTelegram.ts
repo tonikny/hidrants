@@ -48,17 +48,13 @@ const handler: ApiHandler = async (req, res) => {
     // Si és un nou hidrant i tenim adf_id, el guardem a la BD
     let dbResult = null;
     if (isNewHydrant && adf_id) {
-      try {
-        dbResult = HidrantsService.createLocal(
-          Number(adf_id),
-          lat,
-          lon,
-          tags?.ui_fields,
-          tags?.private_tags || {}
-        );
-      } catch (dbErr) {
-        console.error('Error saving to DB:', dbErr);
-      }
+      dbResult = HidrantsService.createLocal(
+        Number(adf_id),
+        lat,
+        lon,
+        tags?.ui_fields,
+        tags?.private_tags || {}
+      );
     }
 
     // Preparem una còpia neta per Telegram amb la info de la BD

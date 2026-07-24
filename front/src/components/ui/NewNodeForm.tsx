@@ -216,15 +216,6 @@ export const MapClickHandler = ({
   }, [isActive]);
 
   useEffect(() => {
-    const handleContextMenu = (e: L.LeafletMouseEvent) => {
-      if (isActive) return;
-      if (hasOpenedRef.current) return;
-      hasOpenedRef.current = true;
-      // e.originalEvent?.preventDefault?.();
-      // e.originalEvent?.stopPropagation?.();
-      onClick(e.latlng);
-    };
-
     const handleClick = () => {
       if (isActive) return; // Protegeix tancament mentre el form està obert
       onCancel();
@@ -293,7 +284,6 @@ export const MapClickHandler = ({
     };
 
     const container = map.getContainer();
-    map.on('contextmenu', handleContextMenu);
     map.on('click', handleClick);
     map.on('movestart', handleMoveStart);
     map.on('zoomstart', handleZoomStart);
@@ -302,7 +292,6 @@ export const MapClickHandler = ({
     container.addEventListener('touchend', handleTouchEnd);
 
     return () => {
-      map.off('contextmenu', handleContextMenu);
       map.off('click', handleClick);
       map.off('movestart', handleMoveStart);
       map.off('zoomstart', handleZoomStart);

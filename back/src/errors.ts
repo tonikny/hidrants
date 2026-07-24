@@ -29,6 +29,12 @@ export class BadRequestError extends AppError {
   }
 }
 
+export class ForbiddenError extends AppError {
+  constructor(message = 'No tens permisos') {
+    super(message, 403);
+  }
+}
+
 export class InternalServerError extends AppError {
   constructor(message = 'Error intern del servidor') {
     super(message, 500);

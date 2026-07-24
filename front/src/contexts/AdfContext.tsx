@@ -16,6 +16,7 @@ interface AdfContextType {
   adfs: AdfData[];
   isLoading: boolean;
   error: string | null;
+  boundaryGeojson: string | null;
 }
 
 const AdfContext = createContext<AdfContextType | undefined>(undefined);
@@ -26,6 +27,7 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [adfs, setAdfs] = useState<AdfData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [boundaryGeojson, setBoundaryGeojson] = useState<string | null>(null);
 
   const setActiveAdf = useCallback((adf: AdfData | null) => {
     setActiveAdfState(adf);
@@ -97,7 +99,15 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     fetchAdfs();
   }, [user, setActiveAdf]); 
 
-  const value = useMemo(() => ({ activeAdf, setActiveAdf, adfs, isLoading, error }), [activeAdf, setActiveAdf, adfs, isLoading, error]);
+  useEffect(() => {
+    if (!activeAdf) { setBoundaryGeojson(null); return; }
+    fetch(`/api/adf/boundary?adf=${activeAdf.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(gj => setBoundaryGeojson(gj ? JSON.stringify(gj) : null))
+      .catch(() => setBoundaryGeojson(null));
+  }, [activeAdf?.id]);
+
+  const value = useMemo(() => ({ activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson }), [activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson]);
 
   return <AdfContext.Provider value={value}>{children}</AdfContext.Provider>;
 };

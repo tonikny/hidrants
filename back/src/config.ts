@@ -16,6 +16,9 @@ const configSchema = z.object({
     .string()
     .min(1, 'JWT_SECRET és obligatori')
     .default('canvia_aixo_per_una_clau_segura'),
+  MQTT_BROKER_URL: z.string().default('mqtt://mosquitto:1883'),
+  MQTT_CLIENT_ID: z.string().default('hidrants-back'),
+  MQTT_TOPIC: z.string().default('owntracks/#'),
 });
 
 // Avaluem process.env contra el schema

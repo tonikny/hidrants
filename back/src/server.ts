@@ -21,7 +21,7 @@ import { config } from './config.js';
 import { AppError } from './errors.js';
 
 // Iniciar servei MQTT
-import './services/mqtt.js';
+import { initMqttClient } from './services/mqtt.js';
 
 const app = Fastify({
   logger: { level: config.FASTIFY_LOGLEVEL },
@@ -202,6 +202,7 @@ routes.forEach((r) => {
  */
 const start = async () => {
   try {
+    initMqttClient();
     await app.listen({
       host: '0.0.0.0',
       port: config.PORT,

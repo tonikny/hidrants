@@ -1,55 +1,40 @@
 import mqtt from 'mqtt';
 import { z } from 'zod';
-import { v4 as uuidv4 } from 'uuid';
-import { db } from '../db/index.js';
-import { ubicacions } from '../db/schema.js';
-
-// Configuració des de variables d'entorn
-const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://mosquitto:1883';
-const MQTT_CLIENT_ID = process.env.MQTT_CLIENT_ID || 'hidrants-back';
-const MQTT_TOPIC = process.env.MQTT_TOPIC || 'owntracks/#';
+import { config } from '../config.js';
+import { TrackingService } from './trackingService.js';
 
 // Schema de validació per a payloads d'OwnTracks
-// Basat en: https://owntracks.org/booklet/tech/json/
 const OwnTracksLocationSchema = z.object({
   _type: z.literal('location'),
-  tid: z.string().optional(), // Tracker ID (2 caràcters)
-  lat: z.number().min(-90).max(90), // Latitud
-  lon: z.number().min(-180).max(180), // Longitud
-  tst: z.number(), // Timestamp (Unix epoch)
-  acc: z.number().optional(), // Accuracy en metres
-  alt: z.number().optional(), // Altitud
-  batt: z.number().min(0).max(100).optional(), // Bateria en percentatge
-  vel: z.number().optional(), // Velocitat en km/h
-  cog: z.number().optional(), // Course over ground (direcció)
-  t: z.string().optional(), // Trigger (p=ping, u=user, t=timer, etc.)
-  conn: z.string().optional(), // Tipus de connexió (w=wifi, m=mobile)
-  BSSID: z.string().optional(), // WiFi BSSID
-  SSID: z.string().optional(), // WiFi SSID
+  tid: z.string().optional(),
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  tst: z.number(),
+  acc: z.number().optional(),
+  alt: z.number().optional(),
+  batt: z.number().min(0).max(100).optional(),
+  vel: z.number().optional(),
+  cog: z.number().optional(),
+  t: z.string().optional(),
+  conn: z.string().optional(),
 });
-
-type OwnTracksLocation = z.infer<typeof OwnTracksLocationSchema>;
 
 let client: mqtt.MqttClient | null = null;
 let connectionAttempts = 0;
 const MAX_CONNECTION_ATTEMPTS = 3;
 
-// Funció per iniciar el client MQTT de forma segura
-function initMqttClient() {
+export function initMqttClient() {
   try {
-    // Opcions de connexió MQTT amb manejo d'errors millorat
     const mqttOptions: mqtt.IClientOptions = {
-      clientId: MQTT_CLIENT_ID,
+      clientId: config.MQTT_CLIENT_ID,
       clean: true,
-      reconnectPeriod: 10000, // Reconnectar cada 10 segons
-      connectTimeout: 10000, // Timeout de connexió 10 segons
-      rejectUnauthorized: false, // Per certificats autosignats en dev
+      reconnectPeriod: 10000,
+      connectTimeout: 10000,
+      rejectUnauthorized: false,
     };
 
-    console.log('[MQTT] Iniciant connexió a', MQTT_BROKER_URL);
-
-    client = mqtt.connect(MQTT_BROKER_URL, mqttOptions);
-
+    console.log('[MQTT] Iniciant connexió a', config.MQTT_BROKER_URL);
+    client = mqtt.connect(config.MQTT_BROKER_URL, mqttOptions);
     setupEventHandlers();
   } catch (error) {
     console.error('[MQTT] ❌ Error fatal iniciant client MQTT:', error);
@@ -60,126 +45,54 @@ function initMqttClient() {
 function setupEventHandlers() {
   if (!client) return;
 
-  // Event: Connexió establerta
   client.on('connect', () => {
-    connectionAttempts = 0; // Reset counter en connexió exitosa
+    connectionAttempts = 0;
     console.log('[MQTT] ✅ Connectat correctament');
-    console.log('[MQTT] Client ID:', MQTT_CLIENT_ID);
 
     if (client) {
-      client.subscribe(MQTT_TOPIC, (err) => {
+      client.subscribe(config.MQTT_TOPIC, (err) => {
         if (err) {
-          console.error(
-            '[MQTT] ❌ Error subscrivint-se al topic:',
-            MQTT_TOPIC,
-            err
-          );
+          console.error('[MQTT] ❌ Error subscrivint-se al topic:', config.MQTT_TOPIC, err);
         } else {
-          console.log('[MQTT] 📡 Subscrit al topic:', MQTT_TOPIC);
+          console.log('[MQTT] 📡 Subscrit al topic:', config.MQTT_TOPIC);
         }
       });
     }
   });
 
-  // Event: Missatge rebut
   client.on('message', async (topic: string, payload: Buffer) => {
     try {
-      // Intentar parsejar com JSON
-      const payloadString = payload.toString();
-      const data = JSON.parse(payloadString);
-
-      // Validar si és un missatge de localització d'OwnTracks
+      const data = JSON.parse(payload.toString());
       const validation = OwnTracksLocationSchema.safeParse(data);
 
       if (validation.success) {
-        const location: OwnTracksLocation = validation.data;
-        const timestamp = new Date().toISOString();
-        console.log(`[MQTT] 📍 Ubicació rebuda [${timestamp}]`);
-        console.log('[MQTT]   Topic:', topic);
-        console.log('[MQTT]   Tracker:', location.tid || 'N/A');
-        console.log('[MQTT]   Coordenades:', `${location.lat}, ${location.lon}`);
-        console.log('[MQTT]   Precisió:', location.acc ? `${location.acc}m` : 'N/A');
-        console.log('[MQTT]   Bateria:', location.batt !== undefined ? `${location.batt}%` : 'N/A');
-
-        // Guardar a la base de dades
-        try {
-          await db.insert(ubicacions).values({
-            id: uuidv4(),
-            topic: topic,
-            tracker_id: location.tid || null,
-            lat: location.lat,
-            lon: location.lon,
-            timestamp: location.tst,
-            accuracy: location.acc || null,
-            altitude: location.alt || null,
-            battery: location.batt || null,
-            velocity: location.vel || null,
-            trigger: location.t || null,
-            connection: location.conn || null,
-          });
-          console.log('[MQTT]   ✅ Guardat a la base de dades');
-        } catch (dbError) {
-          console.error('[MQTT]   ❌ Error guardant a la BD:', dbError);
-        }
-      } else {
-        // Només mostrar warning per a tipus desconeguts, no per a tipus coneguts com "status"
-        const messageType = data._type || 'desconegut';
-        if (messageType !== 'status' && messageType !== 'transition' && messageType !== 'waypoint' && messageType !== 'lwt') {
-          console.log(`[MQTT] ⚠️  Missatge no processat: ${messageType} (topic: ${topic})`);
-        }
+        await TrackingService.saveLocation(topic, validation.data);
+        console.log(`[MQTT] 📍 Ubicació guardada: ${topic}`);
+      } else if (data._type && !['status', 'transition', 'waypoint', 'lwt'].includes(data._type)) {
+        console.log(`[MQTT] ⚠️ Missatge no processat: ${data._type} (topic: ${topic})`);
       }
     } catch (error) {
       console.error('[MQTT] ❌ Error processant missatge:', error);
     }
   });
 
-  // Event: Error de connexió
   client.on('error', (error) => {
     connectionAttempts++;
     console.error('[MQTT] ❌ Error de connexió:', error.message);
 
     if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
-      console.log(
-        '[MQTT] ⚠️  Massa intents fallits de connexió. Desactivant reconnexió automàtica.'
-      );
-      console.log('[MQTT] ⚠️  El backend continuarà funcionant sense MQTT');
-      if (client) {
-        client.end(true); // Forçar tancament
-      }
+      console.log('[MQTT] ⚠️ Massa intents fallits. Desactivant reconnexió.');
+      if (client) client.end(true);
     }
   });
 
-  // Event: Reconnexió
   client.on('reconnect', () => {
     if (connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
-      console.log(
-        '[MQTT] 🔄 Intentant reconnectar... (intent ' +
-          (connectionAttempts + 1) +
-          '/' +
-          MAX_CONNECTION_ATTEMPTS +
-          ')'
-      );
+      console.log(`[MQTT] 🔄 Intentant reconnectar... (${connectionAttempts + 1}/${MAX_CONNECTION_ATTEMPTS})`);
     }
   });
 
-  // Event: Connexió tancada
-  client.on('close', () => {
-    console.log('[MQTT] 🔌 Connexió tancada');
-  });
-
-  // Event: Offline
-  client.on('offline', () => {
-    console.log('[MQTT] 📡 Client offline');
-  });
+  client.on('close', () => console.log('[MQTT] 🔌 Connexió tancada'));
 }
 
-// Iniciar el client MQTT de forma no-bloquejant
-try {
-  initMqttClient();
-} catch (error) {
-  console.error('[MQTT] ❌ Error crític iniciant MQTT:', error);
-  console.log('[MQTT] ⚠️  El backend continuarà funcionant sense MQTT');
-}
-
-// Exportar el client per si es necessita des d'altres mòduls
 export default client;

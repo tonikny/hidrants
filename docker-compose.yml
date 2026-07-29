@@ -1,5 +1,6 @@
 services:
   backend:
+    image: hidrants-backend:latest
     build:
       context: ./back
       dockerfile: Dockerfile
@@ -26,6 +27,7 @@ services:
       start_period: 40s
 
   frontend:
+    image: hidrants-frontend:latest
     build:
       context: ./front
       dockerfile: Dockerfile

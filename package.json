@@ -11,7 +11,7 @@
     "deploy": "git pull && npm install && npm install --prefix front && npm install --prefix back && npm run update:boundaries && npm run generate:municipis && npm run build && (pm2 restart api || pm2 start ecosystem.config.cjs)"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0",
+    "concurrently": "^9.2.4",
     "pm2": "^7.0.1"
   }
 }

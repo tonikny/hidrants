@@ -40,7 +40,19 @@ export const users = sqliteTable('users', {
 }, (t) => ({
   usernameIdx: index('idx_users_username').on(t.username),
   adfIdx: index('idx_users_adf').on(t.adf_id),
-  unq: unique().on(t.username, t.adf_id)
+  unq: unique().on(t.username)
+}));
+
+export const mqttUsers = sqliteTable('mqtt_users', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id').notNull().references(() => users.id),
+  mqtt_username: text('mqtt_username').notNull(),
+  mqtt_password_enc: text('mqtt_password_enc'),
+  enabled: integer('enabled', { mode: 'boolean' }).default(false),
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`)
+}, (t) => ({
+  userIdIdx: index('idx_mqtt_users_user_id').on(t.user_id),
+  mqttUsernameUnq: unique().on(t.mqtt_username)
 }));
 
 export const incidencies = sqliteTable('incidencies', {

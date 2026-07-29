@@ -14,6 +14,8 @@ import boundary from './routes/boundary.js';
 import hidrants from './routes/hidrants.js';
 import incidencies from './routes/incidencies.js';
 import { login, me, logout } from './routes/auth.js';
+import tracking from './routes/tracking.js';
+import { startMqttService } from './services/mqtt.js';
 
 import { ApiHandler, ApiRequest } from './types.js';
 import { config } from './config.js';
@@ -130,7 +132,7 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
       // Lògica de permisos:
       // 1. Admin pot fer-ho tot
       // 2. Editor només pot mutar la seva pròpia ADF
-      if (user.role !== 'admin' && isMutation) {
+      if (user.role !== 'admin' && isMutation && !isNaN(targetAdfId)) {
         if (user.adf_id !== targetAdfId) {
           return reply
             .status(403)
@@ -178,6 +180,10 @@ const routes = [
   { path: '/api/incidencies', handler: incidencies },
   { path: '/api/incidencies/:id', handler: incidencies },
   { path: '/api/incidencies/:id/events', handler: incidencies },
+  { path: '/api/tracking/status', handler: tracking.status, protected: true },
+  { path: '/api/tracking/positions', handler: tracking.positions, protected: true },
+  { path: '/api/tracking/enable', handler: tracking.enable, protected: true },
+  { path: '/api/tracking/config', handler: tracking.config, protected: true },
 ];
 
 routes.forEach((r) => {
@@ -202,6 +208,10 @@ const start = async () => {
       port: config.PORT,
     });
     console.log('🚀 API running on port', config.PORT);
+
+    startMqttService().catch((err: Error) => {
+      console.log(`[MQTT] ⚠️ Servei no disponible: ${err.message}`);
+    });
   } catch (err) {
     app.log.error(err);
     process.exit(1);

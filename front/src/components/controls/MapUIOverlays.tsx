@@ -9,6 +9,7 @@ import { CoordinateModal } from '../ui/CoordinateModal';
 import { LocateButton } from './LocateButton';
 import { ZoomDisplay } from './ZoomDisplay';
 import { AdfSelector } from '../ui/AdfSelector';
+import { TrackingToggle } from '../ui/TrackingToggle';
 import { Modal } from '../ui/Modal';
 import {
   floatingButtonStyle,
@@ -122,6 +123,13 @@ export function MapUIOverlays({
             {user ? '🔓' : '🔐'}
           </button>
         </div>
+
+        {/* OwnTracks toggle for logged-in users */}
+        {user && (
+          <div style={controlItemStyle}>
+            <TrackingToggle style={floatingButtonStyle} />
+          </div>
+        )}
       </div>
 
       {/* Top Right: Native Layers Control is at top: 10px, right: 10px.

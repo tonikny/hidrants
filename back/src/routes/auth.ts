@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { db } from '../db/index.js';
-import { users } from '../db/schema.js';
+import { users, mqttUsers } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { ApiHandler } from '../types.js';
 
@@ -64,5 +64,16 @@ export const me: ApiHandler = async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'No autenticat' });
   }
-  return res.json({ user: req.user });
+
+  const mqttRow = db.select()
+    .from(mqttUsers)
+    .where(and(eq(mqttUsers.user_id, req.user.id), eq(mqttUsers.enabled, true)))
+    .get();
+
+  return res.json({
+    user: {
+      ...req.user,
+      mqtt_enabled: !!mqttRow,
+    },
+  });
 };

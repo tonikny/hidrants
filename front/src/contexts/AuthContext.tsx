@@ -1,3 +1,4 @@
+// Context d'autenticació: gestor de sessió via cookie httpOnly, exposa user/login/logout.
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 
@@ -6,6 +7,7 @@ interface User {
   username: string;
   adf_id: number | null;
   role: string;
+  mqtt_enabled: boolean;
 }
 
 interface AuthContextType {
@@ -18,49 +20,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Verifica la sessió al mount (la cookie auth_token la gestiona el servidor).
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        const response = await fetch('/api/auth/me', {
-          credentials: 'same-origin' // Ens assegurem que s'envien les cookies
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      } catch (err) {
-        console.error('Error verificant sessió:', err);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+        const response = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (response.ok) { const data = await response.json(); setUser(data.user); }
+        else { setUser(null); }
+      } catch { setUser(null); }
+      finally { setLoading(false); }
     };
-
     verifyToken();
   }, []);
 
-  const login = (_newToken: string, newUser: User) => {
-    setUser(newUser);
-  };
-
+  const login = (_newToken: string, newUser: User) => setUser(newUser);
   const logout = async () => {
-    try {
-      await fetch('/api/auth/logout', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-    } catch (err) {
-      console.error('Error in logout request:', err);
-    }
+    try { await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }); }
+    catch { /* ignore */ }
     setUser(null);
   };
 
@@ -73,8 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

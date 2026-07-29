@@ -1,0 +1,16 @@
+# Exemple de configuració per Mosquitto.
+# Copiar a mosquitto.conf i ajustar ports/certs.
+
+listener 1883 0.0.0.0          # xarxa interna
+
+listener xxxxx 0.0.0.0         # extern TLS
+certfile /mosquitto/certs/cert.pem
+keyfile /mosquitto/certs/key.pem
+
+persistence true
+persistence_location /mosquitto/data/
+log_dest stdout
+allow_anonymous false
+
+plugin /usr/lib/mosquitto_dynamic_security.so
+plugin_opt_config_file /mosquitto/data/dynamic-security.json

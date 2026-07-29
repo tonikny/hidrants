@@ -90,6 +90,7 @@ export function LeafletMap() {
   const [activeTechnicalLayer, setActiveTechnicalLayer] = useState<
     string | null
   >(null);
+  const [hydrantsVisible, setHydrantsVisible] = useState(true);
 
   const handleMapStateChange = useCallback(
     (bounds: [number, number, number, number], zoom: number) => {
@@ -163,6 +164,8 @@ export function LeafletMap() {
         <Layers
           activeTechnicalLayer={activeTechnicalLayer}
           setActiveTechnicalLayer={setActiveTechnicalLayer}
+          hydrantsVisible={hydrantsVisible}
+          setHydrantsVisible={setHydrantsVisible}
         />
         <MapRightClickHandler
           setClickedPosition={setClickedPosition}
@@ -170,14 +173,14 @@ export function LeafletMap() {
           user={user}
           boundaryGeojson={boundaryGeojson}
         />
-        <HydrantMarkerList
+        {hydrantsVisible && <HydrantMarkerList
           features={features}
           setPoi={setPoi}
           showRoute={showRoute}
           setShowRoute={setShowRoute}
           refreshHidrants={refreshHidrants}
           hasLocation={!!position}
-        />
+        />}
         <IncidentMarkerList
           features={incidentFeatures}
           setPoi={setPoi}

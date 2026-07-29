@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
-// Carreguem l'entorn abans de validar (pot no ser necessari si ja es fa al main, però assegura que .env es llegeix)
 dotenv.config();
 
 const configSchema = z.object({
@@ -16,9 +15,27 @@ const configSchema = z.object({
     .string()
     .min(1, 'JWT_SECRET és obligatori')
     .default('canvia_aixo_per_una_clau_segura'),
+
+  ENCRYPTION_SECRET: z
+    .string()
+    .min(1, 'ENCRYPTION_SECRET és obligatori')
+    .default('canvia_aixo_per_una_clau_de_xifrat'),
+
+  MQTT_BROKER_URL: z.string().default('mqtt://mosquitto:1883'),
+  MQTT_ADMIN_USERNAME: z.string().default('admin'),
+  MQTT_ADMIN_PASSWORD: z.string().min(1, 'MQTT_ADMIN_PASSWORD requerit'),
+  MQTT_BACKEND_USERNAME: z.string().default('backend'),
+  MQTT_BACKEND_PASSWORD: z.string().min(1, 'MQTT_BACKEND_PASSWORD requerit'),
+  MQTT_TOPIC_PREFIX: z.string().default('owntracks/hidrants'),
+
+  OTRC_HOST: z.string().default('hidrants.hopto.org'),
+  OTRC_PORT: z.coerce.number().default(8883),
+  OTRC_TLS: z
+    .string()
+    .default('true')
+    .transform((v) => v === 'true' || v === '1'),
 });
 
-// Avaluem process.env contra el schema
 const parsed = configSchema.safeParse(process.env);
 
 if (!parsed.success) {

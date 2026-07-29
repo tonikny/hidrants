@@ -1,4 +1,26 @@
 services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: hidrants-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "51823:51823"
+    expose:
+      - "1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/certs:/mosquitto/certs:ro
+    networks:
+      - hidrants-net
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-i", "healthcheck", "-p", "1883", "-u", "backend", "-P", "${MQTT_BACKEND_PASSWORD}", "-t", "$$SYS/broker/version", "-C", "1", "-W", "3"]
+      interval: 300s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
+
   backend:
     image: hidrants-backend:latest
     build:

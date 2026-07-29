@@ -39,3 +39,11 @@ opencode.json
 *.db
 *.db-wal
 *.db-shm
+.aider*
+.env.prod
+
+# Mosquitto runtime data
+mosquitto/data/
+mosquitto/certs/
+mosquitto/config/mosquitto.conf
+mosquitto/config/mosquitto.prod.conf

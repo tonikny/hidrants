@@ -18,8 +18,8 @@ services:
     networks:
       - hidrants-net
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-i", "healthcheck", "-p", "1883", "-u", "backend", "-P", "${MQTT_BACKEND_PASSWORD}", "-t", "$$SYS/broker/version", "-C", "1", "-W", "3"]
-      interval: 300s
+      test: ["CMD", "nc", "-z", "localhost", "1883"]
+      interval: 60s
       timeout: 5s
       retries: 2
       start_period: 10s

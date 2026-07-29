@@ -8,10 +8,13 @@ services:
       - "51823:51823"
     expose:
       - "1883"
+    env_file:
+      - ./mosquitto/.env
     volumes:
       - ./mosquitto/config:/mosquitto/config:ro
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/certs:/mosquitto/certs:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - hidrants-net
     healthcheck:

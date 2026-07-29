@@ -1,21 +1,39 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "dev": "npm run db:migrate && tsx watch src/server.ts",
+    "start": "node dist/scripts/migrate.js && node dist/server.js",
     "build": "tsc",
     "update:boundaries": "tsx src/scripts/updateBoundaries.ts",
-    "generate:municipis": "tsx src/scripts/generateMunicipis.ts"
+    "create:user": "tsx src/scripts/createUser.ts",
+    "db:reset": "tsx src/scripts/resetDb.ts",
+    "db:reset-hidrants": "tsx src/scripts/cleanHidrants.ts && npm run db:import-osm",
+    "db:seed": "tsx src/scripts/seed.ts",
+    "db:import-osm": "tsx src/scripts/importOsm.ts",
+    "db:export-osm": "tsx src/scripts/exportAllToOsm.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/jwt": "^10.1.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.10.0",
     "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.0.0",
-    "slug": "^11.0.1"
+    "slug": "^11.0.1",
+    "uuid": "^14.0.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^25.8.0",
     "@types/slug": "^5.0.9",
+    "@types/uuid": "^10.0.0",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.0.0",
     "typescript": "^6.0.3"
   }

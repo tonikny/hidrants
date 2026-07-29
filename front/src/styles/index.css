@@ -9,7 +9,7 @@ body,
 
 #map-container {
   height: 100vh;
-  max-height: 100svh; /* Compatibilitat amb navegadors moderns */
+  max-height: 100svh;
   width: 100%;
   overflow: hidden;
 }
@@ -17,4 +17,16 @@ body,
 .leaflet-map {
   height: 100%;
   width: 100%;
+}
+
+/* Ajustos per a mòbil del popup de Leaflet */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  padding: 0;
+}
+
+.leaflet-popup-content {
+  margin: 12px;
+  line-height: 1.4;
+  width: auto !important;
 }

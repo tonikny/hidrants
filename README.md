@@ -1,52 +1,64 @@
-# Mapa d'hidrants d'un municipi
+# Xarxa d'Hidrants ADF
 
-_Toni, ADF 278 Els Hostalets de Pierola_
+_Gestió d'hidrants d'incendis per a les ADF (Agrupacions de Defensa Forestal)_
 
 ## Descripció
 
-- És un projecte personal que vol ser útil per les ADFs i complementar a l'aplicació ControlAdf.
-- És una eina per que les ADFs tinguin el control de les seves dades sense intermediaris.
+Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants del seu territori. És una eina pensada per tenir el control de les dades de forma independent, facilitant la revisió i el manteniment dels punts d'aigua.
 
 ## Característiques
 
-- Typescript
-- Frontend amb React
-- Leaflet amb mapes OSM
-- Backend amb Fastify / Pm2
-- Nginx per reverse proxy
-- Markers per a hidrants amb popup d'informació
-- Enviament per Telegram de comentaris o nous hidrants
-- Pantalla completa
-- Ubicació actual
+- **Arquitectura SPA**: Aplicació de pàgina única.
+- **Gestió per ADF**: Suport per a múltiples ADFs, cadascuna amb un o diversos municipis assignats.
+- **Sincronització amb OSM**: Importació automàtica de dades des d'OpenStreetMap.
+- **Seguretat**: Sessions amb JWT i control d'accés per rols.
+- **Mapa interactiu**: Basat en Leaflet amb suport per a:
+  - Visualització de limits territorials.
+  - Creació i edició d'hidrants locals.
+  - Vista d'imatges des d'urls incloses a OSM
+  - Llista detallada d'hidrants i cerca ràpida.
+  - Càlcul de rutes a hidrants mitjançant GraphHopper.
+  - Enviament de notificacions i alertes a Telegram.
+  - URLs compartibles per a la localització exacta de cada hidrant.
+- **Exportació OSM**: Possibilitat d'exportar els canvis realitzats en format OSM per actualitzar la cartografia pública.
 
-## Raodmap / TODO
+## Stack Tecnològic
 
-- Cache Nginx (mapa / consultes overpass)
-- Deploy automàtic
-- Bd dades locals
-- Rutes a poi (arreglar)
-- Dades (mapa/objectes) offline al client
-- Incidències
-- Usuaris/autentificació
-- Canvi població
-- Menú inferior
-  - canvi població
-  - filtre poi
-  - botons actuals
-  - altres pàgines
-- Rutes amb graphhopper
-- Notificacions (Knock?)
+- **Frontend**: React 19, TypeScript, Leaflet, Vite.
+- **Backend**: Fastify, TypeScript, Drizzle ORM.
+- **Base de dades**: SQLite (Better-SQLite3).
+- **Infraestructura**: Docker, Docker Compose, Nginx.
 
-## Requisits
+## Scripts de Gestió
 
-- NodeJS (no gaire antic)
-- Nginx
+L'aplicació inclou scripts per gestionar la base de dades fàcilment des de l'arrel:
 
-## Us
+- `npm run db:setup`: Reset complet, creació d'ADFs/usuaris i importació des d'OSM.
+- `npm run db:reset`: Buida completament la base de dades (usuaris i hidrants).
+- `npm run db:reset-hidrants`: Esborra només els hidrants i els torna a baixar d'OSM.
+- `npm run db:seed`: Crea les ADFs inicials i els usuaris administradors.
+- `npm run db:import-osm`: Sincronitza els hidrants des d'OSM (totes les ADFs o una d'específica: `npm run db:import-osm -- ID_ADF`).
+- `npm run db:export-osm`: Genera fitxer OSM per a JOSM amb canvis locals (totes les ADFs o una d'específica: `npm run db:export-osm -- ID_ADF`).
+- `npm run update:boundaries`: Descarrega i desa les fronteres geogràfiques (totes les ADFs o una d'específica: `npm run update:boundaries -- ID_ADF`).
 
-- Clonar repositori
-- Des del directori de l'aplicació: `npm run dev` o `npm run deploy`
 
-## Col·laboracions
+## Instal·lació i Ús
 
-- Si vols participar en el desenvolupament només ho has de dir.
+### Entorn de Desenvolupament
+
+```bash
+npm install
+npm run dev
+```
+
+### Deploy amb Docker
+
+Per a un desplegament automatitzat que inclou l'actualització del codi, de les dependències i de la base de dades:
+
+```bash
+npm run docker:deploy
+```
+
+---
+
+_Projecte creat per Toni, ADF 278 Els Hostalets de Pierola._

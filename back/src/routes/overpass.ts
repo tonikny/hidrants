@@ -1,9 +1,7 @@
 import type { ApiHandler } from '../types.js';
+import { queryOverpass } from '../services/overpass.js';
 
 const handler: ApiHandler = async (req, res) => {
-  const OVERPASS_API_URL =
-    process.env.OVERPASS_URL || 'https://overpass.kumi.systems/api/interpreter';
-
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -26,31 +24,18 @@ const handler: ApiHandler = async (req, res) => {
       return;
     }
 
-    const response = await fetch(OVERPASS_API_URL, {
-      method: 'POST',
-      headers: {
-        // 'Content-Type': 'text/plain;charset=UTF-8',
-        Accept: '*/*',
-        'User-Agent': 'HidrantsADF/1.0 (dalecanya@gmail.com)',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      body: query.trim().replace(/\r/g, ''),
-    });
+    const result = await queryOverpass(query.trim().replace(/\r/g, ''));
 
-    const text = await response.text();
-
-    if (!response.ok) {
-      res.status(response.status).json({
+    if (!result.ok) {
+      res.status(result.status || 500).json({
         error: 'Overpass error',
-        details: text,
+        details: result.error,
       });
       return;
     }
 
-    // Overpass retorna JSON com a string
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).send(text);
+    // Overpass retorna JSON
+    res.status(200).json(result.data);
   } catch (err) {
     res.status(500).json({
       error: (err as Error).message || 'Unexpected error',

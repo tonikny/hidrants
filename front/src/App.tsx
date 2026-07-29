@@ -1,15 +1,35 @@
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { LeafletMap } from './components/LeafletMap';
-import { MunicipiProvider } from './contexts/MunicipiContext';
+import { LeafletMap } from './components/map/LeafletMap';
+import { AdfProvider, useAdf } from './contexts/AdfContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { AdfSelector } from './components/ui/AdfSelector';
+
+function AppContent() {
+  const { isLoading } = useAdf();
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        Carregant...
+      </div>
+    );
+  }
+
+  return (
+    <div id="map-container">
+      <LeafletMap />
+    </div>
+  );
+}
 
 export default function App() {
   return (
-    <MunicipiProvider>
-      <div id="map-container">
-        <LeafletMap />
-      </div>
-      <ToastContainer position="top-center" autoClose={3000} theme="colored" />
-    </MunicipiProvider>
+    <AuthProvider>
+      <AdfProvider>
+        <AppContent />
+        <ToastContainer position="top-center" autoClose={3000} theme="colored" />
+      </AdfProvider>
+    </AuthProvider>
   );
 }

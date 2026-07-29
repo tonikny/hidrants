@@ -12,9 +12,9 @@ BACKEND_PASS="${MQTT_BACKEND_PASSWORD}"
 TOPIC_PREFIX="${MQTT_TOPIC_PREFIX:-owntracks/hidrants}"
 
 # Eliminar existents (idempotent, ignora errors si no existeixen)
-mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec removeRole owntracks-device || true
-mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec removeRole backend-reader || true
-mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec removeClientByUsername "$BACKEND_USER" || true
+mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec deleteRole owntracks-device || true
+mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec deleteRole backend-reader || true
+mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec deleteClient "$BACKEND_USER" || true
 
 # Rol owntracks-device
 mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec createRole owntracks-device

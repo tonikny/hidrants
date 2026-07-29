@@ -18,7 +18,7 @@ services:
     networks:
       - hidrants-net
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "1883"]
+      test: ["CMD", "pidof", "mosquitto"]
       interval: 60s
       timeout: 5s
       retries: 2

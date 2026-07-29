@@ -11,10 +11,17 @@ BACKEND_USER="${MQTT_BACKEND_USERNAME:-backend}"
 BACKEND_PASS="${MQTT_BACKEND_PASSWORD}"
 TOPIC_PREFIX="${MQTT_TOPIC_PREFIX:-owntracks/hidrants}"
 
+# Eliminar existents (idempotent, ignora errors si no existeixen)
+mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec removeRole owntracks-device || true
+mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec removeRole backend-reader || true
+mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec removeClientByUsername "$BACKEND_USER" || true
+
+# Rol owntracks-device
 mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec createRole owntracks-device
 mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec addRoleACL owntracks-device \
   publishClientSend "${TOPIC_PREFIX}/%u/#" true
 
+# Rol backend-reader
 mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec createRole backend-reader
 mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec addRoleACL backend-reader \
   subscribePattern "${TOPIC_PREFIX}/#" true
@@ -25,5 +32,6 @@ mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec addRoleACL backend-reade
 mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec addRoleACL backend-reader \
   subscribePattern "\$CONTROL/dynamic-security/v1/#" true
 
+# Client backend
 mosquitto_ctrl -u "$ADMIN_USER" -P "$ADMIN_PASS" dynsec createClient \
   "$BACKEND_USER" "$BACKEND_PASS" backend-reader

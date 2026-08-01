@@ -4,12 +4,10 @@ services:
     container_name: hidrants-mosquitto
     restart: unless-stopped
     ports:
-      - "1883:1883"
+      - "127.0.0.1:1883:1883"
       - "51823:51823"
     expose:
       - "1883"
-    env_file:
-      - ./mosquitto/.env
     volumes:
       - ./mosquitto/config:/mosquitto/config:ro
       - ./mosquitto/data:/mosquitto/data

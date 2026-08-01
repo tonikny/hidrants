@@ -31,7 +31,7 @@ export const TrackingToggle: React.FC<TrackingToggleProps> = ({ style }) => {
   const handleEnable = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/tracking/enable', { method: 'POST' });
+      const res = await fetch('/api/tracking/enable', { method: 'POST', credentials: 'same-origin' });
       if (!res.ok) { const err = await res.json(); toast.error(err.error || 'Error activant OwnTracks'); return; }
       const otrc = await res.json();
       otrcRef.current = otrc;
@@ -43,7 +43,7 @@ export const TrackingToggle: React.FC<TrackingToggleProps> = ({ style }) => {
   const handleConfig = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/tracking/config');
+      const res = await fetch('/api/tracking/config', { credentials: 'same-origin' });
       if (!res.ok) { const err = await res.json(); toast.error(err.error || 'Error descarregant config'); return; }
       const otrc = await res.json();
       otrcRef.current = otrc;

@@ -29,10 +29,9 @@ COPY package*.json ./
 # Instal·lem només dependències de producció
 RUN npm install --omit=dev
 
-# Copiem el codi compilat, les migracions i les dades persistents de l'estadi anterior
+# Copiem el codi compilat i les migracions
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/drizzle ./drizzle
-COPY --from=builder /app/data ./data
 
 # Exposem el port intern (configurat al .env, per defecte 3033)
 EXPOSE 3033

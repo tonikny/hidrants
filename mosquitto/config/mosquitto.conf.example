@@ -1,11 +1,13 @@
 # Exemple de configuració per Mosquitto.
 # Copiar a mosquitto.conf i ajustar ports/certs.
+# Aquest fitxer serveix tant per dev com per producció: només canvia
+# el port del listener extern (1883 = dev/intern, 51823 = producció TLS).
 
 listener 1883 0.0.0.0          # xarxa interna
 
 listener xxxxx 0.0.0.0         # extern TLS
-certfile /mosquitto/certs/cert.pem
-keyfile /mosquitto/certs/key.pem
+certfile /mosquitto/certs/fullchain.pem
+keyfile /mosquitto/certs/privkey.pem
 
 persistence true
 persistence_location /mosquitto/data/

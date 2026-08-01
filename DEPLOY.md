@@ -40,6 +40,12 @@ Si utilitzes un servidor Debian 13 net, pots fer servir els scripts preparats:
     - Revisa els ports (per defecte el backend escolta al 3033 internament).
     - Configura les claus de Telegram i GraphHopper si les tens.
 
+3.  Configura les variables d'entorn de Mosquitto:
+    ```bash
+    nano back/.env
+    ```
+    `MQTT_ADMIN_PASSWORD` i `MQTT_BACKEND_PASSWORD` (al mateix `back/.env`) les fa servir l'script de Dynamic Security. Mosquitto no necessita fitxer `.env` propi.
+
 ## 4. Inicialització de Dades (Host)
 
 Per tal que el volum de Docker ja tingui les dades carregades, farem el setup inicial des del host:
@@ -75,17 +81,52 @@ L'aplicació estarà disponible a:
 - **Frontend:** `http://localhost:8080` (mapejat al port 80 intern del contenidor).
 - **Backend:** `http://localhost:3034` (mapejat al port 3033 intern del contenidor).
 
-## 6. Manteniment i Actualitzacions
+## 6. MQTT / OwnTracks (Mosquitto)
+
+Ports del broker:
+- `1883`: intern/dev, només al host (`127.0.0.1`).
+- `51823`: TLS públic per OwnTracks (cal obrir-lo a firewall/NAT).
+
+Configuració real (ignorada): `mosquitto/config/mosquitto.conf`. Certs esperats dins el contenidor:
+
+```ini
+certfile /mosquitto/certs/fullchain.pem
+keyfile /mosquitto/certs/privkey.pem
+```
+
+Copiar i fixar permisos:
+
+```bash
+sudo cp /etc/letsencrypt/live/hidrants.hopto.org/{fullchain,privkey}.pem mosquitto/certs/
+sudo chmod 644 mosquitto/certs/fullchain.pem
+sudo chmod 600 mosquitto/certs/privkey.pem
+sudo chown 1883:1883 mosquitto/certs/privkey.pem
+```
+
+Renovació automàtica amb Certbot (hook):
+
+```bash
+sudo chmod +x scripts/copy-mosquitto-certs.sh
+sudo ln -s "$(pwd)/scripts/copy-mosquitto-certs.sh" /etc/letsencrypt/renewal-hooks/deploy/copy-mosquitto-certs.sh
+```
+
+El script (versionat) llegeix el domini de `OTRC_HOST` a `back/.env`.
+
+Backend: per defecte connecta a `mqtt://mosquitto:1883`. El fitxer `.otrc` que genera la UI apunta a `OTRC_HOST`, `OTRC_PORT=51823`, `OTRC_TLS=true`.
+
+Dynamic Security: per regenerar `mosquitto/data/dynamic-security.json` usa `npm run mqtt:sync-dynsec` (conserva usuaris) o `npm run mqtt:regen-dynsec` (esborra usuaris, demana confirmació). L'script `scripts/init-dynsec.py` (versionat) carrega contrasenyes des de `back/.env`; cal que `mosquitto/data` sigui escribible. Documentació completa a `mosquitto/MQTT_DEPLOY.md`.
+
+## 7. Manteniment i Actualitzacions
 
 ### Actualitzar l'aplicació
 
 Per actualitzar a l'última versió de Git i reconstruir els contenidors:
 
 ```bash
-npm run deploy
+npm run docker:deploy
 ```
 
-Aquest script de conveniència fa: `git pull` + `npm run install` + `update:boundaries` + `docker compose up --build`.
+Aquest script de conveniència fa: `git pull --ff-only --autostash` + `npm run install` + `update:boundaries` + `docker compose up --build` + `docker image prune -f`. `--autostash` desa i reaplica qualsevol canvi local (ex. `package-lock.json`) sense perdre'l; `--ff-only` falla amb error si el repo local divergeix del remot.
 
 ### Backups Automàtics de la Base de Dades
 
@@ -205,7 +246,7 @@ Per veure què està passant als contenidors:
 npm run docker:logs
 ```
 
-## 7. Publicació a Internet
+## 8. Publicació a Internet
 
 Per defecte, l'aplicació està configurada per escoltar a `127.0.0.1` per seguretat. Per publicar-la:
 

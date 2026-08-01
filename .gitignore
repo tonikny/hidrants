@@ -30,6 +30,9 @@ yarn-error.log*
 opencode.json
 .antigravitycli/
 /scripts/*
+!/scripts/*.example
+!/scripts/init-dynsec.py
+!/scripts/copy-mosquitto-certs.sh
 !/scripts/backup/ 
 
 *.md
@@ -46,4 +49,3 @@ opencode.json
 mosquitto/data/
 mosquitto/certs/
 mosquitto/config/mosquitto.conf
-mosquitto/config/mosquitto.prod.conf

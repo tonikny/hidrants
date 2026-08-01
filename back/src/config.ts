@@ -29,7 +29,7 @@ const configSchema = z.object({
   MQTT_TOPIC_PREFIX: z.string().default('owntracks/hidrants'),
 
   OTRC_HOST: z.string().default('hidrants.hopto.org'),
-  OTRC_PORT: z.coerce.number().default(8883),
+  OTRC_PORT: z.coerce.number().default(51823),
   OTRC_TLS: z
     .string()
     .default('true')

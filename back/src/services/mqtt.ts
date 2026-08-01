@@ -34,7 +34,6 @@ class MqttService {
   private adminClient: mqtt.MqttClient | null = null;
   private positions = new Map<string, LocationData>();
   private available = false;
-  private dynsecAvailable = false;
   private pruneTimer: ReturnType<typeof setInterval> | null = null;
 
   /** Inicia: bootstrap DynSec, connexió com backend, timer de neteja. */
@@ -50,12 +49,11 @@ class MqttService {
     if (this.client) { this.client.end(true); this.client = null; }
     if (this.adminClient) { this.adminClient.end(true); this.adminClient = null; }
     this.available = false;
-    this.dynsecAvailable = false;
     this.positions.clear();
   }
 
   getPositions(): Map<string, LocationData> { return this.positions; }
-  isAvailable(): boolean { return this.available && this.dynsecAvailable; }
+  isAvailable(): boolean { return this.available; }
 
   /** Crea o actualitza un usuari MQTT amb rol owntracks-device. */
   async createMqttUser(username: string, password: string): Promise<void> {
@@ -76,7 +74,7 @@ class MqttService {
     console.log(`[MQTT] ✅ MQTT user deleted: ${username}`);
   }
 
-  /** Inicialitza DynSec si no ho està: admin, roles (owntracks-device, backend-reader), client backend. */
+  /** Inicialitza DynSec si no ho està: admin, roles (owntracks-device, backend-service), client backend. */
   private async bootstrap(): Promise<void> {
     let anon: mqtt.MqttClient | undefined;
     try { anon = await dynsecConnect(); }
@@ -90,13 +88,13 @@ class MqttService {
         await ensureRole(this.adminClient, 'owntracks-device', [
           { acltype: 'publishClientSend', topic: `${config.MQTT_TOPIC_PREFIX}/%u/#`, allow: true },
         ]);
-        await ensureRole(this.adminClient, 'backend-reader', [
+        await ensureRole(this.adminClient, 'backend-service', [
           { acltype: 'subscribePattern', topic: `${config.MQTT_TOPIC_PREFIX}/#`, allow: true },
           { acltype: 'publishClientSend', topic: '$CONTROL/dynamic-security/v1', allow: true },
           { acltype: 'publishClientReceive', topic: '$CONTROL/dynamic-security/v1/#', allow: true },
           { acltype: 'subscribePattern', topic: '$CONTROL/dynamic-security/v1/#', allow: true },
         ]);
-        await ensureClient(this.adminClient, config.MQTT_BACKEND_USERNAME, config.MQTT_BACKEND_PASSWORD, 'backend-reader');
+        await ensureClient(this.adminClient, config.MQTT_BACKEND_USERNAME, config.MQTT_BACKEND_PASSWORD, 'backend-service');
       } catch (err: any) {
         console.log(`[MQTT] ⚠️ Bootstrap error: ${err.message}`);
       } finally {
@@ -117,19 +115,25 @@ class MqttService {
         connectTimeout: 5000,
       });
 
+      let resolved = false;
+      const resolveOnce = () => { if (!resolved) { resolved = true; resolve(); } };
+      const startupTimer = setTimeout(resolveOnce, 6000);
+
       this.client.on('connect', () => {
+        clearTimeout(startupTimer);
         this.available = true;
-        this.dynsecAvailable = true;
         console.log('[MQTT] ✅ Connected');
         this.client!.subscribe(`${config.MQTT_TOPIC_PREFIX}/#`, { qos: 1 }, (err) => {
           if (err) console.log('[MQTT] ❌ Subscribe error:', err.message);
         });
-        resolve();
+        resolveOnce();
       });
 
       this.client.on('message', (topic, payload) => {
         try {
-          const username = topic.split('/')[2];
+          const prefixParts = config.MQTT_TOPIC_PREFIX.split('/').filter(Boolean);
+          const username = topic.split('/')[prefixParts.length];
+          if (!username) return;
           const raw = JSON.parse(payload.toString());
           if (raw._type !== 'location') return;
           const parsed = owntracksSchema.safeParse(raw);

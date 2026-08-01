@@ -87,34 +87,11 @@ Ports del broker:
 - `1883`: intern/dev, només al host (`127.0.0.1`).
 - `51823`: TLS públic per OwnTracks (cal obrir-lo a firewall/NAT).
 
-Configuració real (ignorada): `mosquitto/config/mosquitto.conf`. Certs esperats dins el contenidor:
-
-```ini
-certfile /mosquitto/certs/fullchain.pem
-keyfile /mosquitto/certs/privkey.pem
-```
-
-Copiar i fixar permisos:
-
-```bash
-sudo cp /etc/letsencrypt/live/hidrants.hopto.org/{fullchain,privkey}.pem mosquitto/certs/
-sudo chmod 644 mosquitto/certs/fullchain.pem
-sudo chmod 600 mosquitto/certs/privkey.pem
-sudo chown 1883:1883 mosquitto/certs/privkey.pem
-```
-
-Renovació automàtica amb Certbot (hook):
-
-```bash
-sudo chmod +x scripts/copy-mosquitto-certs.sh
-sudo ln -s "$(pwd)/scripts/copy-mosquitto-certs.sh" /etc/letsencrypt/renewal-hooks/deploy/copy-mosquitto-certs.sh
-```
-
-El script (versionat) llegeix el domini de `OTRC_HOST` a `back/.env`.
+Configuració real (ignorada): `mosquitto/config/mosquitto.conf`, amb certs `fullchain.pem`/`privkey.pem` dins el contenidor.
 
 Backend: per defecte connecta a `mqtt://mosquitto:1883`. El fitxer `.otrc` que genera la UI apunta a `OTRC_HOST`, `OTRC_PORT=51823`, `OTRC_TLS=true`.
 
-Dynamic Security: per regenerar `mosquitto/data/dynamic-security.json` usa `npm run mqtt:sync-dynsec` (conserva usuaris) o `npm run mqtt:regen-dynsec` (esborra usuaris, demana confirmació). L'script `scripts/init-dynsec.py` (versionat) carrega contrasenyes des de `back/.env`; cal que `mosquitto/data` sigui escribible. Documentació completa a `mosquitto/MQTT_DEPLOY.md`.
+Guia completa de MQTT (certs + renovació automàtica, Dynamic Security, `npm run mqtt:sync-dynsec`/`mqtt:regen-dynsec`, accés compartit a `mosquitto/data`, backup i troubleshooting): `mosquitto/MQTT_DEPLOY.md`.
 
 ## 7. Manteniment i Actualitzacions
 

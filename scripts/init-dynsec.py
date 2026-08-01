@@ -79,10 +79,26 @@ def base_config():
 def confirm(prompt: str) -> bool:
     return input(prompt).strip().lower() in ("y", "yes")
 
+def perm_error() -> None:
+    print("ERROR: sense accés a mosquitto/data/dynamic-security.json.", file=sys.stderr)
+    print("  Configura l'accés compartit (una sola vegada):", file=sys.stderr)
+    print("    sudo groupadd --force mosquitto", file=sys.stderr)
+    print("    sudo usermod -a -G mosquitto <el_teu_usuari>", file=sys.stderr)
+    print("    sudo chown -R root:mosquitto mosquitto/data   # o 1883:mosquitto si el contenidor corre com a 1883", file=sys.stderr)
+    print("    sudo chmod 2770 mosquitto/data", file=sys.stderr)
+    print("    sudo chmod 660 mosquitto/data/dynamic-security.json mosquitto/data/mosquitto.db", file=sys.stderr)
+    print("    sudo setfacl -d -m g:mosquitto:rw mosquitto/data", file=sys.stderr)
+    print("    sudo setfacl -m g:mosquitto:rw mosquitto/data/dynamic-security.json mosquitto/data/mosquitto.db", file=sys.stderr)
+    print("  Després entra amb sessió nova (o 'newgrp mosquitto') i torna a executar.", file=sys.stderr)
+    sys.exit(1)
+
 def write_config(config) -> None:
-    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(config, f, indent=2)
+    try:
+        os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=2)
+    except PermissionError:
+        perm_error()
     print(f"Fet: {CONFIG_FILE}")
 
 def cmd_regen() -> None:
@@ -102,8 +118,11 @@ def cmd_regen() -> None:
 def cmd_sync() -> None:
     existing = None
     if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE) as f:
-            existing = json.load(f)
+        try:
+            with open(CONFIG_FILE) as f:
+                existing = json.load(f)
+        except PermissionError:
+            perm_error()
     admin_user, admin_pass, backend_user, backend_pass, prefix = creds()
     run("docker", "compose", "stop", "mosquitto")
     base = base_config()

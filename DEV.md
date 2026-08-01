@@ -1,0 +1,80 @@
+# Guia de Desenvolupament Local
+
+## Instal·lació
+
+```bash
+cp back/.env.example back/.env
+npm run install
+npm run db:setup
+```
+
+Per backend local fora de Docker:
+
+```env
+MQTT_BROKER_URL=mqtt://localhost:1883
+MQTT_TOPIC_PREFIX=owntracks/hidrants
+OTRC_PORT=51823
+```
+
+Per backend dins Docker:
+
+```env
+MQTT_BROKER_URL=mqtt://mosquitto:1883
+```
+
+## Execució
+
+Frontend + backend local:
+
+```bash
+npm run mqtt:up
+npm run dev
+```
+
+Tot amb Docker:
+
+```bash
+npm run docker:up
+npm run docker:logs
+```
+
+URLs:
+
+- Frontend local: `http://localhost:3003`
+- Backend local: `http://localhost:3033`
+- Frontend Docker: `http://localhost:8080`
+- Backend Docker: `http://localhost:3034`
+- Mosquitto intern/dev: `mqtt://localhost:1883`
+
+## Scripts
+
+- `npm run mqtt:up`: aixeca només Mosquitto.
+- `npm run docker:up`: aixeca tots els contenidors.
+- `npm run docker:down`: atura contenidors.
+- `npm run docker:deploy`: deploy complet (pull `--ff-only --autostash` + rebuild).
+- `npm run db:setup`: reset + seed + import OSM + boundaries.
+- `npm run update:boundaries`: actualitza límits ADF.
+
+## MQTT / OwnTracks
+
+El backend escolta `${MQTT_TOPIC_PREFIX}/#`. Per defecte: `owntracks/hidrants/#`.
+
+OwnTracks rep `.otrc` des de la UI. En producció ha d'apuntar a:
+
+```env
+OTRC_HOST=<DOMINI>
+OTRC_PORT=51823
+OTRC_TLS=true
+```
+
+Prova manual amb credencials DynSec vàlides:
+
+```bash
+docker compose exec mosquitto mosquitto_pub -h localhost -u <usuari> -P <password> -t 'owntracks/hidrants/<usuari>/phone' -m '{"_type":"location","lat":41.5,"lon":1.8,"tst":1721667688,"acc":10,"batt":80}'
+```
+
+## Troubleshooting
+
+- `getaddrinfo ENOTFOUND mosquitto`: backend local usa `mqtt://localhost:1883`, backend Docker usa `mqtt://mosquitto:1883`.
+- `Not authorized`: contrasenyes `back/.env` i `dynamic-security.json` no coincideixen.
+- `docker compose config` no cal `mosquitto/.env`: Mosquitto no en té (contreseny a `back/.env`).

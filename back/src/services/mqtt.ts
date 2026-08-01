@@ -129,19 +129,27 @@ class MqttService {
         resolveOnce();
       });
 
-      this.client.on('message', (topic, payload) => {
+      this.client.on('message', (topic, payload, packet) => {
         try {
           const prefixParts = config.MQTT_TOPIC_PREFIX.split('/').filter(Boolean);
           const username = topic.split('/')[prefixParts.length];
           if (!username) return;
+          // Missatges retained: el broker els reprodueix a cada subscripció
+          // (e.g. després d'un deploy), mostrant posicions antigues com a connectades.
+          // Només les publicacions live (no retained) representen connexió real.
+          if (packet.retain) return;
           const raw = JSON.parse(payload.toString());
           if (raw._type !== 'location') return;
           const parsed = owntracksSchema.safeParse(raw);
           if (!parsed.success) return;
           const { lat, lon, acc, batt, ts, tst } = parsed.data;
+          const msgTime = ts || tst || Math.floor(Date.now() / 1000);
+          // Descartem posicions antigues (> 15 min, mateix llindar que prunePositions):
+          // garantim que fins que no arribin dades noves no surt cap usuari al mapa.
+          if (Date.now() / 1000 - msgTime > 900) return;
           this.positions.set(username, {
             lat, lon, accuracy: acc,
-            timestamp: ts || tst || Math.floor(Date.now() / 1000),
+            timestamp: msgTime,
             battery: batt, receivedAt: Date.now(),
           });
         } catch { /* ignore */ }

@@ -24,16 +24,44 @@ import { IncidentMarkerList } from './markers/IncidentMarkerList';
 import { toast } from 'react-toastify';
 import { isPointInBoundary } from '../../utils/geo';
 
+// ✅ Centra el mapa en el node seleccionat, tenint en compte el bottomsheet obert
+function MapNodeCenter() {
+  const map = useMap();
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      const [lon, lat] = e.detail.geometry.coordinates;
+      const sheet = document.querySelector('[class*="z-[1000]"]');
+      let targetY = map.getSize().y / 2;
+      if (sheet && sheet.getBoundingClientRect().height > 0) {
+        targetY = sheet.getBoundingClientRect().top / 2;
+      }
+      const p = map.latLngToContainerPoint([lat, lon]);
+      map.panBy(L.point(0, p.y - targetY), { animate: true });
+    };
+
+    window.addEventListener('map-center-node', handler);
+    return () => window.removeEventListener('map-center-node', handler);
+  }, [map]);
+
+  return null;
+}
+
 // ✅ Component per escoltar canvis al mapa i informar al pare
 function MapStateListener({
   onStateChange,
+  onMapClick,
 }: {
   onStateChange: (
     bounds: [number, number, number, number],
     zoom: number
   ) => void;
+  onMapClick?: () => void;
 }) {
   const map = useMapEvents({
+    click: () => {
+      onMapClick?.();
+    },
     moveend: () => {
       const b = map.getBounds();
       onStateChange(
@@ -78,8 +106,7 @@ function FixMapSize() {
 
   return null;
 }
-
-export function LeafletMap() {
+export function LeafletMap({ onSelectNode, onMapClick, selectedNodeId }: { onSelectNode?: (f: any) => void; onMapClick?: () => void; selectedNodeId?: string | null }) {
   const { activeAdf, isLoading, setActiveAdf, boundaryGeojson } = useAdf();
   const { user, logout } = useAuth();
   const [mapBounds, setMapBounds] = useState<
@@ -156,9 +183,10 @@ export function LeafletMap() {
         className="leaflet-map"
       >
         <FixMapSize />
+        <MapNodeCenter />
         {/* Gestiona l'obertura de nodes via URL (?node=ID) */}
         <MapUrlHandler features={features} />
-        <MapStateListener onStateChange={handleMapStateChange} />
+        <MapStateListener onStateChange={handleMapStateChange} onMapClick={onMapClick} />
         <MaskedAreaMap hidden={!!activeTechnicalLayer} />
         <Layers
           activeTechnicalLayer={activeTechnicalLayer}
@@ -179,6 +207,8 @@ export function LeafletMap() {
           setShowRoute={setShowRoute}
           refreshHidrants={refreshHidrants}
           hasLocation={!!position}
+          onSelectNode={onSelectNode}
+          selectedNodeId={selectedNodeId}
         />}
         <IncidentMarkerList
           features={incidentFeatures}

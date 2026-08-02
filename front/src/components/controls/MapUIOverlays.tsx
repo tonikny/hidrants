@@ -143,8 +143,9 @@ export function MapUIOverlays({
         )}
       </div>
 
-      {/* Bottom Left: Zoom Display (Above Attribution if it were there, but on the left) */}
-      <div className={`${controlContainerClass} bottom-[5px] left-[5px]`}>
+      {/* Bottom Left: Zoom Display (Above Attribution if it were there, but on the left).
+          On mobile it sits above the bottomsheet bar (60px), aligned with the attribution. */}
+      <div className={`${controlContainerClass} bottom-[60px] lg:bottom-[5px] left-[5px]`}>
         <div className={controlItemClass}>
           <ZoomDisplay />
         </div>

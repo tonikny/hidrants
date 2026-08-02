@@ -10,14 +10,14 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div className="flex justify-center items-center h-screen">
         Carregant...
       </div>
     );
   }
 
   return (
-    <div id="map-container">
+    <div id="map-container" className="h-screen max-h-[100svh] w-full overflow-hidden">
       <LeafletMap />
     </div>
   );

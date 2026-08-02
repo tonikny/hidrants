@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-  inputStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
 } from '../../styles/uiStyles';
 
 type CoordinateModalProps = {
@@ -27,62 +27,40 @@ export const CoordinateModal = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem', color: '#555' }}>
+    <div className="flex flex-col">
+      <div className="mb-4 text-center text-[0.9rem] text-[#555]">
         Pots afegir un node manualment fent una pulsació llarga o un clic dret
         en el mapa o entrar les coordenades
       </div>
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: 'flex', flexDirection: 'column' }}
-      >
-        <label
-          style={{
-            fontSize: '0.8rem',
-            marginTop: '0.75rem',
-            fontStyle: 'italic',
-          }}
-        >
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <label className="text-[0.8rem] mt-3 italic">
           Latitud:
           <input
             type="text"
             value={lat}
             onChange={(e) => setLat(e.target.value)}
-            style={inputStyle}
+            className={inputClass}
           />
         </label>
 
-        <label
-          style={{
-            fontSize: '0.8rem',
-            marginTop: '0.75rem',
-            fontStyle: 'italic',
-          }}
-        >
+        <label className="text-[0.8rem] mt-3 italic">
           Longitud:
           <input
             type="text"
             value={lon}
             onChange={(e) => setLon(e.target.value)}
-            style={inputStyle}
+            className={inputClass}
           />
         </label>
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: '0.5rem',
-            marginTop: '1.5rem',
-          }}
-        >
-          <button type="submit" style={{ ...primaryButtonStyle, flex: 1 }}>
+        <div className="flex justify-between gap-2 mt-6">
+          <button type="submit" className={`${primaryButtonClass} flex-1`}>
             Confirma
           </button>
           <button
             type="button"
             onClick={onClose}
-            style={{ ...secondaryButtonStyle, flex: 1 }}
+            className={`${secondaryButtonClass} flex-1`}
           >
             Cancel·la
           </button>

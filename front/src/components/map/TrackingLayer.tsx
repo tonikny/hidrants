@@ -71,7 +71,7 @@ export const TrackingLayer: React.FC = () => {
           position={[pos.lat, pos.lon]}
           icon={pinIcon(username.slice(-3), ageColor(pos.receivedAt))}>
           <Popup>
-            <div style={{ fontSize: '0.85rem', lineHeight: 1.4, whiteSpace: 'nowrap', minWidth: 120 }}>
+            <div className="text-[0.85rem] leading-[1.4] whitespace-nowrap min-w-[120px]">
               <strong>{username}</strong><br />
               bateria: {pos.battery}%<br />
               precisió: {pos.accuracy}m<br />

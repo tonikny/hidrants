@@ -12,9 +12,9 @@ import { AdfSelector } from '../ui/AdfSelector';
 import { TrackingToggle } from '../ui/TrackingToggle';
 import { Modal } from '../ui/Modal';
 import {
-  floatingButtonStyle,
-  controlContainerStyle,
-  controlItemStyle,
+  floatingButtonClass,
+  controlContainerClass,
+  controlItemClass,
 } from '../../styles/uiStyles';
 
 interface MapUIOverlaysProps {
@@ -63,50 +63,16 @@ export function MapUIOverlays({
     }
   }, [activeAdf]);
 
-  // Leaflet-like bar style for grouping buttons
-  const barStyle: React.CSSProperties = {
-    backgroundColor: 'white',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    pointerEvents: 'auto',
-  };
-
-  const barButtonStyle: React.CSSProperties = {
-    width: '34px',
-    height: '34px',
-    background: 'white',
-    border: 'none',
-    borderBottom: '1px solid #ccc',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.2rem',
-    color: '#333',
-    padding: 0,
-    transition: 'background-color 0.2s',
-  };
-
   return (
     <>
       {/* Top Left: Zoom control is at top: 10px, left: 10px (~70px high). */}
       <div
-        style={{
-          ...controlContainerStyle,
-          top: '80px',
-          left: '10px',
-          alignItems: 'flex-start',
-          gap: '8px',
-        }}
+        className={`${controlContainerClass} top-[80px] left-[10px] items-start gap-2`}
       >
-        <div style={controlItemStyle}>
+        <div className={controlItemClass}>
           <button
             onClick={() => setShowAdfSelector(true)}
-            style={floatingButtonStyle}
+            className={floatingButtonClass}
             title={activeAdf?.nom || 'Selector de ADF'}
           >
             🗺️
@@ -114,10 +80,10 @@ export function MapUIOverlays({
         </div>
 
         {/* Login/Logout Button under ADF Selector */}
-        <div style={controlItemStyle}>
+        <div className={controlItemClass}>
           <button
             onClick={user ? logout : () => setShowLoginModal(true)}
-            style={floatingButtonStyle}
+            className={floatingButtonClass}
             title={user ? `Surt de ${user.username}` : 'Accés'}
           >
             {user ? '🔓' : '🔐'}
@@ -126,8 +92,8 @@ export function MapUIOverlays({
 
         {/* OwnTracks toggle for logged-in users */}
         {user && (
-          <div style={controlItemStyle}>
-            <TrackingToggle style={floatingButtonStyle} />
+          <div className={controlItemClass}>
+            <TrackingToggle className={floatingButtonClass} />
           </div>
         )}
       </div>
@@ -135,57 +101,51 @@ export function MapUIOverlays({
       {/* Top Right: Native Layers Control is at top: 10px, right: 10px.
           We place our controls under it with enough gap. */}
       <div
-        style={{
-          ...controlContainerStyle,
-          top: '66px',
-          right: '12px',
-          alignItems: 'flex-end',
-          gap: '8px',
-        }}
+        className={`${controlContainerClass} top-[66px] right-[12px] items-end gap-2`}
       >
         {isEditor && (
-          <div style={controlItemStyle}>
+          <div className={controlItemClass}>
             <NewNodeButton
-              style={floatingButtonStyle}
+              className={floatingButtonClass}
               onClick={() => setShowCoordModal(true)}
             />
           </div>
         )}
 
-        <div style={controlItemStyle}>
+        <div className={controlItemClass}>
           <LocateButton
-            style={floatingButtonStyle}
+            className={floatingButtonClass}
             onEdit={onLocateEdit}
             setPosition={setLocatePosition}
             setAccuracy={setLocateAccuracy}
           />
         </div>
 
-        <div style={controlItemStyle}>
+        <div className={controlItemClass}>
           <FullscreenButton
             targetId="map-container"
-            style={floatingButtonStyle}
+            className={floatingButtonClass}
           />
         </div>
 
-        <div style={controlItemStyle}>
-          <HydrantListModal style={floatingButtonStyle} features={features} />
+        <div className={controlItemClass}>
+          <HydrantListModal className={floatingButtonClass} features={features} />
         </div>
 
-        <div style={controlItemStyle}>
-          <LegendModal style={floatingButtonStyle} />
+        <div className={controlItemClass}>
+          <LegendModal className={floatingButtonClass} />
         </div>
 
         {isAdmin && activeAdf && (
-          <div style={controlItemStyle}>
-            <SyncButton style={floatingButtonStyle} />
+          <div className={controlItemClass}>
+            <SyncButton className={floatingButtonClass} />
           </div>
         )}
       </div>
 
       {/* Bottom Left: Zoom Display (Above Attribution if it were there, but on the left) */}
-      <div style={{ ...controlContainerStyle, bottom: '5px', left: '5px' }}>
-        <div style={controlItemStyle}>
+      <div className={`${controlContainerClass} bottom-[5px] left-[5px]`}>
+        <div className={controlItemClass}>
           <ZoomDisplay />
         </div>
       </div>
@@ -201,40 +161,13 @@ export function MapUIOverlays({
       )}
 
       {loadingHidrants && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '4rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(255, 255, 255, 0.8)',
-            padding: '0.5rem 1rem',
-            borderRadius: '20px',
-            zIndex: 990,
-            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-            fontSize: '0.8rem',
-            pointerEvents: 'none',
-          }}
-        >
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-white/80 px-4 py-2 rounded-[20px] z-[990] shadow-[0_2px_5px_rgba(0,0,0,0.2)] text-[0.8rem] pointer-events-none">
           Actualitzant hidrants...
         </div>
       )}
 
       {hidrantsError && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '6rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(255, 0, 0, 0.8)',
-            color: 'white',
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            zIndex: 990,
-            fontSize: '0.8rem',
-          }}
-        >
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-red-700/80 text-white px-4 py-2 rounded-lg z-[990] text-[0.8rem]">
           Error: {hidrantsError}
         </div>
       )}

@@ -4,9 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from './Modal';
 import { toast } from 'react-toastify';
 
-interface TrackingToggleProps { style?: React.CSSProperties; }
+interface TrackingToggleProps { className?: string; }
 
-export const TrackingToggle: React.FC<TrackingToggleProps> = ({ style }) => {
+export const TrackingToggle: React.FC<TrackingToggleProps> = ({ className }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [available, setAvailable] = useState(false);
@@ -59,21 +59,16 @@ export const TrackingToggle: React.FC<TrackingToggleProps> = ({ style }) => {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'inline-flex' }}>
+      <div className="relative inline-flex">
         {user.mqtt_enabled && (
-          <div style={{
-            width: 8, height: 8, borderRadius: '50%',
-            background: available ? '#22c55e' : '#ef4444',
-            border: '1.5px solid white',
-            position: 'absolute', top: 1, right: 1, zIndex: 991,
-          }}
+          <div className={`w-2 h-2 rounded-full border-[1.5px] border-white absolute top-[1px] right-[1px] z-[991] ${available ? 'bg-[#22c55e]' : 'bg-[#ef4444]'}`}
             title={available ? 'MQTT disponible' : 'MQTT no disponible'}
           />
         )}
         <button
           onClick={user.mqtt_enabled ? handleConfig : handleEnable}
           disabled={loading}
-          style={style}
+          className={className}
           title={(user.mqtt_enabled ? 'Veure config OwnTracks' : 'Activar OwnTracks') + (available ? '' : ' (MQTT no disponible)')}
         >
           {loading ? '⏳' : '🚶'}
@@ -81,21 +76,21 @@ export const TrackingToggle: React.FC<TrackingToggleProps> = ({ style }) => {
       </div>
       {showModal && (
         <Modal title="OwnTracks" onClose={() => setShowModal(false)}>
-          <div style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
-            <p style={{ marginTop: 0 }}>Per activar el seguiment de posicions:</p>
-            <ol style={{ paddingLeft: '1.2rem', margin: '0.5rem 0' }}>
+          <div className="text-[0.9rem] leading-normal">
+            <p className="mt-0">Per activar el seguiment de posicions:</p>
+            <ol className="pl-[1.2rem] my-2">
               <li>Instal·la <strong>OwnTracks</strong> al teu mòbil:
-                <div style={{ marginTop: '4px', display: 'flex', gap: '8px' }}>
-                  <a href="https://play.google.com/store/apps/details?id=org.owntracks.android" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: '#007bff' }}>📱 Android</a>
-                  <a href="https://apps.apple.com/app/owntracks/id692424691" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: '#007bff' }}>🍏 iOS</a>
+                <div className="mt-[4px] flex gap-2">
+                  <a href="https://play.google.com/store/apps/details?id=org.owntracks.android" target="_blank" rel="noopener noreferrer" className="text-[0.8rem] text-primary">📱 Android</a>
+                  <a href="https://apps.apple.com/app/owntracks/id692424691" target="_blank" rel="noopener noreferrer" className="text-[0.8rem] text-primary">🍏 iOS</a>
                 </div>
               </li>
-              <li style={{ marginTop: '8px' }}>Descarrega el fitxer de configuració</li>
+              <li className="mt-2">Descarrega el fitxer de configuració</li>
               <li>Obre'l amb OwnTracks per importar-lo</li>
             </ol>
-            <p style={{ color: '#666', fontSize: '0.8rem', margin: '0.5rem 0' }}>El fitxer conté les credencials del teu usuari. No el comparteixis.</p>
+            <p className="text-muted text-[0.8rem] my-2">El fitxer conté les credencials del teu usuari. No el comparteixis.</p>
             <button onClick={downloadCurrent}
-              style={{ width: '100%', padding: '10px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.9rem', cursor: 'pointer', marginTop: '0.5rem' }}>
+              className="w-full p-[10px] bg-primary text-white border-0 rounded text-[0.9rem] cursor-pointer mt-2">
               📥 Baixar {user.username}.otrc
             </button>
           </div>

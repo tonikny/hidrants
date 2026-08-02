@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
-  primaryButtonStyle,
-  secondaryButtonStyle,
+  secondaryButtonClass,
 } from '../../styles/uiStyles';
 
 interface CreationSelectorProps {
@@ -19,109 +18,61 @@ export const CreationSelector: React.FC<CreationSelectorProps> = ({
     null
   );
 
-  const cardStyle = (type: 'hydrant' | 'incident'): React.CSSProperties => {
+  const cardClass = (type: 'hydrant' | 'incident'): string => {
     const isHovered = hoveredCard === type;
     const isHydrant = type === 'hydrant';
-    return {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '1.25rem',
-      borderRadius: '8px',
-      border: `2px solid ${
-        isHovered ? (isHydrant ? '#007bff' : '#dc3545') : '#e0e0e0'
-      }`,
-      backgroundColor: isHovered
-        ? isHydrant
-          ? '#f0f7ff'
-          : '#fff5f5'
-        : '#fcfcfc',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease-in-out',
-      boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
-      flex: 1,
-      minWidth: '100px',
-      textAlign: 'center',
-    };
+    const hoverClass = isHovered
+      ? isHydrant
+        ? 'border-primary bg-[#f0f7ff] shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
+        : 'border-[#dc3545] bg-[#fff5f5] shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
+      : 'border-[#e0e0e0] bg-[#fcfcfc]';
+    return `flex flex-col items-center p-5 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out flex-1 min-w-[100px] text-center ${hoverClass}`;
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        padding: '0.5rem 0',
-      }}
-    >
-      <div
-        style={{
-          color: '#666',
-          fontSize: '0.9rem',
-          marginBottom: '0.5rem',
-          textAlign: 'center',
-        }}
-      >
+    <div className="flex flex-col gap-4 p-[0.5rem_0]">
+      <div className="text-muted text-[0.9rem] mb-2 text-center">
         Què vols afegir en aquesta ubicació?
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+      <div className="flex gap-4 w-full">
         {/* Card Hidrant */}
         <div
-          style={cardStyle('hydrant')}
+          className={cardClass('hydrant')}
           onMouseEnter={() => setHoveredCard('hydrant')}
           onMouseLeave={() => setHoveredCard(null)}
           onClick={onSelectHydrant}
         >
-          <span style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📍</span>
-          <strong
-            style={{ fontSize: '1rem', color: '#333', marginBottom: '0.25rem' }}
-          >
+          <span className="text-[2.5rem] mb-2">📍</span>
+          <strong className="text-[1rem] text-ink mb-1">
             Nou Hidrant
           </strong>
-          <span
-            style={{ fontSize: '0.75rem', color: '#777', lineHeight: '1.2' }}
-          >
+          <span className="text-[0.75rem] text-[#777] leading-[1.2]">
             Registra un nou hidrant amb dades tècniques.
           </span>
         </div>
 
         {/* Card Incidència */}
         <div
-          style={cardStyle('incident')}
+          className={cardClass('incident')}
           onMouseEnter={() => setHoveredCard('incident')}
           onMouseLeave={() => setHoveredCard(null)}
           onClick={onSelectIncident}
         >
-          <span style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⚠️</span>
-          <strong
-            style={{ fontSize: '1rem', color: '#333', marginBottom: '0.25rem' }}
-          >
+          <span className="text-[2.5rem] mb-2">⚠️</span>
+          <strong className="text-[1rem] text-ink mb-1">
             Incidència
           </strong>
-          <span
-            style={{ fontSize: '0.75rem', color: '#777', lineHeight: '1.2' }}
-          >
+          <span className="text-[0.75rem] text-[#777] leading-[1.2]">
             Reporta un foc, obstacle, o anomalia a la zona.
           </span>
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginTop: '0.5rem',
-        }}
-      >
+      <div className="flex justify-end mt-2">
         <button
           onClick={onClose}
-          style={{
-            ...secondaryButtonStyle,
-            padding: '8px 16px',
-            fontSize: '0.8rem',
-            width: 'auto',
-          }}
+          className={`${secondaryButtonClass} px-4 py-2 text-[0.8rem] w-auto`}
         >
           Cancel·lar
         </button>

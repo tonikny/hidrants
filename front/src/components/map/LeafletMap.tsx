@@ -8,7 +8,6 @@ import MapRightClickHandler from './MapRightClickHandler';
 import { LocateButton } from '../controls/LocateButton';
 import { Layers } from './Layers';
 import { ZoomDisplay } from '../controls/ZoomDisplay';
-import { floatingButtonStyle } from '../../styles/uiStyles';
 import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
 import { useAdf } from '../../contexts/AdfContext';

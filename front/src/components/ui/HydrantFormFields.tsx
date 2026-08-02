@@ -1,5 +1,5 @@
 import React from 'react';
-import { inputStyle, selectStyle } from '../../styles/uiStyles';
+import { inputClass, selectClass } from '../../styles/uiStyles';
 import { HydrantUiFields } from '../../utils/osmConversion';
 
 interface HydrantFormFieldsProps {
@@ -29,60 +29,53 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem',
-        marginTop: '0.5rem',
-      }}
-    >
+    <div className="flex flex-col gap-2 mt-2">
       {/* Estat i Data de revisió (Només en edició) */}
       {showSurveyDateAndStatus && (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <label style={{ flex: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
+        <div className="flex gap-2">
+          <label className="flex-1 text-[0.75rem] italic">
             Estat:
             <select
               value={data.estat}
               onChange={(e) => handleFieldChange('estat', e.target.value)}
-              style={selectStyle}
+              className={selectClass}
             >
               <option value="Operatiu">Operatiu</option>
               <option value="Fora de servei">Fora de servei</option>
             </select>
           </label>
-          <label style={{ flex: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
+          <label className="flex-1 text-[0.75rem] italic">
             Data revisió:
             <input
               type="date"
               value={data.surveyDate}
               onChange={(e) => handleFieldChange('surveyDate', e.target.value)}
-              style={{ ...inputStyle, padding: '2px' }}
+              className={`${inputClass} p-[2px]!`}
             />
           </label>
         </div>
       )}
 
       {/* Tipus - Posició */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <label style={{ flex: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
+      <div className="flex gap-2">
+        <label className="flex-1 text-[0.75rem] italic">
           Tipus:
           <select
             value={data.type}
             onChange={(e) => handleFieldChange('type', e.target.value)}
-            style={selectStyle}
+            className={selectClass}
           >
             <option value=""></option>
             <option value="pillar">Columna</option>
             <option value="underground">Subterrani</option>
           </select>
         </label>
-        <label style={{ flex: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
+        <label className="flex-1 text-[0.75rem] italic">
           Posició:
           <select
             value={data.position}
             onChange={(e) => handleFieldChange('position', e.target.value)}
-            style={selectStyle}
+            className={selectClass}
           >
             <option value=""></option>
             <option value="lane">Calçada</option>
@@ -93,13 +86,13 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
       </div>
 
       {/* Acoblaments - Pressió */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <label style={{ flex: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
+      <div className="flex gap-2">
+        <label className="flex-1 text-[0.75rem] italic">
           Acoblaments:
           <select
             value={data.couplings}
             onChange={(e) => handleFieldChange('couplings', e.target.value)}
-            style={selectStyle}
+            className={selectClass}
           >
             <option value=""></option>
             <option value="1">1</option>
@@ -108,30 +101,23 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
             <option value="4">4</option>
           </select>
         </label>
-        <label style={{ flex: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
+        <label className="flex-1 text-[0.75rem] italic">
           Pressió (bar):
           <input
             type="number"
             step="any"
             value={data.pressure}
             onChange={(e) => handleFieldChange('pressure', e.target.value)}
-            style={inputStyle}
+            className={inputClass}
           />
         </label>
       </div>
 
       {/* Diàmetres dinàmics */}
       {numCouplings > 0 && (
-        <label style={{ fontSize: '0.75rem', fontStyle: 'italic' }}>
+        <label className="text-[0.75rem] italic">
           Diàmetre{numCouplings > 1 ? 's' : ''} (mm):
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.3rem',
-              marginTop: '0.2rem',
-            }}
-          >
+          <div className="flex flex-wrap gap-[0.3rem] mt-[0.2rem]">
             {Array.from({ length: numCouplings }, (_, i) => (
               <select
                 key={i}
@@ -141,7 +127,7 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
                   nd[i] = e.target.value;
                   handleFieldChange('diameters', nd.join(';'));
                 }}
-                style={{ ...selectStyle, flex: '1 1 30%' }}
+                className={`${selectClass} flex-[1_1_30%]`}
               >
                 <option value=""></option>
                 <option value="45">45</option>
@@ -154,34 +140,34 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
       )}
 
       {/* Carrer */}
-      <label style={{ fontSize: '0.75rem', fontStyle: 'italic' }}>
+      <label className="text-[0.75rem] italic">
         Carrer:
         <input
           type="text"
           value={data.street}
           onChange={(e) => handleFieldChange('street', e.target.value)}
-          style={inputStyle}
+          className={inputClass}
         />
       </label>
 
       {/* Número i Barri/Urbanització */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <label style={{ flex: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
+      <div className="flex gap-2">
+        <label className="flex-1 text-[0.75rem] italic">
           Núm:
           <input
             type="text"
             value={data.num}
             onChange={(e) => handleFieldChange('num', e.target.value)}
-            style={inputStyle}
+            className={inputClass}
           />
         </label>
-        <label style={{ flex: 2, fontSize: '0.75rem', fontStyle: 'italic' }}>
+        <label className="flex-[2] text-[0.75rem] italic">
           Barri/Urbanització:
           <input
             type="text"
             value={data.barri}
             onChange={(e) => handleFieldChange('barri', e.target.value)}
-            style={inputStyle}
+            className={inputClass}
           />
         </label>
       </div>

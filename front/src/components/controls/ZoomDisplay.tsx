@@ -18,18 +18,7 @@ export const ZoomDisplay = () => {
   }, [map]);
 
   return (
-    <div
-      style={{
-        background: 'white',
-        padding: '2px 8px',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        fontSize: '0.75rem',
-        color: '#333',
-        boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-        fontWeight: 'bold',
-      }}
-    >
+    <div className="bg-white px-2 py-[2px] border border-border rounded text-[0.75rem] text-ink shadow-[0_1px_5px_rgba(0,0,0,0.4)] font-bold">
       Zoom: {zoom}
     </div>
   );

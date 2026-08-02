@@ -1,14 +1,10 @@
 export const NewNodeButton = ({
-  style,
+  className,
   onClick,
-}: Readonly<{ style?: React.CSSProperties; onClick?: () => void }>) => (
-  <button 
-    onClick={onClick} 
-    style={{
-      ...style,
-      fontSize: '1.5rem',
-      lineHeight: '1',
-    }} 
+}: Readonly<{ className?: string; onClick?: () => void }>) => (
+  <button
+    onClick={onClick}
+    className={`${className || ''} text-[1.5rem] leading-none`}
     title="Afegir node manualment"
   >
     +

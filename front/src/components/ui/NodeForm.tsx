@@ -7,9 +7,9 @@ import { openInNativeMaps } from '../../utils/geoMaps';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdf } from '../../contexts/AdfContext';
 import {
-  inputStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
 } from '../../styles/uiStyles';
 import {
   getHydrantDisplayData,
@@ -305,40 +305,33 @@ export const NodeWithForm = ({
 
   return (
     <Popup>
-      <div style={{ minWidth: '280px' }}>
+      <div className="min-w-[280px]">
         {!isEditing ? (
           <>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
+            <div className="flex gap-[10px] items-start">
+              <div className="flex-1">
                 {displayData.map(({ label, value }) => (
-                  <div key={label} style={{ fontSize: '0.85rem', marginBottom: '2px' }}>
+                  <div key={label} className="text-[0.85rem] mb-[2px]">
                     <strong>{label}: </strong>
                     {value}
                   </div>
                 ))}
                 {user?.role === 'admin' && (
-                  <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '8px', borderTop: '1px dotted #ccc', paddingTop: '4px' }}>
+                  <div className="text-[0.75rem] text-muted mt-2 border-t border-dotted border-border pt-[4px]">
                     <strong>Sync:</strong> {formatSyncStatus(props.sync_status)}
                   </div>
                 )}
                 {props.private_tags?.observacions && (
-                  <div style={{ fontSize: '0.85rem', marginTop: '8px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
+                  <div className="text-[0.85rem] mt-2 border-t border-soft pt-2">
                     <strong>Observacions:</strong><br/>
-                    <span style={{ whiteSpace: 'pre-wrap' }}>{props.private_tags.observacions}</span>
+                    <span className="whitespace-pre-wrap">{props.private_tags.observacions}</span>
                   </div>
                 )}
               </div>
               <HydrantImages images={getHydrantImages(props.osm_tags)} />
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '5px',
-                marginTop: '0.8rem',
-              }}
-            >
+            <div className="flex flex-col gap-[5px] mt-3">
               {canEdit && (
                 <>
                   <button
@@ -347,16 +340,7 @@ export const NodeWithForm = ({
                       e.stopPropagation();
                       handleQuickStatusUpdate(true);
                     }}
-                    style={{
-                      background: '#27ae60',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '6px',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
+                    className="bg-[#27ae60] text-white border-0 rounded p-[6px] text-[0.75rem] cursor-pointer font-semibold"
                   >
                     ✅ Operatiu (Avui)
                   </button>
@@ -366,16 +350,7 @@ export const NodeWithForm = ({
                       e.stopPropagation();
                       handleQuickStatusUpdate(false);
                     }}
-                    style={{
-                      background: '#e74c3c',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '6px',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
+                    className="bg-[#e74c3c] text-white border-0 rounded p-[6px] text-[0.75rem] cursor-pointer font-semibold"
                   >
                     ❌ Fora de servei (Avui)
                   </button>
@@ -386,12 +361,7 @@ export const NodeWithForm = ({
                       e.stopPropagation();
                       setIsEditing(true);
                     }}
-                    style={{
-                      ...primaryButtonStyle,
-                      padding: '6px',
-                      fontSize: '0.75rem',
-                      marginTop: '2px',
-                    }}
+                    className={`${primaryButtonClass} p-[6px] text-[0.75rem] mt-[2px]`}
                   >
                     ✏️ Editar dades
                   </button>
@@ -402,13 +372,7 @@ export const NodeWithForm = ({
                         e.stopPropagation();
                         handleDelete();
                       }}
-                      style={{
-                        ...primaryButtonStyle,
-                        backgroundColor: '#c0392b',
-                        padding: '6px',
-                        fontSize: '0.75rem',
-                        marginTop: '2px',
-                      }}
+                      className={`${primaryButtonClass} bg-[#c0392b] p-[6px] text-[0.75rem] mt-[2px]`}
                     >
                       🗑️ Esborrar hidrant
                     </button>
@@ -417,16 +381,7 @@ export const NodeWithForm = ({
               )}
 
               {/* Icones d'acció centrades */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '20px',
-                  marginTop: '10px',
-                  padding: '5px 0',
-                }}
-              >
+              <div className="flex justify-center items-center gap-5 mt-[10px] py-[5px]">
                 {/* Compartir */}
                 <button
                   type="button"
@@ -435,14 +390,7 @@ export const NodeWithForm = ({
                     handleShare();
                   }}
                   title="Compartir ubicació"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '0',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
+                  className="bg-transparent border-0 cursor-pointer p-0 flex items-center"
                 >
                   <ShareIcon />
                 </button>
@@ -455,14 +403,7 @@ export const NodeWithForm = ({
                     handleShowRoute();
                   }}
                   title={showRoute ? 'Tanca ruta' : 'Mostra ruta'}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '1.4rem',
-                    padding: '0',
-                    filter: showRoute ? 'none' : 'grayscale(100%)',
-                  }}
+                  className={`bg-transparent border-0 cursor-pointer text-[1.4rem] p-0 ${showRoute ? '' : 'grayscale'}`}
                 >
                   🛣️
                 </button>
@@ -475,13 +416,7 @@ export const NodeWithForm = ({
                     handleOpenMaps();
                   }}
                   title="Obrir en navegador GPS"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '1.4rem',
-                    padding: '0',
-                  }}
+                  className="bg-transparent border-0 cursor-pointer text-[1.4rem] p-0"
                 >
                   🚕
                 </button>
@@ -498,14 +433,7 @@ export const NodeWithForm = ({
                       );
                     }}
                     title="Veure a OpenStreetMap"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '0',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
+                    className="bg-transparent border-0 cursor-pointer p-0 flex items-center"
                   >
                     <OsmIcon />
                   </button>
@@ -514,20 +442,13 @@ export const NodeWithForm = ({
             </div>
 
             {/* Formulari de notificació (només en mode visualització) */}
-            <hr style={{ margin: '0.5rem 0', border: '1px solid #ccc' }} />
+            <hr className="my-2 border-t border-border" />
             <textarea
               placeholder="Enviar informació sobre aquest hidrant ..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={2}
-              style={{
-                ...inputStyle,
-                width: '100%',
-                marginTop: '0.2rem',
-                padding: '4px',
-                fontSize: '0.75rem',
-                fontFamily: 'inherit',
-              }}
+              className={`${inputClass} w-full mt-[0.2rem] p-[4px]! text-[0.75rem] font-inherit`}
             />
             <button
               type="button"
@@ -535,60 +456,38 @@ export const NodeWithForm = ({
                 e.stopPropagation();
                 handleSend();
               }}
-              style={{
-                ...primaryButtonStyle,
-                width: '100%',
-                marginTop: '0.5rem',
-                padding: '6px',
-                fontSize: '0.75rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
+              className={`${primaryButtonClass} w-full mt-2 p-[6px] text-[0.75rem] flex items-center justify-center gap-2`}
             >
-              Notificar <span style={{ fontSize: '1rem' }}>➤</span>
+              Notificar <span className="text-[1rem]">➤</span>
             </button>
           </>
         ) : (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-              marginTop: '0.5rem',
-            }}
-          >
+          <div className="flex flex-col gap-2 mt-2">
             <HydrantFormFields
               data={data}
               onChange={setData}
               showSurveyDateAndStatus={true}
             />
 
-            <label style={{ fontSize: '0.75rem', fontStyle: 'italic', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label className="text-[0.75rem] italic flex flex-col gap-[4px]">
               Observacions:
               <textarea
                 value={observacions}
                 onChange={(e) => setObservacions(e.target.value)}
                 rows={3}
-                style={{ ...inputStyle, width: '100%', resize: 'vertical', fontSize: '0.75rem', padding: '4px' }}
+                className={`${inputClass} w-full resize-y text-[0.75rem] p-[4px]!`}
                 placeholder="Observacions internes de l'hidrant..."
               />
             </label>
 
-            <div style={{ display: 'flex', gap: '5px', marginTop: '0.5rem' }}>
+            <div className="flex gap-[5px] mt-2">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSave();
                 }}
-                style={{
-                  ...primaryButtonStyle,
-                  flex: 1,
-                  padding: '6px',
-                  fontSize: '0.75rem',
-                }}
+                className={`${primaryButtonClass} flex-1 p-[6px] text-[0.75rem]`}
               >
                 Guardar
               </button>
@@ -598,12 +497,7 @@ export const NodeWithForm = ({
                   e.stopPropagation();
                   setIsEditing(false);
                 }}
-                style={{
-                  ...secondaryButtonStyle,
-                  flex: 1,
-                  padding: '6px',
-                  fontSize: '0.75rem',
-                }}
+                className={`${secondaryButtonClass} flex-1 p-[6px] text-[0.75rem]`}
               >
                 Cancel·lar
               </button>

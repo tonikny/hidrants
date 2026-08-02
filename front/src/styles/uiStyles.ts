@@ -1,115 +1,23 @@
-export const floatingButtonStyle: React.CSSProperties = {
-  background: 'white',
-  color: '#333',
-  border: '1px solid #ccc',
-  borderRadius: '4px',
-  width: '34px',
-  height: '34px',
-  fontSize: '1.2rem',
-  cursor: 'pointer',
-  zIndex: 990,
-  boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 0,
-};
+export const floatingButtonClass =
+  'bg-white text-ink border border-border rounded w-[34px] h-[34px] text-[1.2rem] cursor-pointer z-[990] shadow-[0_1px_5px_rgba(0,0,0,0.4)] flex items-center justify-center p-0';
 
-export const controlBarStyle: React.CSSProperties = {
-  background: 'white',
-  border: '2px solid rgba(0,0,0,0.2)',
-  backgroundClip: 'padding-box',
-  borderRadius: '4px',
-  display: 'flex',
-  flexDirection: 'column',
-};
+export const controlContainerClass =
+  'absolute flex flex-col gap-[10px] z-[990] pointer-events-none';
 
-export const controlBarButtonStyle: React.CSSProperties = {
-  width: '30px',
-  height: '30px',
-  lineHeight: '30px',
-  background: 'white',
-  border: 'none',
-  borderBottom: '1px solid #ccc',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '1.2rem',
-  color: '#333',
-  padding: 0,
-};
+export const controlItemClass = 'pointer-events-auto';
 
-export const controlContainerStyle: React.CSSProperties = {
-  position: 'absolute',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  zIndex: 990,
-  pointerEvents: 'none',
-};
+export const inputClass = 'border border-border rounded text-[0.85rem] w-full py-1 px-0';
 
-export const controlItemStyle: React.CSSProperties = {
-  pointerEvents: 'auto', // Re-enable pointer events for buttons
-};
+export const selectClass = `${inputClass} bg-white`;
 
-// formStyles
+export const primaryButtonClass =
+  'bg-primary text-white px-3 py-3 border-0 rounded cursor-pointer text-[0.85rem]';
 
-export const inputStyle: React.CSSProperties = {
-  padding: '4px 0',
-  border: '1px solid #ccc',
-  borderRadius: '4px',
-  fontSize: '0.85rem',
-  width: '100%',
-};
+export const secondaryButtonClass =
+  'bg-[#e0e0e0] text-ink px-3 py-3 border-0 rounded cursor-pointer text-[0.85rem]';
 
-export const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  backgroundColor: 'white',
-};
+export const popupContainerClass =
+  'bg-white p-4 rounded-lg shadow-[0_4px_15px_rgba(0,0,0,0.2)] w-[min(calc(100vw-60px),340px)] max-h-[85vh] overflow-y-auto z-[2000] font-sans relative';
 
-export const primaryButtonStyle: React.CSSProperties = {
-  backgroundColor: '#007bff',
-  color: 'white',
-  padding: '12px 12px',
-  border: 'none',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-};
-
-export const secondaryButtonStyle: React.CSSProperties = {
-  backgroundColor: '#e0e0e0',
-  color: '#333',
-  padding: '12px 12px',
-  border: 'none',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-};
-
-export const popupContainerStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  padding: '1rem',
-  borderRadius: '8px',
-  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-  width: 'min(calc(100vw - 60px), 340px)',
-  maxHeight: '85vh',
-  overflowY: 'auto',
-  zIndex: 2000,
-  fontFamily: 'system-ui, -apple-system, sans-serif',
-  position: 'relative',
-};
-
-export const modalOverlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: '100%',
-  backgroundColor: 'rgba(0,0,0,0.4)',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  zIndex: 6000,
-};
+export const modalOverlayClass =
+  'fixed inset-0 bg-black/40 flex justify-center items-center z-[6000]';

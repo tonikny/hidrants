@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { inputStyle, primaryButtonStyle } from '../../styles/uiStyles';
+import { inputClass, primaryButtonClass } from '../../styles/uiStyles';
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -36,45 +36,38 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '10px' }}>
-      <form onSubmit={handleSubmit} style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '15px'
-      }}>
-        <h2 style={{ textAlign: 'center', margin: '0 0 10px 0', fontSize: '1.2rem' }}>Accés Hidrants</h2>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label htmlFor="username" style={{ fontSize: '0.9rem', fontWeight: 600 }}>Usuari</label>
+    <div className="p-[10px]">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-[15px]">
+        <h2 className="text-center m-0 mb-[10px] text-[1.2rem]">Accés Hidrants</h2>
+
+        <div className="flex flex-col gap-[5px]">
+          <label htmlFor="username" className="text-[0.9rem] font-semibold">Usuari</label>
           <input
             id="username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            style={{ ...inputStyle, padding: '8px' }}
+            className={`${inputClass} p-2!`}
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label htmlFor="password" style={{ fontSize: '0.9rem', fontWeight: 600 }}>Contrasenya</label>
+        <div className="flex flex-col gap-[5px]">
+          <label htmlFor="password" className="text-[0.9rem] font-semibold">Contrasenya</label>
           <input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ ...inputStyle, padding: '8px' }}
+            className={`${inputClass} p-2!`}
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          style={{
-            ...primaryButtonStyle,
-            marginTop: '10px'
-          }}
+          className={`${primaryButtonClass} mt-[10px]`}
         >
           {loading ? 'Entrant...' : 'Inicia sessió'}
         </button>

@@ -2,12 +2,12 @@ import { useGeolocationTracking } from '../../hooks/useGeolocationTracking';
 import { useEffect } from 'react';
 
 export function LocateButton({
-  style,
+  className,
   onEdit,
   setPosition,
   setAccuracy,
 }: Readonly<{
-  style?: React.CSSProperties;
+  className?: string;
   onEdit?: (latlng: L.LatLng) => void;
   setPosition: (latlng: L.LatLng | null) => void;
   setAccuracy?: (accuracy: number | null) => void;
@@ -26,11 +26,7 @@ export function LocateButton({
   return (
     <button
       onClick={() => setTracking((prev) => !prev)}
-      style={{
-        ...style,
-        backgroundColor: tracking ? '#28a745' : 'white',
-        color: tracking ? 'white' : '#333',
-      }}
+      className={`${className || ''} ${tracking ? 'bg-[#28a745] text-white' : 'bg-white text-ink'}`}
       title={
         tracking
           ? 'Desactiva el seguiment de la teva posició'

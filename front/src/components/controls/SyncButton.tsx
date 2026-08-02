@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAdf } from '../../contexts/AdfContext';
 
 interface SyncButtonProps {
-  style?: React.CSSProperties;
+  className?: string;
 }
 
 interface SyncStats {
@@ -15,7 +15,7 @@ interface SyncStats {
   total_pending: number;
 }
 
-export function SyncButton({ style }: SyncButtonProps) {
+export function SyncButton({ className }: SyncButtonProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [stats, setStats] = useState<SyncStats | null>(null);
   const { activeAdf } = useAdf();
@@ -93,40 +93,19 @@ export function SyncButton({ style }: SyncButtonProps) {
   };
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div className="relative inline-block">
       <button
         onClick={handleSync}
         disabled={isSyncing}
         title={getTitle()}
-        style={{
-          ...style,
-          cursor: isSyncing ? 'not-allowed' : 'pointer',
-          opacity: isSyncing ? 0.7 : 1,
-        }}
+        className={`${className || ''} disabled:cursor-not-allowed disabled:opacity-70`}
       >
         <span>{isSyncing ? '⏳' : '🔄'}</span>
       </button>
-      
+
       {stats && stats.total_pending > 0 && !isSyncing && (
         <div
-          style={{
-            position: 'absolute',
-            top: '-5px',
-            right: '-5px',
-            background: stats.PENDING_CREATE > 0 ? '#f1c40f' : '#3498db',
-            color: 'white',
-            borderRadius: '50%',
-            width: '18px',
-            height: '18px',
-            fontSize: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 'bold',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-            pointerEvents: 'none',
-            zIndex: 10,
-          }}
+          className={`absolute -top-[5px] -right-[5px] text-white rounded-full w-[18px] h-[18px] text-[10px] flex items-center justify-center font-bold shadow-[0_1px_3px_rgba(0,0,0,0.3)] pointer-events-none z-10 ${stats.PENDING_CREATE > 0 ? 'bg-[#f1c40f]' : 'bg-[#3498db]'}`}
         >
           {stats.total_pending}
         </div>

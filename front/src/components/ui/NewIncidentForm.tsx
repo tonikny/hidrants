@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useIncidencies } from '../../hooks/useIncidencies';
 import { toast } from 'react-toastify';
 import {
-  inputStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
-  selectStyle,
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  selectClass,
 } from '../../styles/uiStyles';
 
 type NewIncidentFormProps = {
@@ -50,47 +50,33 @@ export const NewIncidentForm = ({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '0 0.5rem',
-      }}
-    >
-      <div
-        style={{
-          fontSize: '0.8rem',
-          color: '#555',
-          textAlign: 'center',
-          marginBottom: '1rem',
-        }}
-      >
+    <form onSubmit={handleSubmit} className="flex flex-col px-2">
+      <div className="text-[0.8rem] text-[#555] text-center mb-4">
         <strong>
           [ {lat.toFixed(5)}, {lon.toFixed(5)} ]
         </strong>
       </div>
 
       {/* Títol */}
-      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+      <label className="text-[0.8rem] italic mb-2">
         Títol de la incidència:
         <input
           type="text"
           value={titol}
           onChange={(e) => setTitol(e.target.value)}
           placeholder="Ex: Fum a prop de Can Gall"
-          style={inputStyle}
+          className={inputClass}
           required
         />
       </label>
 
       {/* Tipus d'Incidència */}
-      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+      <label className="text-[0.8rem] italic mb-2">
         Tipus d'incidència:
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          style={selectStyle}
+          className={selectClass}
           required
         >
           <option value="FOC">🔥 Foc de vegetació / forestal</option>
@@ -101,12 +87,12 @@ export const NewIncidentForm = ({
       </label>
 
       {/* Prioritat */}
-      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+      <label className="text-[0.8rem] italic mb-2">
         Prioritat:
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
-          style={selectStyle}
+          className={selectClass}
           required
         >
           <option value="BAIXA">🟢 Baixa (No urgent)</option>
@@ -116,55 +102,29 @@ export const NewIncidentForm = ({
       </label>
 
       {/* Comentari inicial */}
-      <label style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.75rem' }}>
+      <label className="text-[0.8rem] italic mb-3">
         Observacions inicials:
         <textarea
           value={comentari}
           onChange={(e) => setComentari(e.target.value)}
           placeholder="Més detalls..."
-          style={{
-            ...inputStyle,
-            fontFamily: 'inherit',
-            height: '60px',
-            resize: 'vertical',
-            padding: '4px 6px',
-          }}
+          className={`${inputClass} font-inherit h-[60px] resize-y p-[4px_6px]!`}
         />
       </label>
 
       {/* Botons */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: '0.5rem',
-          marginTop: '0.5rem',
-        }}
-      >
+      <div className="flex justify-between gap-2 mt-2">
         <button
           type="submit"
           disabled={isSubmitting}
-          style={{
-            ...primaryButtonStyle,
-            backgroundColor: '#dc3545', // Vermell intens per a incidències
-            flex: 1,
-            padding: '8px',
-            fontSize: '0.8rem',
-            opacity: isSubmitting ? 0.7 : 1,
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-          }}
+          className={`${primaryButtonClass} bg-[#dc3545] flex-1 p-2 text-[0.8rem] disabled:opacity-70 disabled:cursor-not-allowed`}
         >
           {isSubmitting ? 'Enviant...' : 'Reportar Incidència'}
         </button>
         <button
           type="button"
           onClick={onClose}
-          style={{
-            ...secondaryButtonStyle,
-            flex: 1,
-            padding: '8px',
-            fontSize: '0.8rem',
-          }}
+          className={`${secondaryButtonClass} flex-1 p-2 text-[0.8rem]`}
         >
           Cancel·la
         </button>

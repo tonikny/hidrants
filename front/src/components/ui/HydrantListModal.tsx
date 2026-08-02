@@ -3,14 +3,14 @@ import L from 'leaflet';
 import { Modal } from './Modal';
 import { HidrantFeature } from '../../hooks/useHidrantData';
 import { getHydrantStatus, getHydrantIconUrl } from '../../utils/icons';
-import { inputStyle } from '../../styles/uiStyles';
+import { inputClass } from '../../styles/uiStyles';
 
 interface HydrantListModalProps {
   features: HidrantFeature[];
-  style?: React.CSSProperties;
+  className?: string;
 }
 
-export function HydrantListModal({ features, style }: HydrantListModalProps) {
+export function HydrantListModal({ features, className }: HydrantListModalProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -53,10 +53,7 @@ export function HydrantListModal({ features, style }: HydrantListModalProps) {
     <>
       <button
         onClick={() => setOpen(true)}
-        style={{
-          ...style,
-          fontSize: '1.2rem',
-        }}
+        className={`${className || ''} text-[1.2rem]`}
         title="Llista d'hidrants"
       >
         📃
@@ -76,45 +73,21 @@ export function HydrantListModal({ features, style }: HydrantListModalProps) {
         >
           <div
             ref={containerRef}
-            style={{
-              padding: '0.5rem 0',
-              display: 'flex',
-              flexDirection: 'column',
-              height: '75vh',
-              boxSizing: 'border-box',
-            }}
+            className="p-[0.5rem_0] flex flex-col h-[75vh] box-border"
           >
-            <div style={{ padding: '0 2px' }}>
+            <div className="px-[2px]">
               <input
                 type="text"
                 placeholder="Cerca per carrer/barri..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  ...inputStyle,
-                  marginBottom: '1rem',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
+                className={`${inputClass} mb-4 p-2! box-border`}
               />
             </div>
 
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                border: '1px solid #eee',
-                borderRadius: '4px',
-              }}
-            >
+            <div className="flex-1 overflow-y-auto border border-soft rounded">
               {filteredFeatures.length === 0 ? (
-                <p
-                  style={{
-                    textAlign: 'center',
-                    color: '#666',
-                    padding: '20px',
-                  }}
-                >
+                <p className="text-center text-muted p-5">
                   No s'han trobat hidrants.
                 </p>
               ) : (
@@ -133,68 +106,26 @@ export function HydrantListModal({ features, style }: HydrantListModalProps) {
                       onClick={() => handleCenter(f.id)}
                       onMouseEnter={() => setHoveredId(f.id)}
                       onMouseLeave={() => setHoveredId(null)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '10px 12px',
-                        borderBottom: '1px solid #eee',
-                        cursor: 'pointer',
-                        backgroundColor:
-                          hoveredId === f.id ? '#f5f5f5' : 'transparent',
-                        transition: 'background-color 0.1s',
-                      }}
+                      className={`flex items-center gap-3 px-3 py-[10px] border-b border-soft cursor-pointer transition-colors duration-100 ${hoveredId === f.id ? 'bg-[#f5f5f5]' : 'bg-transparent'}`}
                     >
                       <img
                         src={getHydrantIconUrl(getHydrantStatus(ui))}
                         alt="Estat"
-                        style={{
-                          width: '16px',
-                          height: '26px',
-                          objectFit: 'contain',
-                          flexShrink: 0,
-                        }}
+                        className="w-4 h-[26px] object-contain shrink-0"
                       />
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="flex-1 min-w-0">
                         <div
-                          style={{
-                            fontWeight: 'bold',
-                            fontSize: '0.95rem',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            color: '#333',
-                          }}
+                          className="font-bold text-[0.95rem] whitespace-nowrap overflow-hidden text-ellipsis text-ink"
                           title={`${address} ${neighborhood}`}
                         >
                           {address || 'Sense adreça'}{' '}
-                          <span
-                            style={{
-                              fontWeight: 'normal',
-                              color: '#666',
-                              fontSize: '0.85rem',
-                            }}
-                          >
+                          <span className="font-normal text-muted text-[0.85rem]">
                             {neighborhood}
                           </span>
                         </div>
 
-                        <div
-                          style={{
-                            fontSize: '0.75rem',
-                            color: '#666',
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '4px',
-                            marginTop: '2px',
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontWeight: '500',
-                              color: isOutOfService ? '#d32f2f' : '#2e7d32',
-                            }}
-                          >
+                        <div className="text-[0.75rem] text-muted flex flex-wrap gap-[4px] mt-[2px]">
+                          <span className={`font-medium ${isOutOfService ? 'text-[#d32f2f]' : 'text-[#2e7d32]'}`}>
                             {ui.estat || 'Desconegut'}
                           </span>
                           <span>•</span>
@@ -213,15 +144,7 @@ export function HydrantListModal({ features, style }: HydrantListModalProps) {
               )}
             </div>
 
-            <div
-              style={{
-                marginTop: '10px',
-                fontSize: '0.8rem',
-                color: '#888',
-                textAlign: 'right',
-                padding: '0 4px',
-              }}
-            >
+            <div className="mt-[10px] text-[0.8rem] text-[#888] text-right px-[4px]">
               Total: {filteredFeatures.length} hidrants
             </div>
           </div>

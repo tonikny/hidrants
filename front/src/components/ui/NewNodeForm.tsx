@@ -4,9 +4,9 @@ import { useMap } from 'react-leaflet';
 import { LatLng, point } from 'leaflet';
 import { toast } from 'react-toastify';
 import {
-  inputStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
 } from '../../styles/uiStyles';
 import { HydrantUiFields } from '../../utils/osmConversion';
 import { HydrantFormFields } from './HydrantFormFields';
@@ -90,40 +90,16 @@ export const NewNodeForm = ({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '0 0.5rem',
-      }}
-    >
-      <div
-        style={{
-          fontSize: '0.8rem',
-          color: '#555',
-          textAlign: 'center',
-          marginBottom: '1rem',
-        }}
-      >
+    <form onSubmit={handleSubmit} className="flex flex-col px-2">
+      <div className="text-[0.8rem] text-[#555] text-center mb-4">
         <strong>
           [ {lat.toFixed(5)}, {lon.toFixed(5)} ]
         </strong>
       </div>
 
-      <div style={{ marginBottom: '0.5rem' }}>
+      <div className="mb-2">
         <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-            background: isInspected ? '#e8f5e9' : '#f5f5f5',
-            padding: '8px',
-            borderRadius: '4px',
-            border: `1px solid ${isInspected ? '#2e7d32' : '#ccc'}`,
-          }}
+          className={`flex items-center gap-2 text-[0.85rem] cursor-pointer p-2 rounded border ${isInspected ? 'bg-[#e8f5e9] border-[#2e7d32]' : 'bg-[#f5f5f5] border-border'}`}
         >
           <input
             type="checkbox"
@@ -141,54 +117,29 @@ export const NewNodeForm = ({
       />
 
       {/* Observacions (100%) */}
-      <label
-        style={{
-          fontSize: '0.8rem',
-          width: '100%',
-          fontStyle: 'italic',
-          marginBottom: '1rem',
-          marginTop: '0.5rem',
-        }}
-      >
+      <label className="text-[0.8rem] w-full italic mb-4 mt-2">
         Observacions:
         <textarea
           value={observacions}
           onChange={(e) => setObservacions(e.target.value)}
           rows={2}
           placeholder="Observacions internes de l'hidrant..."
-          style={{ ...inputStyle, width: '100%', resize: 'vertical' }}
+          className={`${inputClass} w-full resize-y`}
         />
       </label>
 
       {/* Botons */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: '0.5rem',
-          marginTop: '0.5rem',
-        }}
-      >
+      <div className="flex justify-between gap-2 mt-2">
         <button
           type="submit"
-          style={{
-            ...primaryButtonStyle,
-            flex: 1,
-            padding: '6px',
-            fontSize: '0.75rem',
-          }}
+          className={`${primaryButtonClass} flex-1 p-[6px] text-[0.75rem]`}
         >
           Enviar
         </button>
         <button
           type="button"
           onClick={onClose}
-          style={{
-            ...secondaryButtonStyle,
-            flex: 1,
-            padding: '6px',
-            fontSize: '0.75rem',
-          }}
+          className={`${secondaryButtonClass} flex-1 p-[6px] text-[0.75rem]`}
         >
           Cancel·la
         </button>

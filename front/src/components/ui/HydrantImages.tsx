@@ -18,24 +18,12 @@ const SingleImage: React.FC<{ img: HydrantImage; index: number }> = ({
       href={img.url}
       target="_blank"
       rel="noopener noreferrer"
-      style={{ 
-        display: 'block',
-        height: '80px',
-        marginBottom: '4px',
-        width: 'fit-content'
-      }}
+      className="block h-[80px] mb-[4px] w-fit"
     >
       <img
         src={img.thumbnail}
         alt={`Hidrant ${index + 1}`}
-        style={{
-          height: '80px',
-          width: 'auto',
-          maxWidth: '120px',
-          objectFit: 'contain',
-          borderRadius: '6px',
-          display: 'block',
-        }}
+        className="h-[80px] w-auto max-w-[120px] object-contain rounded-[6px] block"
         onError={() => setHasError(true)}
       />
     </a>
@@ -48,15 +36,7 @@ export const HydrantImages: React.FC<HydrantImagesProps> = ({ images }) => {
   const displayImages = images.slice(0, 3);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        gap: '4px',
-        flexShrink: 0,
-      }}
-    >
+    <div className="flex flex-col items-end gap-[4px] shrink-0">
       {displayImages.map((img, index) => (
         <SingleImage key={index} img={img} index={index} />
       ))}

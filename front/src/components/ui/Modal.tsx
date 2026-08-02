@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { modalOverlayStyle, popupContainerStyle } from '../../styles/uiStyles';
+import { modalOverlayClass, popupContainerClass } from '../../styles/uiStyles';
 
 interface ModalProps {
   children: React.ReactNode;
@@ -20,29 +20,22 @@ export const Modal: React.FC<ModalProps> = ({
   containerStyle = {}
 }) => {
   const content = (
-    <div 
-      style={{
-        ...modalOverlayStyle, 
-        pointerEvents: nonBlocking ? 'none' : 'auto', 
-        backgroundColor: nonBlocking ? 'transparent' : modalOverlayStyle.backgroundColor
-      }} 
+    <div
+      className={`${modalOverlayClass} ${nonBlocking ? 'pointer-events-none bg-transparent' : 'pointer-events-auto'}`}
       onClick={onClose}
     >
-      <div 
-        style={{
-          ...popupContainerStyle, 
-          pointerEvents: 'auto',
-          ...containerStyle
-        }} 
+      <div
+        className={`${popupContainerClass} pointer-events-auto`}
+        style={containerStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showClose) && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>{title}</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="m-0 text-[1.1rem]">{title}</h2>
             {showClose && onClose && (
-              <button 
+              <button
                 onClick={onClose}
-                style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', padding: '0 5px', color: '#666' }}
+                className="bg-transparent border-0 text-[1.4rem] cursor-pointer p-0 px-[5px] text-muted"
               >
                 ✕
               </button>

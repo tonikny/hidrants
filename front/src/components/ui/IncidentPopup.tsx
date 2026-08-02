@@ -3,10 +3,10 @@ import { useIncidencies } from '../../hooks/useIncidencies';
 import { Incident, IncidentEvent } from '../../types';
 import { Timeline } from './Timeline';
 import { 
-  primaryButtonStyle, 
-  secondaryButtonStyle, 
-  inputStyle,
-  selectStyle
+  primaryButtonClass, 
+  secondaryButtonClass, 
+  inputClass,
+  selectClass
 } from '../../styles/uiStyles';
 import { toast } from 'react-toastify';
 import { openInNativeMaps } from '../../utils/geoMaps';
@@ -89,74 +89,46 @@ export const IncidentPopup = ({
     }
   };
 
-  if (loading) return <div style={{ minWidth: '280px', padding: '1rem' }}>Carregant incidència...</div>;
-  if (!incident) return <div style={{ minWidth: '280px', padding: '1rem' }}>No s'ha trobat la incidència</div>;
+  if (loading) return <div className="min-w-[280px] p-4">Carregant incidència...</div>;
+  if (!incident) return <div className="min-w-[280px] p-4">No s'ha trobat la incidència</div>;
 
   const emojiPrioritat = incident.prioritat === 'ALTA' ? '🔴' : incident.prioritat === 'MITJANA' ? '🟠' : '🟡';
 
   return (
-    <div style={{ minWidth: '280px', padding: '0.2rem' }}>
-      <div style={{ marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>
-        <h3 style={{ 
-          margin: '0 0 0.5rem 0', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.5rem',
-          fontSize: '1.1rem'
-        }}>
+    <div className="min-w-[280px] p-[0.2rem]">
+      <div className="mb-4 border-b border-soft pb-2">
+        <h3 className="m-0 mb-2 flex items-center gap-2 text-[1.1rem]">
           <span>{emojiPrioritat}</span>
           {incident.titol}
         </h3>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span style={{ 
-            fontSize: '0.7rem', 
-            padding: '2px 6px', 
-            backgroundColor: '#eee', 
-            borderRadius: '4px',
-            textTransform: 'uppercase',
-            fontWeight: 'bold'
-          }}>
+        <div className="flex gap-2 flex-wrap">
+          <span className="text-[0.7rem] px-[6px] py-[2px] bg-soft rounded uppercase font-bold">
             {incident.tipus}
           </span>
-          <span style={{ 
-            fontSize: '0.7rem', 
-            padding: '2px 6px', 
-            backgroundColor: '#007bff', 
-            color: 'white',
-            borderRadius: '4px',
-            textTransform: 'uppercase',
-            fontWeight: 'bold'
-          }}>
+          <span className="text-[0.7rem] px-[6px] py-[2px] bg-primary text-white rounded uppercase font-bold">
             {incident.estat}
           </span>
         </div>
       </div>
 
-      <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '1rem' }}>
+      <div className="max-h-[250px] overflow-y-auto mb-4">
         <Timeline events={incident.events} />
       </div>
 
       {!showAddEvent ? (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          gap: '30px', 
-          marginTop: '10px',
-          padding: '5px 0'
-        }}>
-          <button 
+        <div className="flex justify-center items-center gap-[30px] mt-[10px] py-[5px]">
+          <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setShowAddEvent(true);
             }}
             title="Actualitzar / Comentar"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem', padding: 0 }}
+            className="bg-transparent border-0 cursor-pointer text-[1.5rem] p-0"
           >
             ✏️
           </button>
-          
+
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -168,15 +140,7 @@ export const IncidentPopup = ({
               setShowRoute(!showRoute);
             }}
             title={showRoute ? 'Treure Ruta' : 'Com anar-hi'}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer', 
-              fontSize: '1.5rem',
-              padding: 0,
-              filter: (showRoute || hasLocation) ? 'none' : 'grayscale(100%)',
-              opacity: (showRoute || hasLocation) ? 1 : 0.5
-            }}
+            className={`bg-transparent border-0 cursor-pointer text-[1.5rem] p-0 ${(showRoute || hasLocation) ? '' : 'grayscale opacity-50'}`}
           >
             🛣️
           </button>
@@ -189,25 +153,19 @@ export const IncidentPopup = ({
               handleOpenMaps();
             }}
             title="Obrir en navegador GPS"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '1.5rem',
-              padding: '0',
-            }}
+            className="bg-transparent border-0 cursor-pointer text-[1.5rem] p-0"
           >
             🚕
           </button>
         </div>
       ) : (
         <form onSubmit={handleAddEvent} onClick={(e) => e.stopPropagation()}>
-          <div style={{ marginBottom: '0.8rem' }}>
-            <label style={{ fontSize: '0.8rem', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nou estat:</label>
-            <select 
-              value={newStatus} 
+          <div className="mb-3">
+            <label className="text-[0.8rem] font-bold block mb-[4px]">Nou estat:</label>
+            <select
+              value={newStatus}
               onChange={(e) => setNewStatus(e.target.value)}
-              style={{ ...selectStyle, marginBottom: '0.5rem', padding: '6px' }}
+              className={`${selectClass} mb-2 p-[6px]!`}
             >
               <option value="OBERT">OBERT</option>
               <option value="EN_PROGRES">EN PROGRÉS</option>
@@ -215,37 +173,31 @@ export const IncidentPopup = ({
               <option value="TANCAT">TANCAT</option>
             </select>
           </div>
-          <div style={{ marginBottom: '0.8rem' }}>
-            <label style={{ fontSize: '0.8rem', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Comentari:</label>
+          <div className="mb-3">
+            <label className="text-[0.8rem] font-bold block mb-[4px]">Comentari:</label>
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Afegeix una observació..."
-              style={{ 
-                ...inputStyle, 
-                height: '80px', 
-                resize: 'none', 
-                padding: '8px',
-                fontFamily: 'inherit'
-              }}
+              className={`${inputClass} h-20 resize-none p-2! font-inherit`}
             />
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button 
-              type="submit" 
+          <div className="flex gap-2">
+            <button
+              type="submit"
               disabled={isSubmitting}
-              style={{ ...primaryButtonStyle, flex: 1, padding: '8px' }}
+              className={`${primaryButtonClass} flex-1 p-2`}
             >
               {isSubmitting ? 'Enviant...' : 'Guardar'}
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setShowAddEvent(false);
               }}
-              style={{ ...secondaryButtonStyle, flex: 1, padding: '8px' }}
+              className={`${secondaryButtonClass} flex-1 p-2`}
             >
               Cancel·lar
             </button>

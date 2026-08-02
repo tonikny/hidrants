@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { floatingButtonStyle } from '../../styles/uiStyles';
+import { floatingButtonClass } from '../../styles/uiStyles';
 
-export function FullscreenButton({ 
+export function FullscreenButton({
   targetId,
-  style
-}: Readonly<{ 
+  className
+}: Readonly<{
   targetId: string;
-  style?: React.CSSProperties;
+  className?: string;
 }>) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -24,7 +24,7 @@ export function FullscreenButton({
   return (
     <button
       onClick={toggleFullscreen}
-      style={style || floatingButtonStyle}
+      className={className || floatingButtonClass}
       title={isFullscreen ? 'Sortir de pantalla completa' : 'Pantalla completa'}
     >
       {isFullscreen ? '⤫' : '⛶'}

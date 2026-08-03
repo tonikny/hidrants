@@ -1,12 +1,12 @@
 import { ICONS_H } from './metrics';
 
-export function NodeHeader({ onEdit, showDelete }: { onEdit?: () => void; showDelete?: boolean }) {
+export function NodeHeader({ onEdit, showDelete, title }: { onEdit?: () => void; showDelete?: boolean; title?: string }) {
   return (
     <div
       className="flex items-center justify-between px-3 border-b border-soft"
       style={{ height: ICONS_H }}
     >
-      <span className="font-semibold text-[0.9rem] text-ink">Informació del node</span>
+      <span className="font-semibold text-[0.9rem] text-ink">{title ?? 'Informació del node'}</span>
       <div className="flex items-center gap-1">
         {onEdit && (
           <button

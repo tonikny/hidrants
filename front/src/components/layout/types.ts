@@ -12,6 +12,7 @@ export interface PanelNode {
   onClose: () => void;
   onEdit?: () => void;
   showDelete?: boolean;
+  title?: string;
 }
 
 export interface BottomSheetHandle {

@@ -1,3 +1,5 @@
+export type CreateType = 'selection' | 'hydrant' | 'incidencia' | null;
+
 export type IncidenciaEstat = 'OBERT' | 'EN_PROGRES' | 'RESOLT' | 'TANCAT';
 export type IncidenciaPrioritat = 'BAIXA' | 'MITJANA' | 'ALTA';
 export type IncidenciaPrecisio = 'DESCONEGUDA' | 'MUNICIPI' | 'AREA' | 'EXACTA';

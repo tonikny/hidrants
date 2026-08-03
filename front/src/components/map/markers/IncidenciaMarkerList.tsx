@@ -5,19 +5,13 @@ import { IncidenciaFeature } from '../../../types';
 interface IncidenciaMarkerListProps {
   features: IncidenciaFeature[];
   setPoi: (latlng: LatLng) => void;
-  showRoute: boolean;
-  setShowRoute: (show: boolean) => void;
-  refreshIncidencies: () => void;
-  hasLocation?: boolean;
+  onSelectIncidencia: (feature: IncidenciaFeature) => void;
 }
 
 export function IncidenciaMarkerList({
   features,
   setPoi,
-  showRoute,
-  setShowRoute,
-  refreshIncidencies,
-  hasLocation,
+  onSelectIncidencia,
 }: IncidenciaMarkerListProps) {
   return (
     <>
@@ -26,10 +20,7 @@ export function IncidenciaMarkerList({
           key={feature.id}
           feature={feature}
           setPoi={setPoi}
-          showRoute={showRoute}
-          setShowRoute={setShowRoute}
-          refreshIncidencies={refreshIncidencies}
-          hasLocation={hasLocation}
+          onSelectIncidencia={onSelectIncidencia}
         />
       ))}
     </>

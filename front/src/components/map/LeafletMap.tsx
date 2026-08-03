@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLng } from 'leaflet';
 import { MapClickHandler } from './MapClickHandler';
-import { CreateNodeModal } from './CreateNodeModal';
 import MapRightClickHandler from './MapRightClickHandler';
 import { Layers } from './Layers';
 import MaskedAreaMap from './MaskedAreaMap';
@@ -15,10 +14,8 @@ import { MapUIOverlays } from '../controls/MapUIOverlays';
 import { LocationMarker } from './LocationMarker';
 
 import { IncidenciaMarkerList } from './markers/IncidenciaMarkerList';
-import { toast } from 'react-toastify';
-import { isPointInBoundary } from '../../utils/geo';
 import type { HidrantFeature } from '../../hooks/useHidrantData';
-import type { IncidenciaFeature } from '../../types';
+import type { IncidenciaFeature, CreateType } from '../../types';
 
 // ✅ Centra el mapa en el node seleccionat, tenint en compte el bottomsheet obert
 function MapNodeCenter() {
@@ -80,8 +77,16 @@ export function LeafletMap({
   hidrantsError,
   refreshHidrants,
   incidenciaFeatures,
-  refreshIncidencies,
   positions,
+  position,
+  setPosition,
+  showRoute,
+  setShowRoute,
+  createPos,
+  createForm,
+  onOpenCreate,
+  onCloseCreate,
+  onSelectIncidencia,
 }: {
   onSelectNode?: (f: any) => void;
   onMapClick?: () => void;
@@ -91,35 +96,30 @@ export function LeafletMap({
   hidrantsError: string | null;
   refreshHidrants: () => void;
   incidenciaFeatures: IncidenciaFeature[];
-  refreshIncidencies: () => void;
   positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
+  position: L.LatLng | null;
+  setPosition: (pos: L.LatLng | null) => void;
+  showRoute: boolean;
+  setShowRoute: (show: boolean) => void;
+  createPos: L.LatLng | null;
+  createForm: CreateType;
+  onOpenCreate: (latlng: L.LatLng) => void;
+  onCloseCreate: () => void;
+  onSelectIncidencia: (f: IncidenciaFeature) => void;
 }) {
-  const { activeAdf, isLoading, boundaryGeojson } = useAdf();
+  const { activeAdf, isLoading } = useAdf();
   const { user } = useAuth();
   const [activeTechnicalLayer, setActiveTechnicalLayer] = useState<
     string | null
   >(null);
   const [hydrantsVisible, setHydrantsVisible] = useState(true);
 
-  const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
-
-  const [activeForm, setActiveForm] = useState<
-    'selection' | 'hydrant' | 'incidencia' | null
-  >(null);
   const [showCoordModal, setShowCoordModal] = useState(false);
-  const [position, setPosition] = useState<LatLng | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [poi, setPoi] = useState<LatLng | null>(null);
-  const [showRoute, setShowRoute] = useState(false);
 
   const openFormAtPosition = (latlng: L.LatLng) => {
-    if (!user) return;
-    if (!isPointInBoundary(latlng.lat, latlng.lng, boundaryGeojson)) {
-      toast.warning('Coordenades fora del límit de l\'ADF');
-      return;
-    }
-    setClickedPosition(latlng);
-    setActiveForm('selection');
+    onOpenCreate(latlng);
   };
 
   if (isLoading) {
@@ -147,10 +147,8 @@ export function LeafletMap({
           positions={positions}
         />
         <MapRightClickHandler
-          setClickedPosition={setClickedPosition}
-          setActiveForm={setActiveForm}
+          onCreate={onOpenCreate}
           user={user}
-          boundaryGeojson={boundaryGeojson}
         />
         {hydrantsVisible && <HydrantMarkerList
           features={features}
@@ -165,31 +163,18 @@ export function LeafletMap({
         <IncidenciaMarkerList
           features={incidenciaFeatures}
           setPoi={setPoi}
-          showRoute={showRoute}
-          setShowRoute={setShowRoute}
-          refreshIncidencies={refreshIncidencies}
-          hasLocation={!!position}
+          onSelectIncidencia={onSelectIncidencia}
         />
         {user && (
           <MapClickHandler
-            onClick={(latlng) => {
-              if (!isPointInBoundary(latlng.lat, latlng.lng, boundaryGeojson)) {
-                toast.warning('Coordenades fora del límit de l\'ADF');
-                return;
-              }
-              setClickedPosition(latlng);
-              setActiveForm('selection');
-            }}
-            onCancel={() => {
-              setClickedPosition(null);
-              setActiveForm(null);
-            }}
-            isActive={!!clickedPosition}
+            onClick={onOpenCreate}
+            onCancel={onCloseCreate}
+            isActive={!!createPos}
           />
         )}
-        {clickedPosition && activeForm && (
+        {createPos && createForm && (
           <Marker
-            position={clickedPosition}
+            position={createPos}
             icon={L.icon({
               iconUrl: '/images/icons/marker-icon-gold.png',
               iconSize: [25, 41],
@@ -214,13 +199,7 @@ export function LeafletMap({
           showCoordModal={showCoordModal}
           setShowCoordModal={setShowCoordModal}
           onCoordinateConfirm={(lat, lon) => {
-            if (!isPointInBoundary(lat, lon, boundaryGeojson)) {
-              toast.warning('Coordenades fora del límit de l\'ADF');
-              return;
-            }
-            const latlng = L.latLng(lat, lon);
-            setClickedPosition(latlng);
-            setActiveForm('selection');
+            onOpenCreate(L.latLng(lat, lon));
             setShowCoordModal(false);
           }}
           onLocateEdit={user ? openFormAtPosition : undefined}
@@ -228,21 +207,6 @@ export function LeafletMap({
           setLocateAccuracy={setAccuracy}
         />
       </MapContainer>
-
-      {clickedPosition && activeForm && user && (
-        <CreateNodeModal
-          activeForm={activeForm}
-          position={clickedPosition}
-          user={user}
-          onClose={() => {
-            setClickedPosition(null);
-            setActiveForm(null);
-          }}
-          setNewNodeLatLng={setClickedPosition}
-          refreshHidrants={refreshHidrants}
-          refreshIncidencies={refreshIncidencies}
-        />
-      )}
     </>
   );
 }

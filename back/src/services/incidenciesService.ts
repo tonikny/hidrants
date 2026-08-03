@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { IncidenciesRepository } from '../db/repositories/incidenciesRepository.js';
-import { Incident, IncidentEvent, TipusEvent, IncidentEstat, IncidentPrioritat, IncidentPrecisio } from '../types.js';
+import { Incidencia, IncidenciaEvent, TipusEvent, IncidenciaEstat, IncidenciaPrioritat, IncidenciaPrecisio } from '../types.js';
 import { NotFoundError } from '../errors.js';
 import { sendTelegramMessage } from '../utils/telegram.js';
 
@@ -38,9 +38,9 @@ export const IncidenciesService = {
     };
   },
 
-  getIncidentById(id: string) {
-    const incident = IncidenciesRepository.findById(id);
-    if (!incident) throw new NotFoundError('Incidència no trobada');
+  getIncidenciaById(id: string) {
+    const incidencia = IncidenciesRepository.findById(id);
+    if (!incidencia) throw new NotFoundError('Incidència no trobada');
     
     const events = IncidenciesRepository.getEvents(id);
     // Parsear JSON de dades per a cada event
@@ -50,31 +50,31 @@ export const IncidenciesService = {
     }));
 
     return {
-      ...incident,
+      ...incidencia,
       events: parsedEvents
     };
   },
 
-  createIncident(data: {
+  createIncidencia(data: {
     titol: string;
     tipus: string;
-    prioritat?: IncidentPrioritat;
+    prioritat?: IncidenciaPrioritat;
     lat: number;
     lon: number;
-    precisio?: IncidentPrecisio;
+    precisio?: IncidenciaPrecisio;
     adf_id: number;
     usuari_id: string;
     nom_usuari?: string;
     comentari?: string;
     clientBaseUrl?: string;
   }) {
-    const incidentId = uuidv4();
+    const incidenciaId = uuidv4();
     const eventId = uuidv4();
     const timestamp = new Date().toISOString();
     const nomUsuari = data.nom_usuari || data.usuari_id;
 
-    const incident: Incident = {
-      id: incidentId,
+    const incidencia: Incidencia = {
+      id: incidenciaId,
       titol: data.titol,
       tipus: data.tipus,
       estat: 'OBERT',
@@ -87,51 +87,51 @@ export const IncidenciesService = {
       actualitzat_at: timestamp
     };
 
-    const event: IncidentEvent = {
+    const event: IncidenciaEvent = {
       id: eventId,
-      incidencia_id: incidentId,
+      incidencia_id: incidenciaId,
       usuari_id: data.usuari_id,
       tipus_event: 'CREACIO',
       dades: JSON.stringify({
         titol: data.titol,
         tipus: data.tipus,
-        prioritat: incident.prioritat,
+        prioritat: incidencia.prioritat,
         lat: data.lat,
         lon: data.lon,
-        precisio: incident.precisio,
+        precisio: incidencia.precisio,
         comentari: data.comentari
       }),
       creat_at: timestamp
     };
 
-    IncidenciesRepository.createIncident(incident, event);
+    IncidenciesRepository.createIncidencia(incidencia, event);
 
     // Notificació Telegram
-    const emojiPrioritat = incident.prioritat === 'ALTA' ? '🔴' : incident.prioritat === 'MITJANA' ? '🟠' : '🟡';
-    const appUrl = data.clientBaseUrl ? `${data.clientBaseUrl}/?adf=${incident.adf_id}&node=${incident.id}` : null;
+    const emojiPrioritat = incidencia.prioritat === 'ALTA' ? '🔴' : incidencia.prioritat === 'MITJANA' ? '🟠' : '🟡';
+    const appUrl = data.clientBaseUrl ? `${data.clientBaseUrl}/?adf=${incidencia.adf_id}&node=${incidencia.id}` : null;
     
     const msg = `⚠️ <b>NOVA INCIDÈNCIA</b>
-${emojiPrioritat} <b>${escapeHtml(incident.titol)}</b>
-🏷️ Tipus: ${escapeHtml(incident.tipus)}
+${emojiPrioritat} <b>${escapeHtml(incidencia.titol)}</b>
+🏷️ Tipus: ${escapeHtml(incidencia.tipus)}
 ${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ''}
-📍 Ubicació: <code>${incident.lat}, ${incident.lon}</code> (${incident.precisio})
+📍 Ubicació: <code>${incidencia.lat}, ${incidencia.lon}</code> (${incidencia.precisio})
 💬 Comentari: ${escapeHtml(data.comentari || '(cap)')}
 👤 Creat per: ${escapeHtml(nomUsuari)}
 `;
     sendTelegramMessage(msg);
 
-    return incident;
+    return incidencia;
   },
 
   addEvent(incidenciaId: string, usuariId: string, nomUsuari: string, tipusEvent: TipusEvent, dades: any, clientBaseUrl?: string) {
-    const incident = IncidenciesRepository.findById(incidenciaId);
-    if (!incident) throw new NotFoundError('Incidència no trobada');
+    const incidencia = IncidenciesRepository.findById(incidenciaId);
+    if (!incidencia) throw new NotFoundError('Incidència no trobada');
 
     const eventId = uuidv4();
     const timestamp = new Date().toISOString();
     const displayUser = nomUsuari || usuariId;
 
-    const event: IncidentEvent = {
+    const event: IncidenciaEvent = {
       id: eventId,
       incidencia_id: incidenciaId,
       usuari_id: usuariId,
@@ -140,37 +140,37 @@ ${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ''}
       creat_at: timestamp
     };
 
-    const updates: Partial<Incident> = {};
+    const updates: Partial<Incidencia> = {};
     let msgTelegram = '';
     
-    const appUrl = clientBaseUrl ? `${clientBaseUrl}/?adf=${incident.adf_id}&node=${incidenciaId}` : null;
+    const appUrl = clientBaseUrl ? `${clientBaseUrl}/?adf=${incidencia.adf_id}&node=${incidenciaId}` : null;
     const linkHtml = appUrl ? `\n📍 <a href="${appUrl}">Veure a l'aplicació</a>` : '';
 
     if (tipusEvent === 'CANVI_ESTAT' && dades.nou) {
-      updates.estat = dades.nou as IncidentEstat;
+      updates.estat = dades.nou as IncidenciaEstat;
       msgTelegram = `🔄 <b>CANVI D'ESTAT</b>
-📌 Incidència: ${escapeHtml(incident.titol)}
+📌 Incidència: ${escapeHtml(incidencia.titol)}
 📉 Estat: ${escapeHtml(dades.anterior)} ➡️ <b>${escapeHtml(dades.nou)}</b>
 👤 Per: ${escapeHtml(displayUser)}${linkHtml}`;
     } else if (tipusEvent === 'CANVI_TIPUS' && dades.nou) {
       updates.tipus = dades.nou as string;
       msgTelegram = `🏷️ <b>CANVI DE TIPUS</b>
-📌 Incidència: ${escapeHtml(incident.titol)}
+📌 Incidència: ${escapeHtml(incidencia.titol)}
 🆕 Tipus: ${escapeHtml(dades.anterior)} ➡️ <b>${escapeHtml(dades.nou)}</b>
 👤 Per: ${escapeHtml(displayUser)}${linkHtml}`;
     } else if (tipusEvent === 'CANVI_PRIORITAT' && dades.nou) {
-      updates.prioritat = dades.nou as IncidentPrioritat;
+      updates.prioritat = dades.nou as IncidenciaPrioritat;
     } else if (tipusEvent === 'CANVI_UBICACIO' && dades.nova) {
       updates.lat = dades.nova.lat;
       updates.lon = dades.nova.lon;
       updates.precisio = dades.nova.precisio;
       msgTelegram = `📍 <b>CANVI D'UBICACIÓ</b>
-📌 Incidència: ${escapeHtml(incident.titol)}
+📌 Incidència: ${escapeHtml(incidencia.titol)}
 🆕 Nova posició: <code>${updates.lat}, ${updates.lon}</code>
 👤 Per: ${escapeHtml(displayUser)}${linkHtml}`;
     } else if (tipusEvent === 'OBSERVACIO') {
       msgTelegram = `💬 <b>NOVA OBSERVACIÓ</b>
-📌 Incidència: ${escapeHtml(incident.titol)}
+📌 Incidència: ${escapeHtml(incidencia.titol)}
 📝 ${escapeHtml(dades.comentari)}
 👤 Per: ${escapeHtml(displayUser)}${linkHtml}`;
     }

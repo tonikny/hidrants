@@ -15,12 +15,13 @@ interface LayersProps {
   setActiveTechnicalLayer: (layer: string | null) => void;
   hydrantsVisible: boolean;
   setHydrantsVisible: (v: boolean) => void;
+  positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
 }
 
 const TRACKING_STORAGE_KEY = 'hidrants_tracking_visible';
 const hiddenIcon = L.divIcon({ className: '', iconSize: [0, 0], html: '<div style="width:1px;height:1px;opacity:0"></div>' });
 
-export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrantsVisible, setHydrantsVisible }: LayersProps) => {
+export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrantsVisible, setHydrantsVisible, positions }: LayersProps) => {
   const { user } = useAuth();
   const [trackingChecked] = useState(() => localStorage.getItem(TRACKING_STORAGE_KEY) === 'true');
 
@@ -67,7 +68,7 @@ export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrants
       <LayersControl.Overlay checked name=""><Marker position={[0, 0]} icon={hiddenIcon} /></LayersControl.Overlay>
       <LayersControl.Overlay checked={hydrantsVisible} name="Hidrants"><Marker position={[0, 0]} icon={hiddenIcon} /></LayersControl.Overlay>
       {user && (
-        <LayersControl.Overlay checked={trackingChecked} name="Posicions OwnTracks"><TrackingLayer /></LayersControl.Overlay>
+        <LayersControl.Overlay checked={trackingChecked} name="Posicions OwnTracks"><TrackingLayer positions={positions} /></LayersControl.Overlay>
       )}
     </LayersControl>
   );

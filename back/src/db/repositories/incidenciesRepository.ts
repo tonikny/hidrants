@@ -1,10 +1,10 @@
 import { db } from '../index.js';
 import { incidencies, incidencia_events, users } from '../schema.js';
 import { eq, and, ne, sql, desc } from 'drizzle-orm';
-import { Incident, IncidentEvent } from '../../types.js';
+import { Incidencia, IncidenciaEvent } from '../../types.js';
 
 export const IncidenciesRepository = {
-  findAll(adfId?: number, includeClosed: boolean = false): Incident[] {
+  findAll(adfId?: number, includeClosed: boolean = false): Incidencia[] {
     let query = db.select().from(incidencies);
     const conditions = [];
 
@@ -21,14 +21,14 @@ export const IncidenciesRepository = {
       query = query.where(and(...conditions));
     }
 
-    return query.orderBy(desc(incidencies.actualitzat_at)).all() as Incident[];
+    return query.orderBy(desc(incidencies.actualitzat_at)).all() as Incidencia[];
   },
 
-  findById(id: string): Incident | undefined {
-    return db.select().from(incidencies).where(eq(incidencies.id, id)).get() as Incident | undefined;
+  findById(id: string): Incidencia | undefined {
+    return db.select().from(incidencies).where(eq(incidencies.id, id)).get() as Incidencia | undefined;
   },
 
-  getEvents(incidenciaId: string): IncidentEvent[] {
+  getEvents(incidenciaId: string): IncidenciaEvent[] {
     const rows = db.select({
       id: incidencia_events.id,
       incidencia_id: incidencia_events.incidencia_id,
@@ -44,26 +44,26 @@ export const IncidenciesRepository = {
       .orderBy(desc(incidencia_events.creat_at))
       .all();
       
-    return rows as IncidentEvent[];
+    return rows as IncidenciaEvent[];
   },
 
   /**
    * Crea una incidència i el seu esdeveniment inicial de creació en una transacció.
    */
-  createIncident(incident: Incident, event: IncidentEvent): void {
+  createIncidencia(incidencia: Incidencia, event: IncidenciaEvent): void {
     db.transaction((tx) => {
       tx.insert(incidencies).values({
-        id: incident.id,
-        titol: incident.titol,
-        tipus: incident.tipus,
-        estat: incident.estat,
-        prioritat: incident.prioritat,
-        adf_id: incident.adf_id,
-        lat: incident.lat,
-        lon: incident.lon,
-        precisio: incident.precisio,
-        creat_at: incident.creat_at,
-        actualitzat_at: incident.actualitzat_at
+        id: incidencia.id,
+        titol: incidencia.titol,
+        tipus: incidencia.tipus,
+        estat: incidencia.estat,
+        prioritat: incidencia.prioritat,
+        adf_id: incidencia.adf_id,
+        lat: incidencia.lat,
+        lon: incidencia.lon,
+        precisio: incidencia.precisio,
+        creat_at: incidencia.creat_at,
+        actualitzat_at: incidencia.actualitzat_at
       }).run();
       
       tx.insert(incidencia_events).values({
@@ -80,7 +80,7 @@ export const IncidenciesRepository = {
   /**
    * Afegeix un esdeveniment a una incidència existent i actualitza l'estat denormalitzat de la incidència.
    */
-  addEvent(event: IncidentEvent, updates?: Partial<Omit<Incident, 'id' | 'creat_at'>>): void {
+  addEvent(event: IncidenciaEvent, updates?: Partial<Omit<Incidencia, 'id' | 'creat_at'>>): void {
     db.transaction((tx) => {
       tx.insert(incidencia_events).values({
         id: event.id,
@@ -91,13 +91,13 @@ export const IncidenciesRepository = {
         creat_at: event.creat_at
       }).run();
       
-      const incidentUpdate: any = {
+      const incidenciaUpdate: any = {
         ...updates,
         actualitzat_at: sql`CURRENT_TIMESTAMP`
       };
 
       tx.update(incidencies)
-        .set(incidentUpdate)
+        .set(incidenciaUpdate)
         .where(eq(incidencies.id, event.incidencia_id))
         .run();
     });

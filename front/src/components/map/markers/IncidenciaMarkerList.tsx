@@ -1,9 +1,9 @@
 import { LatLng } from 'leaflet';
-import { IncidentMarker } from './IncidentMarker';
-import { IncidentFeature } from '../../../types';
+import { IncidenciaMarker } from './IncidenciaMarker';
+import { IncidenciaFeature } from '../../../types';
 
-interface IncidentMarkerListProps {
-  features: IncidentFeature[];
+interface IncidenciaMarkerListProps {
+  features: IncidenciaFeature[];
   setPoi: (latlng: LatLng) => void;
   showRoute: boolean;
   setShowRoute: (show: boolean) => void;
@@ -11,18 +11,18 @@ interface IncidentMarkerListProps {
   hasLocation?: boolean;
 }
 
-export function IncidentMarkerList({
+export function IncidenciaMarkerList({
   features,
   setPoi,
   showRoute,
   setShowRoute,
   refreshIncidencies,
   hasLocation,
-}: IncidentMarkerListProps) {
+}: IncidenciaMarkerListProps) {
   return (
     <>
       {features.map((feature) => (
-        <IncidentMarker
+        <IncidenciaMarker
           key={feature.id}
           feature={feature}
           setPoi={setPoi}

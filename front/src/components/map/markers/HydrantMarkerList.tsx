@@ -8,6 +8,8 @@ interface HydrantMarkerListProps {
   setShowRoute: (show: boolean) => void;
   refreshHidrants?: () => Promise<void>;
   hasLocation?: boolean;
+  onSelectNode?: (feature: any) => void;
+  selectedNodeId?: string | null;
 }
 
 export function HydrantMarkerList({
@@ -17,6 +19,8 @@ export function HydrantMarkerList({
   setShowRoute,
   refreshHidrants,
   hasLocation,
+  onSelectNode,
+  selectedNodeId,
 }: HydrantMarkerListProps) {
   return (
     <>
@@ -30,6 +34,8 @@ export function HydrantMarkerList({
           setShowRoute={setShowRoute}
           refreshHidrants={refreshHidrants}
           hasLocation={hasLocation}
+          onSelectNode={onSelectNode}
+          selected={selectedNodeId === feature.id}
         />
       ))}
     </>

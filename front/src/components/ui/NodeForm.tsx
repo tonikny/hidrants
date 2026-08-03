@@ -1,4 +1,3 @@
-import { Popup } from 'react-leaflet';
 import { useState, useEffect } from 'react';
 import { sendToTelegram } from '../../utils/sendToTelegram';
 import { toast } from 'react-toastify';
@@ -20,12 +19,17 @@ import { HydrantFormFields } from './HydrantFormFields';
 import { HydrantImages } from './HydrantImages';
 import { ShareIcon, OsmIcon } from './Icons';
 
+let deleteInFlight = false;
+
 type NodeFormProps = {
   feature: HidrantFeature;
   showRoute: boolean;
   setShowRoute: (value: boolean) => void;
   refreshHidrants?: () => Promise<void>;
   hasLocation?: boolean;
+  canEdit: boolean;
+  editing: boolean;
+  setEditing: (v: boolean) => void;
 };
 
 function calculateChanges(
@@ -53,15 +57,18 @@ function calculateChanges(
   return { changes, originalValues };
 }
 
-export const NodeWithForm = ({
+export const NodeInfo = ({
   feature,
   showRoute,
   setShowRoute,
   refreshHidrants,
   hasLocation,
-}: NodeFormProps) => {
+  canEdit,
+  editing,
+  setEditing,
+  className = '',
+}: NodeFormProps & { className?: string }) => {
   const [message, setMessage] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
   const { user } = useAuth();
   const { activeAdf } = useAdf();
 
@@ -73,11 +80,6 @@ export const NodeWithForm = ({
     setData(props.ui_fields);
     setObservacions(props.private_tags?.observacions || '');
   }, [props.ui_fields, props.private_tags]);
-
-  const canEdit =
-    user &&
-    (user.role === 'admin' ||
-      (user.role === 'editor' && user.adf_id === activeAdf?.id));
 
   const osmId = props.osm_id;
   const displayData = getHydrantDisplayData(data);
@@ -106,6 +108,7 @@ export const NodeWithForm = ({
   };
 
   const handleShowRoute = () => {
+    if (!setShowRoute) return;
     if (!showRoute && !hasLocation) {
       toast.info('Cal activar el seguiment GPS per veure la ruta');
       return;
@@ -165,7 +168,7 @@ export const NodeWithForm = ({
         isEdit: true,
       });
 
-      setIsEditing(false);
+      setEditing(false);
       if (refreshHidrants) {
         await refreshHidrants();
       } else {
@@ -277,6 +280,21 @@ export const NodeWithForm = ({
     }
   };
 
+  useEffect(() => {
+    const onDeleteRequest = async () => {
+      if (deleteInFlight) return;
+      deleteInFlight = true;
+      try {
+        await handleDelete();
+      } finally {
+        deleteInFlight = false;
+      }
+    };
+    window.addEventListener('node-delete-request', onDeleteRequest);
+    return () => window.removeEventListener('node-delete-request', onDeleteRequest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feature.id]);
+
   const handleShare = async () => {
     const url = new URL(window.location.href);
     url.searchParams.set('node', feature.id);
@@ -304,151 +322,125 @@ export const NodeWithForm = ({
   };
 
   return (
-    <Popup>
-      <div className="min-w-[280px]">
-        {!isEditing ? (
-          <>
-            <div className="flex gap-[10px] items-start">
-              <div className="flex-1">
-                {displayData.map(({ label, value }) => (
-                  <div key={label} className="text-[0.85rem] mb-[2px]">
-                    <strong>{label}: </strong>
-                    {value}
-                  </div>
+    <div className={`${className} p-3 flex flex-col gap-3`}>
+      {!editing ? (
+        <>
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex gap-3 text-[0.85rem]">
+              <div className="flex flex-col items-end gap-y-[6px] text-muted">
+                {displayData.map(({ label }) => (
+                  <span key={label}>{label}</span>
                 ))}
-                {user?.role === 'admin' && (
-                  <div className="text-[0.75rem] text-muted mt-2 border-t border-dotted border-border pt-[4px]">
-                    <strong>Sync:</strong> {formatSyncStatus(props.sync_status)}
-                  </div>
-                )}
-                {props.private_tags?.observacions && (
-                  <div className="text-[0.85rem] mt-2 border-t border-soft pt-2">
-                    <strong>Observacions:</strong><br/>
-                    <span className="whitespace-pre-wrap">{props.private_tags.observacions}</span>
-                  </div>
-                )}
+                {user?.role === 'admin' && <span>Sync</span>}
               </div>
-              <HydrantImages images={getHydrantImages(props.osm_tags)} />
-            </div>
-
-            <div className="flex flex-col gap-[5px] mt-3">
-              {canEdit && (
-                <>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQuickStatusUpdate(true);
-                    }}
-                    className="bg-[#27ae60] text-white border-0 rounded p-[6px] text-[0.75rem] cursor-pointer font-semibold"
-                  >
-                    ✅ Operatiu (Avui)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQuickStatusUpdate(false);
-                    }}
-                    className="bg-[#e74c3c] text-white border-0 rounded p-[6px] text-[0.75rem] cursor-pointer font-semibold"
-                  >
-                    ❌ Fora de servei (Avui)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsEditing(true);
-                    }}
-                    className={`${primaryButtonClass} p-[6px] text-[0.75rem] mt-[2px]`}
-                  >
-                    ✏️ Editar dades
-                  </button>
-                  {user?.role === 'admin' && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete();
-                      }}
-                      className={`${primaryButtonClass} bg-[#c0392b] p-[6px] text-[0.75rem] mt-[2px]`}
-                    >
-                      🗑️ Esborrar hidrant
-                    </button>
-                  )}
-                </>
-              )}
-
-              {/* Icones d'acció centrades */}
-              <div className="flex justify-center items-center gap-5 mt-[10px] py-[5px]">
-                {/* Compartir */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShare();
-                  }}
-                  title="Compartir ubicació"
-                  className="bg-transparent border-0 cursor-pointer p-0 flex items-center"
-                >
-                  <ShareIcon />
-                </button>
-
-                {/* Ruta */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShowRoute();
-                  }}
-                  title={showRoute ? 'Tanca ruta' : 'Mostra ruta'}
-                  className={`bg-transparent border-0 cursor-pointer text-[1.4rem] p-0 ${showRoute ? '' : 'grayscale'}`}
-                >
-                  🛣️
-                </button>
-
-                {/* Mapes Externs */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenMaps();
-                  }}
-                  title="Obrir en navegador GPS"
-                  className="bg-transparent border-0 cursor-pointer text-[1.4rem] p-0"
-                >
-                  🚕
-                </button>
-
-                {/* OpenStreetMap (Només Admin) */}
-                {user?.role === 'admin' && osmId && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(
-                        `https://www.openstreetmap.org/node/${osmId}`,
-                        '_blank'
-                      );
-                    }}
-                    title="Veure a OpenStreetMap"
-                    className="bg-transparent border-0 cursor-pointer p-0 flex items-center"
-                  >
-                    <OsmIcon />
-                  </button>
-                )}
+              <div className="flex flex-col items-start gap-y-[6px] text-ink">
+                {displayData.map(({ label, value }) => (
+                  <span key={label}>{value}</span>
+                ))}
+                {user?.role === 'admin' && <span>{formatSyncStatus(props.sync_status)}</span>}
               </div>
             </div>
+            <HydrantImages images={getHydrantImages(props.osm_tags)} />
+          </div>
 
-            {/* Formulari de notificació (només en mode visualització) */}
-            <hr className="my-2 border-t border-border" />
+          {props.private_tags?.observacions && (
+            <div className="border border-border rounded p-2">
+              <div className="text-[0.75rem] text-muted mb-1">Observacions</div>
+              <div className="text-[0.85rem] text-ink whitespace-pre-wrap">
+                {props.private_tags.observacions}
+              </div>
+            </div>
+          )}
+
+          {canEdit && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleQuickStatusUpdate(true);
+                }}
+                className="bg-[#27ae60] text-white border-0 rounded py-[8px] text-[0.8rem] cursor-pointer font-semibold"
+              >
+                ✅ Operatiu (Avui)
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleQuickStatusUpdate(false);
+                }}
+                className="bg-[#e74c3c] text-white border-0 rounded py-[8px] text-[0.8rem] cursor-pointer font-semibold"
+              >
+                ❌ Fora de servei (Avui)
+              </button>
+            </div>
+          )}
+
+          <div className="flex justify-center items-center gap-6 py-2 border-t border-soft">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShare();
+              }}
+              title="Compartir ubicació"
+              className="bg-transparent border-0 cursor-pointer p-0 flex items-center"
+            >
+              <ShareIcon />
+            </button>
+
+            {setShowRoute && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShowRoute();
+                }}
+                title={showRoute ? 'Tanca ruta' : 'Mostra ruta'}
+                className={`bg-transparent border-0 cursor-pointer text-[1.4rem] p-0 ${showRoute ? '' : 'grayscale'}`}
+              >
+                🛣️
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenMaps();
+              }}
+              title="Obrir en navegador GPS"
+              className="bg-transparent border-0 cursor-pointer text-[1.4rem] p-0"
+            >
+              🚕
+            </button>
+
+            {user?.role === 'admin' && osmId && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(
+                    `https://www.openstreetmap.org/node/${osmId}`,
+                    '_blank'
+                  );
+                }}
+                title="Veure a OpenStreetMap"
+                className="bg-transparent border-0 cursor-pointer p-0 flex items-center"
+              >
+                <OsmIcon />
+              </button>
+            )}
+          </div>
+
+          <div className="border-t border-soft pt-2">
             <textarea
               placeholder="Enviar informació sobre aquest hidrant ..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={2}
-              className={`${inputClass} w-full mt-[0.2rem] p-[4px]! text-[0.75rem] font-inherit`}
+              className={`${inputClass} w-full p-[6px] text-[0.8rem] font-inherit`}
             />
             <button
               type="button"
@@ -456,55 +448,55 @@ export const NodeWithForm = ({
                 e.stopPropagation();
                 handleSend();
               }}
-              className={`${primaryButtonClass} w-full mt-2 p-[6px] text-[0.75rem] flex items-center justify-center gap-2`}
+              className={`${primaryButtonClass} w-full mt-2 py-[8px] text-[0.8rem] flex items-center justify-center gap-2`}
             >
               Notificar <span className="text-[1rem]">➤</span>
             </button>
-          </>
-        ) : (
-          <div className="flex flex-col gap-2 mt-2">
-            <HydrantFormFields
-              data={data}
-              onChange={setData}
-              showSurveyDateAndStatus={true}
-            />
-
-            <label className="text-[0.75rem] italic flex flex-col gap-[4px]">
-              Observacions:
-              <textarea
-                value={observacions}
-                onChange={(e) => setObservacions(e.target.value)}
-                rows={3}
-                className={`${inputClass} w-full resize-y text-[0.75rem] p-[4px]!`}
-                placeholder="Observacions internes de l'hidrant..."
-              />
-            </label>
-
-            <div className="flex gap-[5px] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSave();
-                }}
-                className={`${primaryButtonClass} flex-1 p-[6px] text-[0.75rem]`}
-              >
-                Guardar
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditing(false);
-                }}
-                className={`${secondaryButtonClass} flex-1 p-[6px] text-[0.75rem]`}
-              >
-                Cancel·lar
-              </button>
-            </div>
           </div>
-        )}
-      </div>
-    </Popup>
+        </>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <HydrantFormFields
+            data={data}
+            onChange={setData}
+            showSurveyDateAndStatus={true}
+          />
+
+          <label className="text-[0.8rem] italic flex flex-col gap-[4px]">
+            Observacions:
+            <textarea
+              value={observacions}
+              onChange={(e) => setObservacions(e.target.value)}
+              rows={3}
+              className={`${inputClass} w-full resize-y text-[0.8rem] p-[6px]`}
+              placeholder="Observacions internes de l'hidrant..."
+            />
+          </label>
+
+          <div className="flex gap-[8px]">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSave();
+              }}
+              className={`${primaryButtonClass} flex-1 py-[8px] text-[0.8rem]`}
+            >
+              Guardar
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditing(false);
+              }}
+              className={`${secondaryButtonClass} flex-1 py-[8px] text-[0.8rem]`}
+            >
+              Cancel·lar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

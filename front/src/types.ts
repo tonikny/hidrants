@@ -1,17 +1,17 @@
-export type IncidentEstat = 'OBERT' | 'EN_PROGRES' | 'RESOLT' | 'TANCAT';
-export type IncidentPrioritat = 'BAIXA' | 'MITJANA' | 'ALTA';
-export type IncidentPrecisio = 'DESCONEGUDA' | 'MUNICIPI' | 'AREA' | 'EXACTA';
+export type IncidenciaEstat = 'OBERT' | 'EN_PROGRES' | 'RESOLT' | 'TANCAT';
+export type IncidenciaPrioritat = 'BAIXA' | 'MITJANA' | 'ALTA';
+export type IncidenciaPrecisio = 'DESCONEGUDA' | 'MUNICIPI' | 'AREA' | 'EXACTA';
 
-export interface Incident {
+export interface Incidencia {
   id: string;
   titol: string;
   tipus: string;
-  estat: IncidentEstat;
-  prioritat: IncidentPrioritat;
+  estat: IncidenciaEstat;
+  prioritat: IncidenciaPrioritat;
   adf_id: number | null;
   lat: number;
   lon: number;
-  precisio: IncidentPrecisio;
+  precisio: IncidenciaPrecisio;
   creat_at: string;
   actualitzat_at: string;
 }
@@ -26,7 +26,7 @@ export type TipusEvent =
   | 'MULTIMEDIA' 
   | 'ASSIGNACIO';
 
-export interface IncidentEvent {
+export interface IncidenciaEvent {
   id: string;
   incidencia_id: string;
   usuari_id: string | null;
@@ -36,12 +36,12 @@ export interface IncidentEvent {
   creat_at: string;
 }
 
-export interface IncidentFeature {
+export interface IncidenciaFeature {
   type: 'Feature';
   id: string;
   geometry: {
     type: 'Point';
     coordinates: [number, number];
   };
-  properties: Incident;
+  properties: Incidencia;
 }

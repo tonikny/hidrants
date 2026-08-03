@@ -26,7 +26,7 @@ export function LocateButton({
   return (
     <button
       onClick={() => setTracking((prev) => !prev)}
-      className={`${className || ''} ${tracking ? 'bg-[#28a745] text-white' : 'bg-white text-ink'}`}
+      className={`${className || ''} relative`}
       title={
         tracking
           ? 'Desactiva el seguiment de la teva posició'
@@ -34,6 +34,9 @@ export function LocateButton({
       }
     >
       🛰️
+      {tracking && (
+        <span className="w-2 h-2 rounded-full bg-[#22c55e] border-[1.5px] border-white absolute top-[1px] right-[1px]" />
+      )}
     </button>
   );
 }

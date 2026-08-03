@@ -49,7 +49,7 @@ function getHydrantIcon(properties: Record<string, any>): L.Icon {
   });
 }
 
-export function getIncidentIcon(properties: any): L.DivIcon {
+export function getIncidenciaIcon(properties: any): L.DivIcon {
   const tipus = properties.tipus?.toUpperCase();
   const prioritat = properties.prioritat?.toUpperCase();
   
@@ -61,7 +61,7 @@ export function getIncidentIcon(properties: any): L.DivIcon {
   const shadow = prioritat === 'ALTA' ? '0 0 10px red' : '0 0 5px orange';
   
   return L.divIcon({
-    className: 'incident-marker',
+    className: 'incidencia-marker',
     html: `<div style="font-size: 28px; display: flex; justify-content: center; align-items: center; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); text-shadow: ${shadow};">${emoji}</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15],

@@ -5,20 +5,20 @@ import {
 
 interface CreationSelectorProps {
   onSelectHydrant: () => void;
-  onSelectIncident: () => void;
+  onSelectIncidencia: () => void;
   onClose: () => void;
 }
 
 export const CreationSelector: React.FC<CreationSelectorProps> = ({
   onSelectHydrant,
-  onSelectIncident,
+  onSelectIncidencia,
   onClose,
 }) => {
-  const [hoveredCard, setHoveredCard] = useState<'hydrant' | 'incident' | null>(
+  const [hoveredCard, setHoveredCard] = useState<'hydrant' | 'incidencia' | null>(
     null
   );
 
-  const cardClass = (type: 'hydrant' | 'incident'): string => {
+  const cardClass = (type: 'hydrant' | 'incidencia'): string => {
     const isHovered = hoveredCard === type;
     const isHydrant = type === 'hydrant';
     const hoverClass = isHovered
@@ -54,10 +54,10 @@ export const CreationSelector: React.FC<CreationSelectorProps> = ({
 
         {/* Card Incidència */}
         <div
-          className={cardClass('incident')}
-          onMouseEnter={() => setHoveredCard('incident')}
+          className={cardClass('incidencia')}
+          onMouseEnter={() => setHoveredCard('incidencia')}
           onMouseLeave={() => setHoveredCard(null)}
-          onClick={onSelectIncident}
+          onClick={onSelectIncidencia}
         >
           <span className="text-[2.5rem] mb-2">⚠️</span>
           <strong className="text-[1rem] text-ink mb-1">

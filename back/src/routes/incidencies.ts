@@ -31,7 +31,7 @@ const handler: ApiHandler = async (req, res) => {
   // --- GET /api/incidencies/:id: Detall d'una incidència ---
   // Aquest va primer perquè no necessita estrictament adf_id
   if (method === 'GET' && req.params?.id) {
-    const result = await IncidenciesService.getIncidentById(req.params.id);
+    const result = await IncidenciesService.getIncidenciaById(req.params.id);
     return res.json(result);
   }
 
@@ -55,7 +55,7 @@ const handler: ApiHandler = async (req, res) => {
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.message);
     }
-    const result = IncidenciesService.createIncident({
+    const result = IncidenciesService.createIncidencia({
       ...parsed.data,
       adf_id: adf_id || 0, // Fallback segur per admin
       usuari_id: user?.id || 'anonymous',

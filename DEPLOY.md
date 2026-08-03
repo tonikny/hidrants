@@ -87,7 +87,7 @@ Ports del broker:
 - `1883`: intern/dev, només al host (`127.0.0.1`).
 - `51823`: TLS públic per OwnTracks (cal obrir-lo a firewall/NAT).
 
-Configuració real (ignorada): `mosquitto/config/mosquitto.conf`, amb certs `fullchain.pem`/`privkey.pem` dins el contenidor.
+Configuració: copiar `mosquitto/config/mosquitto.conf.example` → `mosquitto.conf` (amb certs `fullchain.pem`/`privkey.pem` dins el contenidor). Per a desenvolupament local, usa `mosquitto.dev.conf.example` (sense TLS).
 
 Backend: per defecte connecta a `mqtt://mosquitto:1883`. El fitxer `.otrc` que genera la UI apunta a `OTRC_HOST`, `OTRC_PORT=51823`, `OTRC_TLS=true`.
 

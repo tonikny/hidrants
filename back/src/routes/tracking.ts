@@ -65,6 +65,8 @@ const configHandler: ApiHandler = async (req, res) => {
   if (!row || !row.mqtt_password_enc) return res.status(400).json({ error: 'OwnTracks no activat' });
   const password = decrypt(row.mqtt_password_enc);
   if (!password) return res.status(500).json({ error: 'No es pot desxifrar. Torna a activar.' });
+  try { await createMqttUser(username, password); }
+  catch { /* tornem la config igualment */ }
   return res.json(buildOtrc(username, password));
 };
 

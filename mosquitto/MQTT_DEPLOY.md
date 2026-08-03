@@ -17,6 +17,14 @@ Només cobreix MQTT/OwnTracks. Backend, frontend i DB ja funcionen.
 
 ### `mosquitto/config/mosquitto.conf`
 
+Copiar el template de producció:
+
+```bash
+cp mosquitto/config/mosquitto.conf.example mosquitto/config/mosquitto.conf
+```
+
+El fitxer conté:
+
 ```ini
 listener 1883 0.0.0.0
 listener 51823 0.0.0.0
@@ -29,6 +37,8 @@ allow_anonymous false
 plugin /usr/lib/mosquitto_dynamic_security.so
 plugin_opt_config_file /mosquitto/data/dynamic-security.json
 ```
+
+**Nota:** per a desenvolupament local, usa `mosquitto.dev.conf.example` (sense TLS). Veure `DEV.md`.
 
 ### `mosquitto/.env`
 

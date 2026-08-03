@@ -4,9 +4,13 @@
 
 ```bash
 cp back/.env.example back/.env
+cp mosquitto/config/mosquitto.dev.conf.example mosquitto/config/mosquitto.conf
 npm run install
 npm run db:setup
+npm run mqtt:sync-dynsec
 ```
+
+**Nota:** `mqtt:sync-dynsec` genera `mosquitto/data/dynamic-security.json` llegint les contrasenyes MQTT de `back/.env` (`MQTT_ADMIN_PASSWORD`, `MQTT_BACKEND_PASSWORD`). Cal executar-ho abans de `npm run mqtt:up`.
 
 Per backend local fora de Docker:
 
@@ -66,6 +70,16 @@ OTRC_HOST=<DOMINI>
 OTRC_PORT=51823
 OTRC_TLS=true
 ```
+
+En desenvolupament el broker escolta sense TLS al port 51823 (publicat a `0.0.0.0` a `docker-compose.yml`). El `.otrc` ha d'apuntar a la IP LAN de la màquina dev amb `OTRC_TLS=false`:
+
+```env
+OTRC_HOST=<IP_LAN_DEV>
+OTRC_PORT=51823
+OTRC_TLS=false
+```
+
+En producció, el 51823 usa TLS. El listener del mateix port a dev és pla (sense TLS).
 
 Prova manual amb credencials DynSec vàlides:
 

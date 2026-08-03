@@ -12,20 +12,6 @@ const HANDLE_H = 16;
 const ICONS_H = 44;
 const BAR_HEIGHT = HANDLE_H + ICONS_H;
 
-export const PanelContent: React.FC = () => (
-  <div className="p-4">
-    <h2 className="m-0 mb-4 text-[1.1rem] font-semibold">Contingut del panell</h2>
-    {[1, 2, 3, 4].map((i) => (
-      <div
-        key={i}
-        className="mb-2 border border-border rounded p-3 bg-soft text-[0.85rem] text-ink"
-      >
-        Fila placeholder {i}
-      </div>
-    ))}
-  </div>
-);
-
 export interface PanelTab {
   id: string;
   icon: string;

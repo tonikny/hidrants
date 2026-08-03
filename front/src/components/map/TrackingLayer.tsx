@@ -2,7 +2,15 @@
 import { Marker, Popup, Pane } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePositionPolling } from '../../hooks/usePositionPolling';
+
+interface Position {
+  lat: number;
+  lon: number;
+  accuracy: number;
+  timestamp: number;
+  battery: number;
+  receivedAt: number;
+}
 
 const COLORS = [
   '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
@@ -56,9 +64,8 @@ const placeholderIcon = L.divIcon({
 });
 
 /** Renderitza els pins de posició a un pane amb z-index elevat (per sobre d'hidrants). */
-export const TrackingLayer: React.FC = () => {
+export const TrackingLayer: React.FC<{ positions: Record<string, Position> }> = ({ positions }) => {
   const { user } = useAuth();
-  const positions = usePositionPolling(15000);
 
   if (!user) return <Marker position={[0, 0]} icon={placeholderIcon} />;
   const markers = Object.entries(positions);

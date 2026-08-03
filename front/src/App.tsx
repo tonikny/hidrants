@@ -4,37 +4,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import { LeafletMap } from './components/map/LeafletMap';
 import { AdfProvider, useAdf } from './contexts/AdfContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Panel, PanelContent, type BottomSheetHandle, type PanelTab } from './components/ui/Panel';
+import { Panel, type BottomSheetHandle } from './components/ui/Panel';
+import { buildTabs } from './components/ui/PanelTabs';
+import { useHydrantData } from './hooks/useHidrantData';
+import { useIncidencies } from './hooks/useIncidencies';
+import { usePositionPolling } from './hooks/usePositionPolling';
 import { NodeInfo } from './components/ui/NodeForm';
-
-const tabs: PanelTab[] = [
-  {
-    id: 'llista',
-    icon: '📋',
-    label: 'Llista',
-    content: <PanelContent />,
-  },
-  {
-    id: 'mapa',
-    icon: '🗺️',
-    label: 'Mapa',
-    content: (
-      <div className="p-4 text-[0.85rem] text-muted">
-        Contingut de la pestanya Mapa (placeholder).
-      </div>
-    ),
-  },
-  {
-    id: 'config',
-    icon: '⚙️',
-    label: 'Configuració',
-    content: (
-      <div className="p-4 text-[0.85rem] text-muted">
-        Contingut de la pestanya Configuració (placeholder).
-      </div>
-    ),
-  },
-];
 
 function setUrlNodeParam(nodeId: string | null) {
   const url = new URL(window.location.href);
@@ -49,6 +24,20 @@ function AppContent() {
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const sheetRef = useRef<BottomSheetHandle>(null);
+
+  const {
+    features,
+    loading: loadingHidrants,
+    error: hidrantsError,
+    mutate: refreshHidrants,
+  } = useHydrantData(null, 0);
+
+  const {
+    features: incidentFeatures,
+    refresh: refreshIncidencies,
+  } = useIncidencies();
+
+  const positions = usePositionPolling(15000);
 
   if (isLoading) {
     return (
@@ -86,9 +75,16 @@ function AppContent() {
           onSelectNode={handleSelectNode}
           selectedNodeId={selectedNode?.id}
           onMapClick={() => sheetRef.current?.close()}
+          features={features}
+          loadingHidrants={loadingHidrants}
+          hidrantsError={hidrantsError}
+          refreshHidrants={refreshHidrants}
+          incidentFeatures={incidentFeatures}
+          refreshIncidencies={refreshIncidencies}
+          positions={positions}
         />
       }
-      tabs={tabs}
+      tabs={buildTabs({ features, incidentFeatures, positions })}
       node={
         selectedNode
           ? {

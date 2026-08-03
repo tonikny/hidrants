@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLng } from 'leaflet';
 import { MapClickHandler, NewNodeForm } from '../ui/NewNodeForm';
@@ -18,11 +18,11 @@ import { MapUIOverlays } from '../controls/MapUIOverlays';
 import { LocationMarker } from './LocationMarker';
 
 import { Modal } from '../ui/Modal';
-import { useHydrantData } from '../../hooks/useHidrantData';
-import { useIncidencies } from '../../hooks/useIncidencies';
 import { IncidentMarkerList } from './markers/IncidentMarkerList';
 import { toast } from 'react-toastify';
 import { isPointInBoundary } from '../../utils/geo';
+import type { HidrantFeature } from '../../hooks/useHidrantData';
+import type { IncidentFeature } from '../../types';
 
 // ✅ Centra el mapa en el node seleccionat, tenint en compte el bottomsheet obert
 function MapNodeCenter() {
@@ -47,44 +47,13 @@ function MapNodeCenter() {
   return null;
 }
 
-// ✅ Component per escoltar canvis al mapa i informar al pare
-function MapStateListener({
-  onStateChange,
-  onMapClick,
-}: {
-  onStateChange: (
-    bounds: [number, number, number, number],
-    zoom: number
-  ) => void;
-  onMapClick?: () => void;
-}) {
-  const map = useMapEvents({
+// ✅ Component per escoltar clics al mapa i informar al pare
+function MapStateListener({ onMapClick }: { onMapClick?: () => void }) {
+  useMapEvents({
     click: () => {
       onMapClick?.();
     },
-    moveend: () => {
-      const b = map.getBounds();
-      onStateChange(
-        [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
-        map.getZoom()
-      );
-    },
   });
-
-  // Inicialitzem l'estat en muntar-se, però amb un petit delay per evitar loops de render
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // @ts-ignore
-      if (map && map._loaded && map.getContainer()) {
-        const b = map.getBounds();
-        onStateChange(
-          [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()],
-          map.getZoom()
-        );
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [map]);
 
   return null;
 }
@@ -106,48 +75,35 @@ function FixMapSize() {
 
   return null;
 }
-export function LeafletMap({ onSelectNode, onMapClick, selectedNodeId }: { onSelectNode?: (f: any) => void; onMapClick?: () => void; selectedNodeId?: string | null }) {
-  const { activeAdf, isLoading, setActiveAdf, boundaryGeojson } = useAdf();
-  const { user, logout } = useAuth();
-  const [mapBounds, setMapBounds] = useState<
-    [number, number, number, number] | null
-  >(null);
-  const [mapZoom, setMapZoom] = useState<number>(14);
+export function LeafletMap({
+  onSelectNode,
+  onMapClick,
+  selectedNodeId,
+  features,
+  loadingHidrants,
+  hidrantsError,
+  refreshHidrants,
+  incidentFeatures,
+  refreshIncidencies,
+  positions,
+}: {
+  onSelectNode?: (f: any) => void;
+  onMapClick?: () => void;
+  selectedNodeId?: string | null;
+  features: HidrantFeature[];
+  loadingHidrants: boolean;
+  hidrantsError: string | null;
+  refreshHidrants: () => void;
+  incidentFeatures: IncidentFeature[];
+  refreshIncidencies: () => void;
+  positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
+}) {
+  const { activeAdf, isLoading, boundaryGeojson } = useAdf();
+  const { user } = useAuth();
   const [activeTechnicalLayer, setActiveTechnicalLayer] = useState<
     string | null
   >(null);
   const [hydrantsVisible, setHydrantsVisible] = useState(true);
-
-  const handleMapStateChange = useCallback(
-    (bounds: [number, number, number, number], zoom: number) => {
-      setMapBounds((prev) => {
-        if (!prev) return bounds;
-        const threshold = 0.00001;
-        const hasMovedSignificantly =
-          Math.abs(prev[0] - bounds[0]) > threshold ||
-          Math.abs(prev[1] - bounds[1]) > threshold ||
-          Math.abs(prev[2] - bounds[2]) > threshold ||
-          Math.abs(prev[3] - bounds[3]) > threshold;
-
-        return hasMovedSignificantly ? bounds : prev;
-      });
-
-      setMapZoom((prev) => (prev === zoom ? prev : zoom));
-    },
-    []
-  );
-
-  const {
-    features,
-    loading: loadingHidrants,
-    error: hidrantsError,
-    mutate: refreshHidrants,
-  } = useHydrantData(mapBounds, mapZoom);
-
-  const {
-    features: incidentFeatures,
-    refresh: refreshIncidencies
-  } = useIncidencies();
 
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
 
@@ -155,7 +111,6 @@ export function LeafletMap({ onSelectNode, onMapClick, selectedNodeId }: { onSel
     'selection' | 'hydrant' | 'incident' | null
   >(null);
   const [showCoordModal, setShowCoordModal] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [poi, setPoi] = useState<LatLng | null>(null);
@@ -186,13 +141,14 @@ export function LeafletMap({ onSelectNode, onMapClick, selectedNodeId }: { onSel
         <MapNodeCenter />
         {/* Gestiona l'obertura de nodes via URL (?node=ID) */}
         <MapUrlHandler features={features} />
-        <MapStateListener onStateChange={handleMapStateChange} onMapClick={onMapClick} />
+        <MapStateListener onMapClick={onMapClick} />
         <MaskedAreaMap hidden={!!activeTechnicalLayer} />
         <Layers
           activeTechnicalLayer={activeTechnicalLayer}
           setActiveTechnicalLayer={setActiveTechnicalLayer}
           hydrantsVisible={hydrantsVisible}
           setHydrantsVisible={setHydrantsVisible}
+          positions={positions}
         />
         <MapRightClickHandler
           setClickedPosition={setClickedPosition}
@@ -257,13 +213,8 @@ export function LeafletMap({ onSelectNode, onMapClick, selectedNodeId }: { onSel
 
         <MapUIOverlays
           user={user}
-          logout={logout}
-          activeAdf={activeAdf}
-          setActiveAdf={setActiveAdf}
           loadingHidrants={loadingHidrants}
           hidrantsError={hidrantsError}
-          showLoginModal={showLoginModal}
-          setShowLoginModal={setShowLoginModal}
           showCoordModal={showCoordModal}
           setShowCoordModal={setShowCoordModal}
           onCoordinateConfirm={(lat, lon) => {
@@ -279,7 +230,6 @@ export function LeafletMap({ onSelectNode, onMapClick, selectedNodeId }: { onSel
           onLocateEdit={user ? openFormAtPosition : undefined}
           setLocatePosition={setPosition}
           setLocateAccuracy={setAccuracy}
-          features={features}
         />
       </MapContainer>
 

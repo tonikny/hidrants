@@ -5,6 +5,7 @@ import { useAdf } from '../../contexts/AdfContext';
 
 interface SyncButtonProps {
   className?: string;
+  label?: string;
 }
 
 interface SyncStats {
@@ -15,7 +16,7 @@ interface SyncStats {
   total_pending: number;
 }
 
-export function SyncButton({ className }: SyncButtonProps) {
+export function SyncButton({ className, label }: SyncButtonProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [stats, setStats] = useState<SyncStats | null>(null);
   const { activeAdf } = useAdf();
@@ -101,6 +102,7 @@ export function SyncButton({ className }: SyncButtonProps) {
         className={`${className || ''} disabled:cursor-not-allowed disabled:opacity-70`}
       >
         <span>{isSyncing ? '⏳' : '🔄'}</span>
+        {label && <span>{label}</span>}
       </button>
 
       {stats && stats.total_pending > 0 && !isSyncing && (

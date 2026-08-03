@@ -28,20 +28,20 @@ export type ApiHandler = (
 
 // --- Incidències ---
 
-export type IncidentEstat = 'OBERT' | 'EN_PROGRES' | 'RESOLT' | 'TANCAT';
-export type IncidentPrioritat = 'BAIXA' | 'MITJANA' | 'ALTA';
-export type IncidentPrecisio = 'DESCONEGUDA' | 'MUNICIPI' | 'AREA' | 'EXACTA';
+export type IncidenciaEstat = 'OBERT' | 'EN_PROGRES' | 'RESOLT' | 'TANCAT';
+export type IncidenciaPrioritat = 'BAIXA' | 'MITJANA' | 'ALTA';
+export type IncidenciaPrecisio = 'DESCONEGUDA' | 'MUNICIPI' | 'AREA' | 'EXACTA';
 
-export interface Incident {
+export interface Incidencia {
   id: string;
   titol: string;
   tipus: string;
-  estat: IncidentEstat;
-  prioritat: IncidentPrioritat;
+  estat: IncidenciaEstat;
+  prioritat: IncidenciaPrioritat;
   adf_id: number | null;
   lat: number;
   lon: number;
-  precisio: IncidentPrecisio;
+  precisio: IncidenciaPrecisio;
   creat_at: string;
   actualitzat_at: string;
 }
@@ -56,7 +56,7 @@ export type TipusEvent =
   | 'MULTIMEDIA' 
   | 'ASSIGNACIO';
 
-export interface IncidentEvent {
+export interface IncidenciaEvent {
   id: string;
   incidencia_id: string;
   usuari_id: string | null;
@@ -70,16 +70,16 @@ export interface IncidentEvent {
 export interface EventDataCreacio {
   titol: string;
   tipus: string;
-  prioritat: IncidentPrioritat;
+  prioritat: IncidenciaPrioritat;
   lat: number;
   lon: number;
-  precisio: IncidentPrecisio;
+  precisio: IncidenciaPrecisio;
   comentari?: string;
 }
 
 export interface EventDataCanviEstat {
-  anterior: IncidentEstat;
-  nou: IncidentEstat;
+  anterior: IncidenciaEstat;
+  nou: IncidenciaEstat;
 }
 
 export interface EventDataCanviTipus {
@@ -88,8 +88,8 @@ export interface EventDataCanviTipus {
 }
 
 export interface EventDataCanviUbicacio {
-  anterior: { lat: number; lon: number; precisio: IncidentPrecisio };
-  nova: { lat: number; lon: number; precisio: IncidentPrecisio };
+  anterior: { lat: number; lon: number; precisio: IncidenciaPrecisio };
+  nova: { lat: number; lon: number; precisio: IncidenciaPrecisio };
 }
 
 export interface EventDataObservacio {

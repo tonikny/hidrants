@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useIncidencies } from '../../hooks/useIncidencies';
-import { Incident, IncidentEvent } from '../../types';
+import { Incidencia, IncidenciaEvent } from '../../types';
 import { Timeline } from './Timeline';
 import { 
   primaryButtonClass, 
@@ -11,23 +11,23 @@ import {
 import { toast } from 'react-toastify';
 import { openInNativeMaps } from '../../utils/geoMaps';
 
-interface IncidentPopupProps {
-  incidentId: string;
+interface IncidenciaPopupProps {
+  incidenciaId: string;
   showRoute: boolean;
   setShowRoute: (show: boolean) => void;
   refreshIncidencies: () => void;
   hasLocation?: boolean;
 }
 
-export const IncidentPopup = ({ 
-  incidentId, 
+export const IncidenciaPopup = ({ 
+  incidenciaId, 
   showRoute, 
   setShowRoute, 
   refreshIncidencies,
   hasLocation 
-}: IncidentPopupProps) => {
-  const { getIncident, addEvent } = useIncidencies();
-  const [incident, setIncident] = useState<Incident & { events: IncidentEvent[] } | null>(null);
+}: IncidenciaPopupProps) => {
+  const { getIncidencia, addEvent } = useIncidencies();
+  const [incidencia, setIncidencia] = useState<Incidencia & { events: IncidenciaEvent[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -37,8 +37,8 @@ export const IncidentPopup = ({
   const loadIncident = async () => {
     try {
       setLoading(true);
-      const data = await getIncident(incidentId);
-      setIncident(data);
+      const data = await getIncidencia(incidenciaId);
+      setIncidencia(data);
       setNewStatus(data.estat);
     } catch (err) {
       console.error(err);
@@ -49,24 +49,24 @@ export const IncidentPopup = ({
 
   useEffect(() => {
     loadIncident();
-  }, [incidentId]);
+  }, [incidenciaId]);
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!newComment && newStatus === incident?.estat) return;
+    if (!newComment && newStatus === incidencia?.estat) return;
 
     setIsSubmitting(true);
     try {
-      if (newStatus !== incident?.estat) {
-        await addEvent(incidentId, 'CANVI_ESTAT', {
-          anterior: incident?.estat,
+      if (newStatus !== incidencia?.estat) {
+        await addEvent(incidenciaId, 'CANVI_ESTAT', {
+          anterior: incidencia?.estat,
           nou: newStatus
         });
       }
       
       if (newComment) {
-        await addEvent(incidentId, 'OBSERVACIO', {
+        await addEvent(incidenciaId, 'OBSERVACIO', {
           comentari: newComment
         });
       }
@@ -84,35 +84,35 @@ export const IncidentPopup = ({
   };
 
   const handleOpenMaps = () => {
-    if (incident) {
-      openInNativeMaps(incident.lat, incident.lon, incident.titol);
+    if (incidencia) {
+      openInNativeMaps(incidencia.lat, incidencia.lon, incidencia.titol);
     }
   };
 
   if (loading) return <div className="min-w-[280px] p-4">Carregant incidència...</div>;
-  if (!incident) return <div className="min-w-[280px] p-4">No s'ha trobat la incidència</div>;
+  if (!incidencia) return <div className="min-w-[280px] p-4">No s'ha trobat la incidència</div>;
 
-  const emojiPrioritat = incident.prioritat === 'ALTA' ? '🔴' : incident.prioritat === 'MITJANA' ? '🟠' : '🟡';
+  const emojiPrioritat = incidencia.prioritat === 'ALTA' ? '🔴' : incidencia.prioritat === 'MITJANA' ? '🟠' : '🟡';
 
   return (
     <div className="min-w-[280px] p-[0.2rem]">
       <div className="mb-4 border-b border-soft pb-2">
         <h3 className="m-0 mb-2 flex items-center gap-2 text-[1.1rem]">
           <span>{emojiPrioritat}</span>
-          {incident.titol}
+          {incidencia.titol}
         </h3>
         <div className="flex gap-2 flex-wrap">
           <span className="text-[0.7rem] px-[6px] py-[2px] bg-soft rounded uppercase font-bold">
-            {incident.tipus}
+            {incidencia.tipus}
           </span>
           <span className="text-[0.7rem] px-[6px] py-[2px] bg-primary text-white rounded uppercase font-bold">
-            {incident.estat}
+            {incidencia.estat}
           </span>
         </div>
       </div>
 
       <div className="max-h-[250px] overflow-y-auto mb-4">
-        <Timeline events={incident.events} />
+        <Timeline events={incidencia.events} />
       </div>
 
       {!showAddEvent ? (

@@ -1,12 +1,12 @@
 import { useRef } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import { latLng, LatLng } from 'leaflet';
-import { getIncidentIcon } from '../../../utils/icons';
-import { IncidentFeature } from '../../../types';
-import { IncidentPopup } from '../../ui/IncidentPopup';
+import { getIncidenciaIcon } from '../../../utils/icons';
+import { IncidenciaFeature } from '../../../types';
+import { IncidenciaPopup } from '../../ui/IncidenciaPopup';
 
-interface IncidentMarkerProps {
-  feature: IncidentFeature;
+interface IncidenciaMarkerProps {
+  feature: IncidenciaFeature;
   setPoi: (latlng: LatLng) => void;
   showRoute: boolean;
   setShowRoute: (show: boolean) => void;
@@ -14,14 +14,14 @@ interface IncidentMarkerProps {
   hasLocation?: boolean;
 }
 
-export function IncidentMarker({ 
+export function IncidenciaMarker({ 
   feature, 
   setPoi, 
   showRoute, 
   setShowRoute, 
   refreshIncidencies,
   hasLocation 
-}: IncidentMarkerProps) {
+}: IncidenciaMarkerProps) {
   const markerRef = useRef<L.Marker>(null);
   const coords = feature.geometry.coordinates;
 
@@ -29,7 +29,7 @@ export function IncidentMarker({
     <Marker
       ref={markerRef}
       position={[coords[1], coords[0]]}
-      icon={getIncidentIcon(feature.properties)}
+      icon={getIncidenciaIcon(feature.properties)}
       eventHandlers={{
         click: () => {
           setPoi(latLng(coords[1], coords[0]));
@@ -37,8 +37,8 @@ export function IncidentMarker({
       }}
     >
       <Popup minWidth={320} maxWidth={450}>
-        <IncidentPopup 
-          incidentId={feature.id}
+        <IncidenciaPopup 
+          incidenciaId={feature.id}
           showRoute={showRoute}
           setShowRoute={setShowRoute}
           refreshIncidencies={refreshIncidencies}

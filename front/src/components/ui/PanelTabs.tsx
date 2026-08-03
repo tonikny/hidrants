@@ -6,7 +6,7 @@ import { Modal } from './Modal';
 import { SyncButton } from '../controls/SyncButton';
 import type { PanelTab } from './Panel';
 import type { HidrantFeature } from '../../hooks/useHidrantData';
-import type { IncidentFeature } from '../../types';
+import type { IncidenciaFeature } from '../../types';
 import { getHydrantStatus, getHydrantIconUrl } from '../../utils/icons';
 import {
   hidrant_op_rev,
@@ -310,10 +310,10 @@ function CollapsibleSection({
 
 function ReportsTab({
   features,
-  incidentFeatures,
+  incidenciaFeatures,
 }: {
   features: HidrantFeature[];
-  incidentFeatures: IncidentFeature[];
+  incidenciaFeatures: IncidenciaFeature[];
 }) {
   const [search, setSearch] = useState('');
 
@@ -327,7 +327,7 @@ function ReportsTab({
     });
   }, [features, search]);
 
-  const centerIncident = (feature: IncidentFeature) => {
+  const centerIncidencia = (feature: IncidenciaFeature) => {
     window.dispatchEvent(new CustomEvent('map-center-node', { detail: feature }));
   };
 
@@ -393,17 +393,17 @@ function ReportsTab({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Incidències" count={incidentFeatures.length}>
-        {incidentFeatures.length === 0 ? (
+      <CollapsibleSection title="Incidències" count={incidenciaFeatures.length}>
+        {incidenciaFeatures.length === 0 ? (
           <p className="text-muted text-[0.85rem]">No hi ha incidències obertes.</p>
         ) : (
           <div className="max-h-[35vh] overflow-y-auto border border-soft rounded">
-            {incidentFeatures.map((f) => {
+            {incidenciaFeatures.map((f) => {
               const p = f.properties;
               return (
                 <div
                   key={f.id}
-                  onClick={() => centerIncident(f)}
+                  onClick={() => centerIncidencia(f)}
                   className="flex items-center gap-3 px-3 py-[10px] border-b border-soft cursor-pointer transition-colors duration-100 hover:bg-[#f5f5f5]"
                 >
                   <span className="text-[1.1rem]">
@@ -509,11 +509,11 @@ function HelpTab() {
 
 export function buildTabs({
   features,
-  incidentFeatures,
+  incidenciaFeatures,
   positions,
 }: {
   features: HidrantFeature[];
-  incidentFeatures: IncidentFeature[];
+  incidenciaFeatures: IncidenciaFeature[];
   positions: Record<string, Position>;
 }): PanelTab[] {
   return [
@@ -528,7 +528,7 @@ export function buildTabs({
       id: 'informes',
       icon: '📃',
       label: 'Informes',
-      content: <ReportsTab features={features} incidentFeatures={incidentFeatures} />,
+      content: <ReportsTab features={features} incidenciaFeatures={incidenciaFeatures} />,
     },
     { id: 'usuaris', icon: '👤', label: 'Usuaris', content: <UsersTab /> },
     { id: 'config', icon: '⚙️', label: 'Configuració', content: <ConfigTab /> },

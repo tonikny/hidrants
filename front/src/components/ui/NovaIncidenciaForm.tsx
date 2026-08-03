@@ -8,18 +8,18 @@ import {
   selectClass,
 } from '../../styles/uiStyles';
 
-type NewIncidentFormProps = {
+type NovaIncidenciaFormProps = {
   lat: number;
   lon: number;
   onClose: () => void;
 };
 
-export const NewIncidentForm = ({
+export const NovaIncidenciaForm = ({
   lat,
   lon,
   onClose,
-}: NewIncidentFormProps) => {
-  const { createIncident } = useIncidencies();
+}: NovaIncidenciaFormProps) => {
+  const { createIncidencia } = useIncidencies();
   const [type, setType] = useState('FOC');
   const [priority, setPriority] = useState('MITJANA');
   const [titol, setTitol] = useState('');
@@ -31,7 +31,7 @@ export const NewIncidentForm = ({
     setIsSubmitting(true);
 
     try {
-      await createIncident({
+      await createIncidencia({
         titol,
         tipus: type,
         prioritat: priority,

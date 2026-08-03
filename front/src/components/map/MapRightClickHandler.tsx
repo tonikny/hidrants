@@ -6,7 +6,7 @@ import { isPointInBoundary } from '../../utils/geo';
 
 interface Props {
   setClickedPosition: (pos: LatLng) => void;
-  setActiveForm: (form: 'selection' | 'hydrant' | 'incident' | null) => void;
+  setActiveForm: (form: 'selection' | 'hydrant' | 'incidencia' | null) => void;
   user: any;
   boundaryGeojson: string | null;
 }

@@ -33,7 +33,7 @@ function AppContent() {
   } = useHydrantData(null, 0);
 
   const {
-    features: incidentFeatures,
+    features: incidenciaFeatures,
     refresh: refreshIncidencies,
   } = useIncidencies();
 
@@ -79,12 +79,12 @@ function AppContent() {
           loadingHidrants={loadingHidrants}
           hidrantsError={hidrantsError}
           refreshHidrants={refreshHidrants}
-          incidentFeatures={incidentFeatures}
+          incidenciaFeatures={incidenciaFeatures}
           refreshIncidencies={refreshIncidencies}
           positions={positions}
         />
       }
-      tabs={buildTabs({ features, incidentFeatures, positions })}
+      tabs={buildTabs({ features, incidenciaFeatures, positions })}
       node={
         selectedNode
           ? {

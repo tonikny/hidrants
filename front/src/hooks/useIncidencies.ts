@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAdf } from '../contexts/AdfContext';
-import { IncidentFeature, Incident, IncidentEvent } from '../types';
+import { IncidenciaFeature, Incidencia, IncidenciaEvent } from '../types';
 
 export function useIncidencies() {
   const { activeAdf } = useAdf();
-  const [features, setFeatures] = useState<IncidentFeature[]>([]);
+  const [features, setFeatures] = useState<IncidenciaFeature[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,13 +31,13 @@ export function useIncidencies() {
     fetchIncidencies();
   }, [fetchIncidencies]);
 
-  const getIncident = async (id: string): Promise<Incident & { events: IncidentEvent[] }> => {
+  const getIncidencia = async (id: string): Promise<Incidencia & { events: IncidenciaEvent[] }> => {
     const response = await fetch(`/api/incidencies/${id}`);
     if (!response.ok) throw new Error('Error al carregar el detall de la incidència');
     return response.json();
   };
 
-  const createIncident = async (data: any) => {
+  const createIncidencia = async (data: any) => {
     const response = await fetch('/api/incidencies', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,8 +72,8 @@ export function useIncidencies() {
     loading, 
     error, 
     refresh: fetchIncidencies,
-    getIncident,
-    createIncident,
+    getIncidencia,
+    createIncidencia,
     addEvent
   };
 }

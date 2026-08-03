@@ -3,7 +3,7 @@ import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLng } from 'leaflet';
 import { MapClickHandler, NewNodeForm } from '../ui/NewNodeForm';
 import { CreationSelector } from '../ui/CreationSelector';
-import { NewIncidentForm } from '../ui/NewIncidentForm';
+import { NovaIncidenciaForm } from '../ui/NovaIncidenciaForm';
 import MapRightClickHandler from './MapRightClickHandler';
 import { LocateButton } from '../controls/LocateButton';
 import { Layers } from './Layers';
@@ -18,11 +18,11 @@ import { MapUIOverlays } from '../controls/MapUIOverlays';
 import { LocationMarker } from './LocationMarker';
 
 import { Modal } from '../ui/Modal';
-import { IncidentMarkerList } from './markers/IncidentMarkerList';
+import { IncidenciaMarkerList } from './markers/IncidenciaMarkerList';
 import { toast } from 'react-toastify';
 import { isPointInBoundary } from '../../utils/geo';
 import type { HidrantFeature } from '../../hooks/useHidrantData';
-import type { IncidentFeature } from '../../types';
+import type { IncidenciaFeature } from '../../types';
 
 // ✅ Centra el mapa en el node seleccionat, tenint en compte el bottomsheet obert
 function MapNodeCenter() {
@@ -83,7 +83,7 @@ export function LeafletMap({
   loadingHidrants,
   hidrantsError,
   refreshHidrants,
-  incidentFeatures,
+  incidenciaFeatures,
   refreshIncidencies,
   positions,
 }: {
@@ -94,7 +94,7 @@ export function LeafletMap({
   loadingHidrants: boolean;
   hidrantsError: string | null;
   refreshHidrants: () => void;
-  incidentFeatures: IncidentFeature[];
+  incidenciaFeatures: IncidenciaFeature[];
   refreshIncidencies: () => void;
   positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
 }) {
@@ -108,7 +108,7 @@ export function LeafletMap({
   const [clickedPosition, setClickedPosition] = useState<LatLng | null>(null);
 
   const [activeForm, setActiveForm] = useState<
-    'selection' | 'hydrant' | 'incident' | null
+    'selection' | 'hydrant' | 'incidencia' | null
   >(null);
   const [showCoordModal, setShowCoordModal] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
@@ -166,8 +166,8 @@ export function LeafletMap({
           onSelectNode={onSelectNode}
           selectedNodeId={selectedNodeId}
         />}
-        <IncidentMarkerList
-          features={incidentFeatures}
+        <IncidenciaMarkerList
+          features={incidenciaFeatures}
           setPoi={setPoi}
           showRoute={showRoute}
           setShowRoute={setShowRoute}
@@ -251,7 +251,7 @@ export function LeafletMap({
           {activeForm === 'selection' && (
             <CreationSelector
               onSelectHydrant={() => setActiveForm('hydrant')}
-              onSelectIncident={() => setActiveForm('incident')}
+              onSelectIncidencia={() => setActiveForm('incidencia')}
               onClose={() => {
                 setClickedPosition(null);
                 setActiveForm(null);
@@ -270,8 +270,8 @@ export function LeafletMap({
               refreshHidrants={refreshHidrants}
             />
           )}
-          {activeForm === 'incident' && (
-            <NewIncidentForm
+          {activeForm === 'incidencia' && (
+            <NovaIncidenciaForm
               lat={clickedPosition.lat}
               lon={clickedPosition.lng}
               onClose={() => {

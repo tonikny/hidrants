@@ -1,8 +1,8 @@
 import React from 'react';
-import { IncidentEvent } from '../../types';
+import { IncidenciaEvent } from '../../types';
 
 interface TimelineProps {
-  events: IncidentEvent[];
+  events: IncidenciaEvent[];
 }
 
 export const Timeline = ({ events }: TimelineProps) => {
@@ -20,14 +20,14 @@ export const Timeline = ({ events }: TimelineProps) => {
     });
   };
 
-  const renderEventContent = (event: IncidentEvent) => {
+  const renderEventContent = (event: IncidenciaEvent) => {
     const { tipus_event, dades } = event;
 
     switch (tipus_event) {
       case 'CREACIO':
         return (
           <div>
-            <strong>Creat l'incident</strong>
+            <strong>Creat l'incidència</strong>
             {dades.comentari && <p className="m-[4px_0_0_0] italic font-inherit">"{dades.comentari}"</p>}
           </div>
         );

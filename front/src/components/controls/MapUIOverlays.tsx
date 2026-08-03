@@ -123,7 +123,7 @@ export function MapUIOverlays({
 
         <div className={controlItemClass}>
           <FullscreenButton
-            targetId="map-container"
+            targetId="app-shell"
             className={floatingButtonClass}
           />
         </div>

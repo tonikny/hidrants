@@ -49,7 +49,7 @@ export function Panel({ map, tabs, node, sheetRef }: PanelProps) {
   const activeContent = tabs.find((t) => t.id === activeTab)?.content;
 
   return (
-    <>
+    <div id="app-shell" className="h-full w-full">
       <div className="flex h-screen max-h-[100svh] w-full overflow-hidden">
         <div id="map-container" className="flex-1 relative h-full min-w-0">
           {map}
@@ -72,7 +72,7 @@ export function Panel({ map, tabs, node, sheetRef }: PanelProps) {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
       />
-    </>
+    </div>
   );
 }
 

@@ -3,7 +3,7 @@ import { Marker, Popup } from 'react-leaflet';
 import { latLng, LatLng } from 'leaflet';
 import { getIncidenciaIcon } from '../../../utils/icons';
 import { IncidenciaFeature } from '../../../types';
-import { IncidenciaPopup } from '../../ui/IncidenciaPopup';
+import { IncidenciaPopup } from '../../incidents/IncidenciaPopup';
 
 interface IncidenciaMarkerProps {
   feature: IncidenciaFeature;

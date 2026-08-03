@@ -1,0 +1,143 @@
+import { useState } from 'react';
+import { sendToTelegram } from '../../utils/sendToTelegram';
+import { LatLng } from 'leaflet';
+import { toast } from 'react-toastify';
+import {
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '../../styles/uiStyles';
+import type { HydrantUiFields } from '../../utils/osmConversion';
+import { HydrantFormFields } from './HydrantFormFields';
+import { useAdf } from '../../contexts/AdfContext';
+import { CoordinatesLabel } from '../shared/CoordinatesLabel';
+
+type NewNodeFormProps = {
+  lat: number;
+  lon: number;
+  onClose: () => void;
+  setNewNodeLatLng: (latlng: LatLng | null) => void;
+  refreshHidrants?: () => void;
+};
+
+export const NewNodeForm = ({
+  lat,
+  lon,
+  onClose,
+  setNewNodeLatLng,
+  refreshHidrants,
+}: NewNodeFormProps) => {
+  const [observacions, setObservacions] = useState('');
+  const { activeAdf } = useAdf();
+  const [isInspected, setIsInspected] = useState(false);
+
+  const [data, setData] = useState<HydrantUiFields>({
+    type: '',
+    position: '',
+    couplings: '',
+    diameters: '',
+    pressure: '',
+    street: '',
+    num: '',
+    barri: '',
+    estat: 'Desconegut',
+    surveyDate: '',
+  });
+
+  const handleInspectedChange = (checked: boolean) => {
+    setIsInspected(checked);
+    if (checked) {
+      setData((prev) => ({
+        ...prev,
+        estat: 'Operatiu',
+        surveyDate: new Date().toISOString().split('T')[0],
+      }));
+    } else {
+      setData((prev) => ({
+        ...prev,
+        estat: 'Desconegut',
+        surveyDate: '',
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await sendToTelegram({
+        lat,
+        lon,
+        tags: {
+          ui_fields: data,
+          private_tags: {
+            observacions: observacions.trim() || undefined,
+          },
+        },
+        message: 'Node creat',
+        adf_id: activeAdf?.id,
+      });
+      toast.success('Hidrant afegit');
+      setObservacions('');
+      if (refreshHidrants) {
+        await refreshHidrants();
+      }
+      onClose();
+      setNewNodeLatLng(null);
+    } catch (err) {
+      toast.error("Error en afegir l'hidrant");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col px-2">
+      <CoordinatesLabel lat={lat} lon={lon} />
+
+      <div className="mb-2">
+        <label
+          className={`flex items-center gap-2 text-[0.85rem] cursor-pointer p-2 rounded border ${isInspected ? 'bg-[#e8f5e9] border-[#2e7d32]' : 'bg-[#f5f5f5] border-border'}`}
+        >
+          <input
+            type="checkbox"
+            checked={isInspected}
+            onChange={(e) => handleInspectedChange(e.target.checked)}
+          />
+          <span>🔍 He revisat l'estat ara mateix</span>
+        </label>
+      </div>
+
+      <HydrantFormFields
+        data={data}
+        onChange={setData}
+        showSurveyDateAndStatus={isInspected}
+      />
+
+      <label className="text-[0.8rem] w-full italic mb-4 mt-2">
+        Observacions:
+        <textarea
+          value={observacions}
+          onChange={(e) => setObservacions(e.target.value)}
+          rows={2}
+          placeholder="Observacions internes de l'hidrant..."
+          className={`${inputClass} w-full resize-y`}
+        />
+      </label>
+
+      <div className="flex justify-between gap-2 mt-2">
+        <button
+          type="submit"
+          className={`${primaryButtonClass} flex-1 p-[6px] text-[0.75rem]`}
+        >
+          Enviar
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className={`${secondaryButtonClass} flex-1 p-[6px] text-[0.75rem]`}
+        >
+          Cancel·la
+        </button>
+      </div>
+    </form>
+  );
+};

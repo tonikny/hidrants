@@ -5,6 +5,7 @@
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "jsx": "react-jsx",
     "moduleResolution": "Node",
+    "ignoreDeprecations": "6.0",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

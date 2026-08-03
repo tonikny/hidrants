@@ -1,7 +1,7 @@
 // Hook que polla GET /api/tracking/positions cada intervalMs i retorna les posicions.
 import { useState, useEffect, useRef } from 'react';
 
-interface Position {
+export interface Position {
   lat: number;
   lon: number;
   accuracy: number;

@@ -1,13 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLng } from 'leaflet';
-import { MapClickHandler, NewNodeForm } from '../ui/NewNodeForm';
-import { CreationSelector } from '../ui/CreationSelector';
-import { NovaIncidenciaForm } from '../ui/NovaIncidenciaForm';
+import { MapClickHandler } from './MapClickHandler';
+import { CreateNodeModal } from './CreateNodeModal';
 import MapRightClickHandler from './MapRightClickHandler';
-import { LocateButton } from '../controls/LocateButton';
 import { Layers } from './Layers';
-import { ZoomDisplay } from '../controls/ZoomDisplay';
 import MaskedAreaMap from './MaskedAreaMap';
 import { RouteLayer } from './RouteLayer';
 import { useAdf } from '../../contexts/AdfContext';
@@ -17,7 +14,6 @@ import { MapUrlHandler } from './MapUrlHandler';
 import { MapUIOverlays } from '../controls/MapUIOverlays';
 import { LocationMarker } from './LocationMarker';
 
-import { Modal } from '../ui/Modal';
 import { IncidenciaMarkerList } from './markers/IncidenciaMarkerList';
 import { toast } from 'react-toastify';
 import { isPointInBoundary } from '../../utils/geo';
@@ -234,54 +230,18 @@ export function LeafletMap({
       </MapContainer>
 
       {clickedPosition && activeForm && user && (
-        <Modal
-          title={
-            activeForm === 'selection'
-              ? '📍 Selecciona una acció'
-              : activeForm === 'hydrant'
-              ? '📍 Nou hidrant'
-              : '⚠️ Nova incidència'
-          }
+        <CreateNodeModal
+          activeForm={activeForm}
+          position={clickedPosition}
+          user={user}
           onClose={() => {
             setClickedPosition(null);
             setActiveForm(null);
           }}
-          nonBlocking={true}
-        >
-          {activeForm === 'selection' && (
-            <CreationSelector
-              onSelectHydrant={() => setActiveForm('hydrant')}
-              onSelectIncidencia={() => setActiveForm('incidencia')}
-              onClose={() => {
-                setClickedPosition(null);
-                setActiveForm(null);
-              }}
-            />
-          )}
-          {activeForm === 'hydrant' && (
-            <NewNodeForm
-              lat={clickedPosition.lat}
-              lon={clickedPosition.lng}
-              onClose={() => {
-                setClickedPosition(null);
-                setActiveForm(null);
-              }}
-              setNewNodeLatLng={setClickedPosition}
-              refreshHidrants={refreshHidrants}
-            />
-          )}
-          {activeForm === 'incidencia' && (
-            <NovaIncidenciaForm
-              lat={clickedPosition.lat}
-              lon={clickedPosition.lng}
-              onClose={() => {
-                setClickedPosition(null);
-                setActiveForm(null);
-                refreshIncidencies();
-              }}
-            />
-          )}
-        </Modal>
+          setNewNodeLatLng={setClickedPosition}
+          refreshHidrants={refreshHidrants}
+          refreshIncidencies={refreshIncidencies}
+        />
       )}
     </>
   );

@@ -6,7 +6,7 @@ interface HydrantMarkerListProps {
   setPoi: (latlng: LatLng) => void;
   showRoute: boolean;
   setShowRoute: (show: boolean) => void;
-  refreshHidrants?: () => Promise<void>;
+  refreshHidrants?: () => void;
   hasLocation?: boolean;
   onSelectNode?: (feature: any) => void;
   selectedNodeId?: string | null;

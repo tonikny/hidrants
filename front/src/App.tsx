@@ -4,12 +4,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import { LeafletMap } from './components/map/LeafletMap';
 import { AdfProvider, useAdf } from './contexts/AdfContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Panel, type BottomSheetHandle } from './components/ui/Panel';
-import { buildTabs } from './components/ui/PanelTabs';
+import { Panel, type BottomSheetHandle } from './components/layout/Panel';
+import { buildTabs } from './components/panel/PanelTabs';
 import { useHydrantData } from './hooks/useHidrantData';
 import { useIncidencies } from './hooks/useIncidencies';
 import { usePositionPolling } from './hooks/usePositionPolling';
-import { NodeInfo } from './components/ui/NodeForm';
+import { NodeInfo } from './components/hidrants/NodeInfo';
 
 function setUrlNodeParam(nodeId: string | null) {
   const url = new URL(window.location.href);

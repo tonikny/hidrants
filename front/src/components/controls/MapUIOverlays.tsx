@@ -1,9 +1,9 @@
 import { FullscreenButton } from './FullscreenButton';
 import { NewNodeButton } from './NewNodeButton';
-import { CoordinateModal } from '../ui/CoordinateModal';
+import { CoordinateModal } from '../shared/CoordinateModal';
 import { LocateButton } from './LocateButton';
 import { ZoomDisplay } from './ZoomDisplay';
-import { Modal } from '../ui/Modal';
+import { Modal } from '../shared/Modal';
 import {
   floatingButtonClass,
   controlContainerClass,

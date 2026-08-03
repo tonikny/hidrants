@@ -5,123 +5,11 @@ import {
   useRef,
   useState,
   type PointerEvent,
-  type ReactNode,
 } from 'react';
-
-const HANDLE_H = 16;
-const ICONS_H = 44;
-const BAR_HEIGHT = HANDLE_H + ICONS_H;
-
-export interface PanelTab {
-  id: string;
-  icon: string;
-  label: string;
-  content: ReactNode;
-}
-
-export interface BottomSheetHandle {
-  close: () => void;
-}
-
-interface PanelProps {
-  map: ReactNode;
-  tabs: PanelTab[];
-  node: { content: ReactNode; onClose: () => void; onEdit?: () => void; showDelete?: boolean } | null;
-  sheetRef?: React.Ref<BottomSheetHandle>;
-}
-
-export function Panel({ map, tabs, node, sheetRef }: PanelProps) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? '');
-  const activeContent = tabs.find((t) => t.id === activeTab)?.content;
-
-  return (
-    <div id="app-shell" className="h-full w-full">
-      <div className="flex h-screen max-h-[100svh] w-full overflow-hidden">
-        <div id="map-container" className="flex-1 relative h-full min-w-0">
-          {map}
-        </div>
-        <aside className="hidden lg:block w-[380px] shrink-0 bg-white border-l border-border">
-          {node ? (
-            <NodeHeader onEdit={node.onEdit} showDelete={node.showDelete} />
-          ) : (
-            <TabBar tabs={tabs} activeId={activeTab} onSelect={setActiveTab} showLabels />
-          )}
-          <div className={`h-[calc(100%-44px)] overflow-y-auto ${node ? '' : 'border-t border-soft'}`}>
-            {node ? node.content : activeContent}
-          </div>
-        </aside>
-      </div>
-      <BottomSheet
-        ref={sheetRef}
-        tabs={tabs}
-        node={node}
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-      />
-    </div>
-  );
-}
-
-function TabBar({
-  tabs,
-  activeId,
-  onSelect,
-  showLabels,
-}: {
-  tabs: PanelTab[];
-  activeId: string;
-  onSelect: (id: string) => void;
-  showLabels: boolean;
-}) {
-  return (
-    <div className="flex w-full border-b border-soft" style={{ height: ICONS_H }}>
-      {tabs.map((t) => (
-        <button
-          key={t.id}
-          data-tab={t.id}
-          onClick={() => onSelect(t.id)}
-          className={`flex-1 flex flex-col items-center justify-center gap-[2px] bg-transparent border-0 cursor-pointer ${
-            activeId === t.id ? 'text-primary font-semibold' : 'text-muted'
-          }`}
-        >
-          <span className="text-[1.15rem] leading-none">{t.icon}</span>
-          {showLabels && <span className="text-[0.7rem] leading-none">{t.label}</span>}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function NodeHeader({ onEdit, showDelete }: { onEdit?: () => void; showDelete?: boolean }) {
-  return (
-    <div
-      className="flex items-center justify-between px-3 border-b border-soft"
-      style={{ height: ICONS_H }}
-    >
-      <span className="font-semibold text-[0.9rem] text-ink">Informació del node</span>
-      <div className="flex items-center gap-1">
-        {onEdit && (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="bg-transparent border-0 cursor-pointer text-[0.85rem] text-primary flex items-center gap-1 px-1"
-          >
-            ✏️ Editar
-          </button>
-        )}
-        {showDelete && (
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('node-delete-request'))}
-            className="bg-transparent border-0 cursor-pointer text-[0.85rem] text-[#c0392b] flex items-center gap-1 px-1"
-          >
-            🗑️ Esborrar
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
+import { HANDLE_H, ICONS_H, BAR_HEIGHT } from './metrics';
+import { TabBar } from './TabBar';
+import { NodeHeader } from './NodeHeader';
+import type { PanelTab, PanelNode, BottomSheetHandle } from './types';
 
 function BottomSheetView(
   {
@@ -131,7 +19,7 @@ function BottomSheetView(
     onSelectTab,
   }: {
     tabs: PanelTab[];
-    node: { content: ReactNode; onClose: () => void; onEdit?: () => void; showDelete?: boolean } | null;
+    node: PanelNode | null;
     activeTab: string;
     onSelectTab: (id: string) => void;
   },
@@ -269,11 +157,11 @@ function BottomSheetView(
   );
 }
 
-const BottomSheet = forwardRef<
+export const BottomSheet = forwardRef<
   BottomSheetHandle,
   {
     tabs: PanelTab[];
-    node: { content: ReactNode; onClose: () => void; onEdit?: () => void; showDelete?: boolean } | null;
+    node: PanelNode | null;
     activeTab: string;
     onSelectTab: (id: string) => void;
   }

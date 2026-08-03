@@ -7,6 +7,7 @@ import {
   secondaryButtonClass,
   selectClass,
 } from '../../styles/uiStyles';
+import { CoordinatesLabel } from '../shared/CoordinatesLabel';
 
 type NovaIncidenciaFormProps = {
   lat: number;
@@ -51,11 +52,7 @@ export const NovaIncidenciaForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col px-2">
-      <div className="text-[0.8rem] text-[#555] text-center mb-4">
-        <strong>
-          [ {lat.toFixed(5)}, {lon.toFixed(5)} ]
-        </strong>
-      </div>
+      <CoordinatesLabel lat={lat} lon={lon} />
 
       {/* Títol */}
       <label className="text-[0.8rem] italic mb-2">

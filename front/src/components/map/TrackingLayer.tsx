@@ -2,15 +2,8 @@
 import { Marker, Popup, Pane } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../../contexts/AuthContext';
-
-interface Position {
-  lat: number;
-  lon: number;
-  accuracy: number;
-  timestamp: number;
-  battery: number;
-  receivedAt: number;
-}
+import type { Position } from '../../hooks/usePositionPolling';
+import { timeAgo } from '../../utils/time';
 
 const COLORS = [
   '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
@@ -31,16 +24,6 @@ function ageColor(receivedAt: number): string {
   if (age < 300000) return '#eab308';
   if (age < 600000) return '#f97316';
   return '#ef4444';
-}
-
-function timeAgo(ts: number): string {
-  const sec = Math.floor((Date.now() - ts) / 1000);
-  if (sec < 60) return `fa ${sec}s`;
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `fa ${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `fa ${h} h`;
-  return `fa ${Math.floor(h / 24)} dies`;
 }
 
 function pinIcon(label: string, bgColor: string): L.DivIcon {

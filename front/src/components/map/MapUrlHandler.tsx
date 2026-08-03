@@ -2,16 +2,28 @@ import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { toast } from 'react-toastify';
 import { useAdf } from '../../contexts/AdfContext';
+import type { IncidenciaFeature } from '../../types';
 
 interface MapUrlHandlerProps {
   features: any[];
+  incidenciaFeatures: IncidenciaFeature[];
+  loadingHidrants: boolean;
+  loadingIncidencies: boolean;
+  onSelectIncidencia: (feature: IncidenciaFeature) => void;
 }
 
 /**
  * Gestiona l'obertura programàtica de nodes des de la URL (?node=ID)
- * Si el node no existeix, mostra un avís i neteja la URL.
+ * Accepta tant hidrants com incidències. Si el node no existeix,
+ * mostra un avís i neteja la URL.
  */
-export function MapUrlHandler({ features }: MapUrlHandlerProps) {
+export function MapUrlHandler({
+  features,
+  incidenciaFeatures,
+  loadingHidrants,
+  loadingIncidencies,
+  onSelectIncidencia,
+}: MapUrlHandlerProps) {
   const map = useMap();
   const { activeAdf } = useAdf();
   const lastNodeId = useRef<string | null>(null);
@@ -20,14 +32,16 @@ export function MapUrlHandler({ features }: MapUrlHandlerProps) {
   const checkUrl = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const nodeId = urlParams.get('node');
-    
-    if (nodeId && features.length > 0 && nodeId !== lastNodeId.current) {
+
+    if (nodeId && nodeId !== lastNodeId.current) {
       const feature = features.find(f => f.id === nodeId);
-      
-      if (feature) {
+      const incidencia = feature ? null : incidenciaFeatures.find(f => f.id === nodeId);
+
+      if (feature || incidencia) {
         lastNodeId.current = nodeId;
-        const [lon, lat] = feature.geometry.coordinates;
-        
+        const found = feature || incidencia!;
+        const [lon, lat] = found.geometry.coordinates;
+
         // @ts-ignore
         if (map && map._loaded && map.getContainer().clientWidth > 0) {
           map.stop();
@@ -35,11 +49,15 @@ export function MapUrlHandler({ features }: MapUrlHandlerProps) {
           const onAnimationEnd = () => {
             const center = map.getCenter();
             const dist = center.distanceTo([lat, lon]);
-            
+
             if (dist < 1) {
               map.off('moveend zoomend', onAnimationEnd);
               setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('map-node-centered', { detail: { nodeId } }));
+                if (feature) {
+                  window.dispatchEvent(new CustomEvent('map-node-centered', { detail: { nodeId } }));
+                } else {
+                  onSelectIncidencia(incidencia!);
+                }
               }, 300);
             }
           };
@@ -47,11 +65,11 @@ export function MapUrlHandler({ features }: MapUrlHandlerProps) {
           map.on('moveend zoomend', onAnimationEnd);
           map.flyTo([lat, lon], 18, { animate: true, duration: 1.5 });
         }
-      } else {
-        // Node no trobat
+      } else if (!loadingHidrants && !loadingIncidencies) {
+        // Node no trobat i ja no carreguen les llistes: decidim definitivament
         toast.warn(`No s'ha trobat el node: ${nodeId}`);
-        lastNodeId.current = nodeId; 
-        
+        lastNodeId.current = nodeId;
+
         // Netegem el paràmetre de la URL
         const url = new URL(window.location.href);
         url.searchParams.delete('node');
@@ -71,12 +89,13 @@ export function MapUrlHandler({ features }: MapUrlHandlerProps) {
           }
         }
       }
+      // Si encara estan carregant, esperem: l'effect tornarà a executar checkUrl
     }
   };
 
   useEffect(() => {
     checkUrl();
-    
+
     const handleForcedCheck = () => {
       lastNodeId.current = null; // Reset per permetre re-centrar si cal
       checkUrl();
@@ -84,7 +103,7 @@ export function MapUrlHandler({ features }: MapUrlHandlerProps) {
 
     window.addEventListener('map-force-url-check', handleForcedCheck);
     return () => window.removeEventListener('map-force-url-check', handleForcedCheck);
-  }, [features, map, activeAdf]);
+  }, [features, incidenciaFeatures, loadingHidrants, loadingIncidencies, map, activeAdf, onSelectIncidencia]);
 
   return null;
 }

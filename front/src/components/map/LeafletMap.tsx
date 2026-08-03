@@ -77,6 +77,7 @@ export function LeafletMap({
   hidrantsError,
   refreshHidrants,
   incidenciaFeatures,
+  loadingIncidencies,
   positions,
   position,
   setPosition,
@@ -96,6 +97,7 @@ export function LeafletMap({
   hidrantsError: string | null;
   refreshHidrants: () => void;
   incidenciaFeatures: IncidenciaFeature[];
+  loadingIncidencies: boolean;
   positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
   position: L.LatLng | null;
   setPosition: (pos: L.LatLng | null) => void;
@@ -136,7 +138,13 @@ export function LeafletMap({
         <FixMapSize />
         <MapNodeCenter />
         {/* Gestiona l'obertura de nodes via URL (?node=ID) */}
-        <MapUrlHandler features={features} />
+        <MapUrlHandler
+          features={features}
+          incidenciaFeatures={incidenciaFeatures}
+          loadingHidrants={loadingHidrants}
+          loadingIncidencies={loadingIncidencies}
+          onSelectIncidencia={onSelectIncidencia}
+        />
         <MapStateListener onMapClick={onMapClick} />
         <MaskedAreaMap hidden={!!activeTechnicalLayer} />
         <Layers

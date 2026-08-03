@@ -2,6 +2,7 @@ import { IncidenciesService } from '../services/incidenciesService.js';
 import type { ApiHandler } from '../types.js';
 import { BadRequestError } from '../errors.js';
 import { z } from 'zod';
+import { appBaseUrl } from '../utils/appUrl.js';
 
 const createSchema = z.object({
   titol: z.string(),
@@ -23,10 +24,8 @@ const handler: ApiHandler = async (req, res) => {
   const isAdmin = user?.role === 'admin';
   const adf_id = Number(req.query?.adf || req.body?.adf_id || user?.adf_id);
 
-  // Inferir URL base del client per a missatges de Telegram
-  const protocol = req.headers['x-forwarded-proto'] || 'https';
-  const host = req.headers.host || 'hidrants.adfcongost.cat';
-  const clientBaseUrl = `${protocol}://${host}`;
+  // Inferir URL base de l'app per a missatges de Telegram
+  const clientBaseUrl = appBaseUrl(req);
 
   // --- GET /api/incidencies/:id: Detall d'una incidència ---
   // Aquest va primer perquè no necessita estrictament adf_id

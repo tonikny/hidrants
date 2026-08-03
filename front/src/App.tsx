@@ -45,6 +45,7 @@ function AppContent() {
 
   const {
     features: incidenciaFeatures,
+    loading: loadingIncidencies,
     refresh: refreshIncidencies,
   } = useIncidencies();
 
@@ -92,6 +93,7 @@ function AppContent() {
   };
 
   const handleSelectIncidencia = (feature: IncidenciaFeature) => {
+    setUrlNodeParam(feature.id);
     setSelectedIncidencia(feature);
     setSelectedNode(null);
     setEditing(false);
@@ -103,6 +105,7 @@ function AppContent() {
   };
 
   const handleDeselectIncidencia = () => {
+    setUrlNodeParam(null);
     setSelectedIncidencia(null);
   };
 
@@ -135,6 +138,7 @@ function AppContent() {
           hidrantsError={hidrantsError}
           refreshHidrants={refreshHidrants}
           incidenciaFeatures={incidenciaFeatures}
+          loadingIncidencies={loadingIncidencies}
           positions={positions}
           position={position}
           setPosition={setPosition}

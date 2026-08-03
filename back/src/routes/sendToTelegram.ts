@@ -2,6 +2,7 @@ import type { ApiHandler } from '../types.js';
 import { ui2Osm } from '../utils/osmConversion.js';
 import { HidrantsService } from '../services/hidrantsService.js';
 import { sendTelegramMessage } from '../utils/telegram.js';
+import { appBaseUrl } from '../utils/appUrl.js';
 
 function escapeHtml(text: string): string {
   return text
@@ -82,13 +83,13 @@ const handler: ApiHandler = async (req, res) => {
       dbInfo.private_tags = privateTags;
     }
 
-    // Generar URL de l'aplicació dinàmicament utilitzant les capçaleres de la petició
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
-    const host = req.headers.host || 'hidrants.adfcongost.cat';
+    // Generar URL de l'aplicació utilitzant el Host de la petició,
+    // substituint el buclic (localhost) per la IP LAN
+    const base = appBaseUrl(req);
     const nodeId = tags?.id || dbResult?.id;
     const adfParam = adf_id ? `adf=${adf_id}&` : '';
     const appUrl = nodeId
-      ? `${protocol}://${host}/?${adfParam}node=${nodeId}`
+      ? `${base}/?${adfParam}node=${nodeId}`
       : null;
 
     // Extreure observacions de private_tags

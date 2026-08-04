@@ -42,6 +42,6 @@
     "db:setup": "npm run db:reset && npm run db:seed && npm run db:import-osm && npm run update:boundaries"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.2.4"
   }
 }

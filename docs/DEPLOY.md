@@ -91,7 +91,7 @@ Configuració: copiar `mosquitto/config/mosquitto.conf.example` → `mosquitto.c
 
 Backend: per defecte connecta a `mqtt://mosquitto:1883`. El fitxer `.otrc` que genera la UI apunta a `OTRC_HOST`, `OTRC_PORT=51823`, `OTRC_TLS=true`.
 
-Guia completa de MQTT (certs + renovació automàtica, Dynamic Security, `npm run mqtt:sync-dynsec`/`mqtt:regen-dynsec`, accés compartit a `mosquitto/data`, backup i troubleshooting): `mosquitto/MQTT_DEPLOY.md`.
+Guia completa de MQTT (certs + renovació automàtica, Dynamic Security, `npm run mqtt:sync-dynsec`/`mqtt:regen-dynsec`, accés compartit a `mosquitto/data`, backup i troubleshooting): `docs/MQTT_DEPLOY.md`.
 
 ## 7. Manteniment i Actualitzacions
 

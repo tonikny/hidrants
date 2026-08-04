@@ -12,12 +12,12 @@ export function FullscreenButton({
 
   const toggleFullscreen = () => {
     const target = document.getElementById(targetId);
-    if (!target) return;
+    if (!target) {return;}
 
     if (!document.fullscreenElement) {
-      target.requestFullscreen().then(() => setIsFullscreen(true));
+      void target.requestFullscreen().then(() => setIsFullscreen(true));
     } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false));
+      void document.exitFullscreen().then(() => setIsFullscreen(false));
     }
   };
 

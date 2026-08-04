@@ -15,6 +15,12 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
   const [enabled, setEnabled] = useState(!!user?.mqtt_enabled);
   const [otrc, setOtrc] = useState<Record<string, unknown> | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const poll = async () => {
@@ -27,8 +33,8 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
         }
       } catch { /* ignore */ }
     };
-    poll();
-    const t = setInterval(poll, 300000);
+    void poll();
+    const t = setInterval(() => { void poll(); }, 300000);
     return () => clearInterval(t);
   }, []);
 
@@ -70,7 +76,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
   };
 
   const downloadCurrent = () => {
-    if (!otrc || !user) return;
+    if (!otrc || !user) {return;}
     const blob = new Blob([JSON.stringify(otrc, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -82,12 +88,11 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
   };
 
   const connected = useMemo(() => {
-    const now = Date.now();
     return Object.entries(positions)
       .map(([username, pos]) => ({ username, ts: pos.receivedAt || pos.timestamp }))
       .filter((p) => now - p.ts < CONNECTED_MS)
       .sort((a, b) => b.ts - a.ts);
-  }, [positions]);
+  }, [positions, now]);
 
   if (!user) {
     return (
@@ -111,7 +116,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
       </div>
       {!enabled ? (
         <button
-          onClick={handleEnable}
+          onClick={() => { void handleEnable(); }}
           disabled={loading}
           className={`${primaryButtonClass} w-full`}
           title="Activa OwnTracks i genera credencials"
@@ -121,7 +126,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
       ) : (
         <div>
           <button
-            onClick={handleConfig}
+            onClick={() => { void handleConfig(); }}
             disabled={loading}
             className={`${secondaryButtonClass} w-full`}
             title="Descarrega el fitxer de configuració OwnTracks"

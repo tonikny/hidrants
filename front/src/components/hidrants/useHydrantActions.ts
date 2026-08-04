@@ -4,6 +4,9 @@ import type { HidrantFeature } from '../../hooks/useHidrantData';
 import type { HydrantUiFields } from '../../utils/osmConversion';
 import type { AdfData } from '../../contexts/AdfContext';
 import { sendToTelegram } from '../../utils/sendToTelegram';
+import { logError } from '../../utils/log';
+
+type FieldPatch = Partial<HydrantUiFields & { observacions: string }>;
 
 function calculateChanges(
   original: HydrantUiFields,
@@ -11,8 +14,8 @@ function calculateChanges(
   originalObservacions: string,
   modifiedObservacions: string
 ) {
-  const changes: any = {};
-  const originalValues: any = {};
+  const changes: FieldPatch = {};
+  const originalValues: FieldPatch = {};
 
   for (const key in modified) {
     const k = key as keyof HydrantUiFields;
@@ -42,8 +45,8 @@ export function useHydrantActions(
   };
 
   const afterChange = async () => {
-    if (refreshHidrants) await refreshHidrants();
-    else setTimeout(() => window.location.reload(), 1000);
+    if (refreshHidrants) {await refreshHidrants();}
+    else {setTimeout(() => window.location.reload(), 1000);}
   };
 
   const save = async (opts: {
@@ -52,7 +55,7 @@ export function useHydrantActions(
     originalUiFields: HydrantUiFields;
     originalObservacions: string;
   }): Promise<boolean> => {
-    if (!adf) return false;
+    if (!adf) {return false;}
     setBusy(true);
     try {
       const privateTags = {
@@ -64,7 +67,7 @@ export function useHydrantActions(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ui_fields: opts.uiFields, private_tags: privateTags }),
       });
-      if (!response.ok) throw new Error('Error actualitzant dades');
+      if (!response.ok) {throw new Error('Error actualitzant dades');}
 
       const { changes, originalValues } = calculateChanges(
         opts.originalUiFields,
@@ -87,7 +90,7 @@ export function useHydrantActions(
       await afterChange();
       return true;
     } catch (err) {
-      console.error(err);
+      logError("Error en actualitzar l'hidrant", err);
       toast.error("Error en actualitzar l'hidrant");
       return false;
     } finally {
@@ -96,9 +99,9 @@ export function useHydrantActions(
   };
 
   const quickStatus = async (isOperative: boolean, data: HydrantUiFields) => {
-    if (!adf) return;
+    if (!adf) {return;}
     const statusText = isOperative ? 'OPERATIU' : 'FORA DE SERVEI';
-    if (!window.confirm(`Vols marcar aquest hidrant com a ${statusText} amb data d'avui?`)) return;
+    if (!window.confirm(`Vols marcar aquest hidrant com a ${statusText} amb data d'avui?`)) {return;}
 
     setBusy(true);
     try {
@@ -113,7 +116,7 @@ export function useHydrantActions(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ui_fields: newData }),
       });
-      if (!response.ok) throw new Error('Error actualitzant');
+      if (!response.ok) {throw new Error('Error actualitzant');}
       toast.success(`Hidrant actualitzat a ${statusText}`);
 
       await sendToTelegram({
@@ -132,7 +135,7 @@ export function useHydrantActions(
       await afterChange();
       return newData;
     } catch (err) {
-      console.error(err);
+      logError('Error en l\'actualització ràpida', err);
       toast.error('Error en l’actualització ràpida');
     } finally {
       setBusy(false);
@@ -140,15 +143,15 @@ export function useHydrantActions(
   };
 
   const remove = async () => {
-    if (!adf) return;
-    if (!window.confirm('Estàs segur que vols esborrar aquest hidrant?')) return;
+    if (!adf) {return;}
+    if (!window.confirm('Estàs segur que vols esborrar aquest hidrant?')) {return;}
 
     setBusy(true);
     try {
       const response = await fetch(`/api/hidrants/${feature.id}?adf=${adf.id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error("Error esborrant l'hidrant");
+      if (!response.ok) {throw new Error("Error esborrant l'hidrant");}
       toast.success('Hidrant esborrat');
 
       const url = new URL(window.location.href);
@@ -158,7 +161,7 @@ export function useHydrantActions(
       }
       await afterChange();
     } catch (err) {
-      console.error(err);
+      logError("Error en esborrar l'hidrant", err);
       toast.error("Error en esborrar l'hidrant");
     } finally {
       setBusy(false);

@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+
+*.log
+
+mosquitto/
+config/
+scripts/
+backups/
+
+back/data/
+back/drizzle/

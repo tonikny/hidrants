@@ -4,6 +4,7 @@ import { HydrantImages } from './HydrantImages';
 import { QuickStatusButtons } from './QuickStatusButtons';
 import { HydrantActions } from './HydrantActions';
 import { TelegramNotifyBox } from './TelegramNotifyBox';
+import type { User } from '../../contexts/AuthContext';
 
 function formatSyncStatus(status: string) {
   switch (status) {
@@ -30,7 +31,7 @@ export function HydrantInfoView({
   onQuickStatus,
 }: {
   feature: HidrantFeature;
-  user: any;
+  user: User | null;
   canEdit: boolean;
   showRoute?: boolean;
   setShowRoute?: (v: boolean) => void;

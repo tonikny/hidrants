@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { sendToTelegram } from '../../utils/sendToTelegram';
-import { LatLng } from 'leaflet';
+import type { LatLng } from 'leaflet';
 import { toast } from 'react-toastify';
 import {
   inputClass,
@@ -12,13 +12,13 @@ import { HydrantFormFields } from './HydrantFormFields';
 import { useAdf } from '../../contexts/AdfContext';
 import { CoordinatesLabel } from '../shared/CoordinatesLabel';
 
-type NewNodeFormProps = {
+interface NewNodeFormProps {
   lat: number;
   lon: number;
   onClose: () => void;
   setNewNodeLatLng: (latlng: LatLng | null) => void;
   refreshHidrants?: () => void;
-};
+}
 
 export const NewNodeForm = ({
   lat,
@@ -84,13 +84,18 @@ export const NewNodeForm = ({
       }
       onClose();
       setNewNodeLatLng(null);
-    } catch (err) {
+    } catch {
       toast.error("Error en afegir l'hidrant");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col px-2">
+    <form
+      onSubmit={(e) => {
+        void handleSubmit(e);
+      }}
+      className="flex flex-col px-2"
+    >
       <CoordinatesLabel lat={lat} lon={lon} />
 
       <div className="mb-2">

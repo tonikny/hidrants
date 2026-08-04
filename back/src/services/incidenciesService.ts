@@ -1,17 +1,24 @@
 import { v4 as uuidv4 } from 'uuid';
 import { IncidenciesRepository } from '../db/repositories/incidenciesRepository.js';
-import { Incidencia, IncidenciaEvent, TipusEvent, IncidenciaEstat, IncidenciaPrioritat, IncidenciaPrecisio } from '../types.js';
+import type { Incidencia, IncidenciaEvent, TipusEvent, IncidenciaEstat, IncidenciaPrioritat, IncidenciaPrecisio } from '../types.js';
 import { NotFoundError } from '../errors.js';
 import { sendTelegramMessage } from '../utils/telegram.js';
 
-function escapeHtml(text: string): string {
-  return text
+function escapeHtml(text: string | undefined): string {
+  return (text ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+type EventDades = {
+  nou?: string;
+  anterior?: string;
+  nova?: { lat: number; lon: number; precisio: IncidenciaPrecisio };
+  comentari?: string;
+};
 
 export const IncidenciesService = {
   getIncidencies(adfId?: number, includeClosed: boolean = false) {
@@ -40,7 +47,7 @@ export const IncidenciesService = {
 
   getIncidenciaById(id: string) {
     const incidencia = IncidenciesRepository.findById(id);
-    if (!incidencia) throw new NotFoundError('Incidència no trobada');
+    if (!incidencia) {throw new NotFoundError('Incidència no trobada');}
     
     const events = IncidenciesRepository.getEvents(id);
     // Parsear JSON de dades per a cada event
@@ -118,14 +125,14 @@ ${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ''}
 💬 Comentari: ${escapeHtml(data.comentari || '(cap)')}
 👤 Creat per: ${escapeHtml(nomUsuari)}
 `;
-    sendTelegramMessage(msg);
+    void sendTelegramMessage(msg);
 
     return incidencia;
   },
 
-  addEvent(incidenciaId: string, usuariId: string, nomUsuari: string, tipusEvent: TipusEvent, dades: any, clientBaseUrl?: string) {
+  addEvent(incidenciaId: string, usuariId: string, nomUsuari: string, tipusEvent: TipusEvent, dades: EventDades, clientBaseUrl?: string) {
     const incidencia = IncidenciesRepository.findById(incidenciaId);
-    if (!incidencia) throw new NotFoundError('Incidència no trobada');
+    if (!incidencia) {throw new NotFoundError('Incidència no trobada');}
 
     const eventId = uuidv4();
     const timestamp = new Date().toISOString();
@@ -178,7 +185,7 @@ ${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ''}
     IncidenciesRepository.addEvent(event, updates);
 
     if (msgTelegram) {
-      sendTelegramMessage(msgTelegram);
+      void sendTelegramMessage(msgTelegram);
     }
 
     return event;

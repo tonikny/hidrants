@@ -28,7 +28,7 @@ export const Login: React.FC = () => {
       } else {
         toast.error(data.error || 'Error en el login');
       }
-    } catch (err) {
+    } catch {
       toast.error('No es pot connectar amb el servidor');
     } finally {
       setLoading(false);
@@ -37,7 +37,12 @@ export const Login: React.FC = () => {
 
   return (
     <div className="p-[10px]">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-[15px]">
+      <form
+        onSubmit={(e) => {
+          void handleSubmit(e);
+        }}
+        className="flex flex-col gap-[15px]"
+      >
         <h2 className="text-center m-0 mb-[10px] text-[1.2rem]">Accés Hidrants</h2>
 
         <div className="flex flex-col gap-[5px]">

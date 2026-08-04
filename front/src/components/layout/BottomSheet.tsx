@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -25,13 +24,15 @@ function BottomSheetView(
   },
   ref: React.ForwardedRef<BottomSheetHandle>
 ) {
-  const [open, setOpen] = useState(false);
-  const [height, setHeight] = useState(BAR_HEIGHT);
+  const nodeMode = !!node;
+  const [open, setOpen] = useState(nodeMode);
+  const [height, setHeight] = useState(
+    node ? Math.round(window.innerHeight * 0.6) : BAR_HEIGHT
+  );
   const [snapping, setSnapping] = useState(false);
   const dragRef = useRef<{ startY: number; startH: number; h: number; moved: boolean; handleHit: boolean; tabId: string | null } | null>(null);
   const dragMovedRef = useRef(false);
 
-  const nodeMode = !!node;
   const positions = () => [
     BAR_HEIGHT,
     Math.round(window.innerHeight * 0.6),
@@ -44,15 +45,10 @@ function BottomSheetView(
     setSnapping(true);
   };
 
-  useEffect(() => {
-    setSnap(node ? positions()[1] : positions()[0]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node]);
-
   useImperativeHandle(ref, () => ({
     close() {
-      if (node) node.onClose();
-      else setSnap(positions()[0]);
+      if (node) {node.onClose();}
+      else {setSnap(positions()[0]);}
     },
   }), [node]);
 
@@ -75,10 +71,10 @@ function BottomSheetView(
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
-    if (!d) return;
+    if (!d) {return;}
     const delta = d.startY - e.clientY;
     if (!d.moved) {
-      if (Math.abs(delta) < 6) return;
+      if (Math.abs(delta) < 6) {return;}
       d.moved = true;
       dragMovedRef.current = true;
     }
@@ -89,15 +85,15 @@ function BottomSheetView(
 
   const endDrag = () => {
     const d = dragRef.current;
-    if (!d) return;
+    if (!d) {return;}
     dragRef.current = null;
     if (!d.moved) {
       if (d.tabId) {
         onSelectTab(d.tabId);
-        if (!open) setSnap(positions()[1]);
+        if (!open) {setSnap(positions()[1]);}
       } else if (d.handleHit) {
-        if (nodeMode) node.onClose();
-        else setSnap(open ? positions()[0] : positions()[1]);
+        if (nodeMode) {node.onClose();}
+        else {setSnap(open ? positions()[0] : positions()[1]);}
       }
       return;
     }
@@ -114,9 +110,9 @@ function BottomSheetView(
   };
 
   const handleTabSelect = (id: string) => {
-    if (dragMovedRef.current) return;
+    if (dragMovedRef.current) {return;}
     onSelectTab(id);
-    if (!open) setSnap(positions()[1]);
+    if (!open) {setSnap(positions()[1]);}
   };
 
   const activeContent = tabs.find((t) => t.id === activeTab)?.content;

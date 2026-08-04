@@ -35,11 +35,6 @@ export const NodeInfo = ({
   const [data, setData] = useState(props.ui_fields);
   const [observacions, setObservacions] = useState(props.private_tags?.observacions || '');
 
-  useEffect(() => {
-    setData(props.ui_fields);
-    setObservacions(props.private_tags?.observacions || '');
-  }, [props.ui_fields, props.private_tags]);
-
   const { busy, save, quickStatus, remove } = useHydrantActions(feature, activeAdf, refreshHidrants);
 
   const handleSave = async () => {
@@ -49,17 +44,17 @@ export const NodeInfo = ({
       originalUiFields: props.ui_fields,
       originalObservacions: props.private_tags?.observacions || '',
     });
-    if (ok) setEditing(false);
+    if (ok) {setEditing(false);}
   };
 
   const handleQuickStatus = async (isOperative: boolean) => {
     const newData = await quickStatus(isOperative, data);
-    if (newData) setData(newData);
+    if (newData) {setData(newData);}
   };
 
   useEffect(() => {
     const onDeleteRequest = async () => {
-      if (deleteInFlight) return;
+      if (deleteInFlight) {return;}
       deleteInFlight = true;
       try {
         await remove();
@@ -67,8 +62,8 @@ export const NodeInfo = ({
         deleteInFlight = false;
       }
     };
-    window.addEventListener('node-delete-request', onDeleteRequest);
-    return () => window.removeEventListener('node-delete-request', onDeleteRequest);
+    window.addEventListener('node-delete-request', () => { void onDeleteRequest(); });
+    return () => window.removeEventListener('node-delete-request', () => { void onDeleteRequest(); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feature.id]);
 
@@ -82,7 +77,7 @@ export const NodeInfo = ({
           showRoute={showRoute ?? false}
           setShowRoute={setShowRoute}
           hasLocation={hasLocation}
-          onQuickStatus={handleQuickStatus}
+          onQuickStatus={(v) => { void handleQuickStatus(v); }}
         />
       ) : (
         <HydrantEditForm
@@ -91,7 +86,7 @@ export const NodeInfo = ({
           observacions={observacions}
           setObservacions={setObservacions}
           busy={busy}
-          onSave={handleSave}
+          onSave={() => { void handleSave(); }}
           onCancel={() => setEditing(false)}
         />
       )}

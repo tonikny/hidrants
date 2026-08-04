@@ -1,5 +1,5 @@
 import { IncidenciesService } from '../services/incidenciesService.js';
-import type { ApiHandler } from '../types.js';
+import type { ApiHandler, TipusEvent } from '../types.js';
 import { BadRequestError } from '../errors.js';
 import { z } from 'zod';
 import { appBaseUrl } from '../utils/appUrl.js';
@@ -75,7 +75,7 @@ const handler: ApiHandler = async (req, res) => {
       req.params.id,
       user?.id || 'anonymous',
       user?.username || 'Anònim',
-      parsed.data.tipus_event as any,
+      parsed.data.tipus_event as TipusEvent,
       parsed.data.dades,
       clientBaseUrl
     );

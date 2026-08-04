@@ -1,4 +1,4 @@
-export type HydrantUiFields = {
+export interface HydrantUiFields {
   position: string;
   type: string;
   couplings: string;
@@ -9,7 +9,7 @@ export type HydrantUiFields = {
   barri: string;
   surveyDate: string;
   estat: string;
-};
+}
 
 const POSITION_MAP: Record<string, string> = {
   lane: 'Calçada',
@@ -23,7 +23,7 @@ const TYPE_MAP: Record<string, string> = {
 };
 
 export function getHydrantDisplayData(uiFields: HydrantUiFields) {
-  if (!uiFields) return [];
+  if (!uiFields) {return [];}
 
   return [
     { label: 'Data de revisió', value: uiFields.surveyDate || 'Desconeguda' },
@@ -64,14 +64,14 @@ export interface HydrantImage {
 }
 
 export function getHydrantImages(osmTags: Record<string, string>): HydrantImage[] {
-  if (!osmTags) return [];
+  if (!osmTags) {return [];}
   const images: HydrantImage[] = [];
 
   Object.keys(osmTags).forEach((key) => {
     const value = osmTags[key];
-    if (!value) return;
+    if (!value) {return;}
 
-    if (key === 'image' || key.match(/^image:\d+$/)) {
+    if (key === 'image' || (/^image:\d+$/.exec(key))) {
       if (value.startsWith('http')) {
         images.push({
           url: value,
@@ -79,7 +79,7 @@ export function getHydrantImages(osmTags: Record<string, string>): HydrantImage[
           type: 'image',
         });
       }
-    } else if (key === 'panoramax' || key.match(/^panoramax:\d+$/)) {
+    } else if (key === 'panoramax' || (/^panoramax:\d+$/.exec(key))) {
       const uuid = value.trim();
       // Si és un UUID (no URL)
       if (uuid && !uuid.startsWith('http')) {

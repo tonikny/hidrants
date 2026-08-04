@@ -3,7 +3,9 @@ import L from 'leaflet';
 import { useMap } from 'react-leaflet';
 import { toast } from 'react-toastify';
 
-export function useGeolocationTracking(onEdit?: (latlng: L.LatLng) => void) {
+const geoAvailable = typeof navigator.geolocation?.watchPosition === 'function';
+
+export function useGeolocationTracking() {
   const map = useMap();
   const [tracking, setTracking] = useState(false);
   const [position, setPosition] = useState<L.LatLng | null>(null);
@@ -24,21 +26,18 @@ export function useGeolocationTracking(onEdit?: (latlng: L.LatLng) => void) {
   }, [map]);
 
   useEffect(() => {
-    if (tracking) {
-      const geolocation = navigator.geolocation;
-      if (!geolocation || typeof geolocation.watchPosition !== 'function') {
-        toast.error('Geolocalització no disponible al teu navegador');
-        setTracking(false);
-        return;
-      }
+    if (tracking && !geoAvailable) {
+      return;
+    }
 
+    if (tracking) {
       toast.success('Seguiment de la posició activat');
       firstUpdateRef.current = true;
 
-      watchIdRef.current = geolocation.watchPosition(
+      watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
-          // @ts-ignore
-          if (!map || !map._loaded || !map.getContainer()) return;
+          // @ts-expect-error accés intern de Leaflet per verificar estat del mapa
+          if (!map?._loaded || !map.getContainer()) {return;}
 
           const { latitude, longitude, accuracy } = pos.coords;
           const latlng = L.latLng(latitude, longitude);
@@ -48,8 +47,8 @@ export function useGeolocationTracking(onEdit?: (latlng: L.LatLng) => void) {
           if (firstUpdateRef.current) {
             map.setView(latlng, 17);
             setTimeout(() => {
-              // @ts-ignore
-              if (map && map._loaded && map.getContainer()) {
+              // @ts-expect-error accés intern de Leaflet per verificar estat del mapa
+              if (map?._loaded && map.getContainer()) {
                 map.invalidateSize();
               }
             }, 100);
@@ -72,8 +71,6 @@ export function useGeolocationTracking(onEdit?: (latlng: L.LatLng) => void) {
         watchIdRef.current = null;
         toast.info('Seguiment de la posició desactivat');
       }
-      setPosition(null);
-      setAccuracy(null);
     }
 
     // ✅ Funció de neteja correcta
@@ -85,9 +82,21 @@ export function useGeolocationTracking(onEdit?: (latlng: L.LatLng) => void) {
     };
   }, [tracking, map]);
 
+  const toggleTracking = () => {
+    if (!tracking && !geoAvailable) {
+      toast.error('Geolocalització no disponible al teu navegador');
+      return;
+    }
+    setTracking((prev) => !prev);
+    if (tracking) {
+      setPosition(null);
+      setAccuracy(null);
+    }
+  };
+
   return {
     tracking,
-    setTracking,
+    toggleTracking,
     position,
     accuracy,
   };

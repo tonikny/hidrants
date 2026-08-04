@@ -25,7 +25,7 @@ export function dynsecConnect(username?: string, password?: string, timeoutMs = 
 
 /** Envia un comandament al Dynamic Security plugin i espera la resposta.
  *  Usa AbortController per gestionar el timeout sense listener leaks. */
-export function dynsecCommand(client: mqtt.MqttClient, command: Record<string, unknown>, timeoutMs = 8000): Promise<any> {
+export function dynsecCommand(client: mqtt.MqttClient, command: Record<string, unknown>, timeoutMs = 8000): Promise<unknown> {
   const cmdName = command.command as string;
   const ac = new AbortController();
 
@@ -36,14 +36,16 @@ export function dynsecCommand(client: mqtt.MqttClient, command: Record<string, u
 
     const onMsg = (topic: string, payload: Buffer) => {
       try {
-        const resp = JSON.parse(payload.toString());
-        const entry = resp.responses?.find((r: any) => r.command === cmdName);
-        if (!entry) return;
+        const resp = JSON.parse(payload.toString()) as {
+          responses?: { command: string; error?: string }[];
+        };
+        const entry = resp.responses?.find((r) => r.command === cmdName);
+        if (!entry) {return;}
         clearTimeout(timer);
         ac.signal.removeEventListener('abort', onAbort);
         client.removeListener('message', onMsg);
-        if (entry.error) reject(new Error(entry.error));
-        else resolve(resp);
+        if (entry.error) {reject(new Error(entry.error));}
+        else {resolve(resp);}
       } catch { /* ignore */ }
     };
 
@@ -55,14 +57,14 @@ export function dynsecCommand(client: mqtt.MqttClient, command: Record<string, u
     ac.signal.addEventListener('abort', onAbort);
     client.on('message', onMsg);
     client.subscribe(DYNSEC_RESP_TOPIC, { qos: 1 }, () => {
-      if (ac.signal.aborted) return;
+      if (ac.signal.aborted) {return;}
       client.publish(DYNSEC_TOPIC, JSON.stringify({ commands: [command] }), { qos: 1 });
     });
   });
 }
 
 /** Crea un rol DynSec si no existeix i li assigna les ACLs indicades. */
-export async function ensureRole(client: mqtt.MqttClient, rolename: string, acls: any[]): Promise<void> {
+export async function ensureRole(client: mqtt.MqttClient, rolename: string, acls: Record<string, unknown>[]): Promise<void> {
   try {
     await dynsecCommand(client, { command: 'createRole', rolename });
   } catch { /* exists */ }

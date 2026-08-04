@@ -1,13 +1,15 @@
-type SendPayload = {
+import { logError } from './log';
+
+interface SendPayload {
   lat: number;
   lon: number;
-  tags?: Record<string, any>;
+  tags?: unknown;
   message?: string;
-  originalData?: Record<string, any>;
-  changes?: Record<string, any>;
+  originalData?: unknown;
+  changes?: unknown;
   adf_id?: number;
   isEdit?: boolean;
-};
+}
 
 export async function sendToTelegram(data: SendPayload): Promise<void> {
   try {
@@ -24,7 +26,7 @@ export async function sendToTelegram(data: SendPayload): Promise<void> {
       throw new Error(`Error enviant el missatge: ${text}`);
     }
   } catch (err) {
-    console.error('Error enviant a Telegram:', err);
+    logError('Error enviant a Telegram', err);
     throw err;
   }
 }

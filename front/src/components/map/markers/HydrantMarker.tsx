@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Marker } from 'react-leaflet';
 import L, { latLng } from 'leaflet';
 import getHydrantIcon from '../../../utils/icons';
+import type { HidrantFeature } from '../../../hooks/useHidrantData';
 
 const ringIcon = L.divIcon({
   className: '',
@@ -11,13 +12,13 @@ const ringIcon = L.divIcon({
 });
 
 export interface HydrantMarkerProps {
-  feature: any;
+  feature: HidrantFeature;
   setPoi: (latlng: L.LatLng) => void;
   showRoute: boolean;
   setShowRoute: (show: boolean) => void;
   refreshHidrants?: () => void;
   hasLocation?: boolean;
-  onSelectNode?: (feature: any) => void;
+  onSelectNode?: (feature: HidrantFeature) => void;
   selected?: boolean;
 }
 
@@ -30,8 +31,9 @@ export function HydrantMarker({ feature, setPoi, onSelectNode, selected }: Hydra
   const coords = feature.geometry.coordinates;
 
   useEffect(() => {
-    const handleCentered = (e: any) => {
-      if (e.detail.nodeId === feature.id && onSelectNode) {
+    const handleCentered = (e: Event) => {
+      const { nodeId } = (e as CustomEvent<{ nodeId: string }>).detail;
+      if (nodeId === feature.id && onSelectNode) {
         onSelectNode(feature);
       }
     };
@@ -50,7 +52,7 @@ export function HydrantMarker({ feature, setPoi, onSelectNode, selected }: Hydra
         eventHandlers={{
           click: () => {
             setPoi(latLng(coords[1], coords[0]));
-            if (onSelectNode) onSelectNode(feature);
+            if (onSelectNode) {onSelectNode(feature);}
           },
         }}
       />

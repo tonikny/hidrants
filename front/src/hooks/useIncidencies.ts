@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAdf } from '../contexts/AdfContext';
-import { IncidenciaFeature, Incidencia, IncidenciaEvent } from '../types';
+import type { IncidenciaFeature, Incidencia, IncidenciaEvent } from '../types';
 
 export function useIncidencies() {
   const { activeAdf } = useAdf();
@@ -16,7 +16,7 @@ export function useIncidencies() {
     try {
       setLoading(true);
       const response = await fetch(`/api/incidencies?adf=${activeAdf.id}`);
-      if (!response.ok) throw new Error('Error al carregar incidències');
+      if (!response.ok) {throw new Error('Error al carregar incidències');}
       const data = await response.json();
       setFeatures(data.features || []);
       setError(null);
@@ -28,16 +28,24 @@ export function useIncidencies() {
   }, [activeAdf?.id]);
 
   useEffect(() => {
-    fetchIncidencies();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- càrrega asíncrona legítima
+    void fetchIncidencies();
   }, [fetchIncidencies]);
 
   const getIncidencia = async (id: string): Promise<Incidencia & { events: IncidenciaEvent[] }> => {
     const response = await fetch(`/api/incidencies/${id}`);
-    if (!response.ok) throw new Error('Error al carregar el detall de la incidència');
+    if (!response.ok) {throw new Error('Error al carregar el detall de la incidència');}
     return response.json();
   };
 
-  const createIncidencia = async (data: any) => {
+  const createIncidencia = async (data: {
+    titol: string;
+    tipus: string;
+    prioritat: string;
+    lat: number;
+    lon: number;
+    comentari: string;
+  }) => {
     const response = await fetch('/api/incidencies', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -48,11 +56,11 @@ export function useIncidencies() {
       throw new Error(err.error || 'Error al crear la incidència');
     }
     const result = await response.json();
-    fetchIncidencies(); // Recarregar llista
+    void fetchIncidencies(); // Recarregar llista
     return result;
   };
 
-  const addEvent = async (incidenciaId: string, tipusEvent: string, dades: any) => {
+  const addEvent = async (incidenciaId: string, tipusEvent: string, dades: Record<string, unknown>) => {
     const response = await fetch(`/api/incidencies/${incidenciaId}/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -63,7 +71,7 @@ export function useIncidencies() {
       throw new Error(err.error || 'Error al afegir l\'esdeveniment');
     }
     const result = await response.json();
-    fetchIncidencies(); // Recarregar llista per actualitzar estat denormalitzat
+    void fetchIncidencies(); // Recarregar llista per actualitzar estat denormalitzat
     return result;
   };
 

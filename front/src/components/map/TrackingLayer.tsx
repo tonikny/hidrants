@@ -5,24 +5,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import type { Position } from '../../hooks/usePositionPolling';
 import { timeAgo } from '../../utils/time';
 
-const COLORS = [
-  '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
-  '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
-  '#469990', '#dcbeff', '#9a6324', '#fffac8', '#800000',
-  '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9',
-];
-
-function userColor(username: string): string {
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
-  return COLORS[Math.abs(hash) % COLORS.length];
-}
-
 function ageColor(receivedAt: number): string {
   const age = Date.now() - receivedAt;
-  if (age < 120000) return '#22c55e';
-  if (age < 300000) return '#eab308';
-  if (age < 600000) return '#f97316';
+  if (age < 120000) {return '#22c55e';}
+  if (age < 300000) {return '#eab308';}
+  if (age < 600000) {return '#f97316';}
   return '#ef4444';
 }
 
@@ -50,9 +37,9 @@ const placeholderIcon = L.divIcon({
 export const TrackingLayer: React.FC<{ positions: Record<string, Position> }> = ({ positions }) => {
   const { user } = useAuth();
 
-  if (!user) return <Marker position={[0, 0]} icon={placeholderIcon} />;
+  if (!user) {return <Marker position={[0, 0]} icon={placeholderIcon} />;}
   const markers = Object.entries(positions);
-  if (markers.length === 0) return <Marker position={[0, 0]} icon={placeholderIcon} />;
+  if (markers.length === 0) {return <Marker position={[0, 0]} icon={placeholderIcon} />;}
 
   return (
     <Pane name="trackingPane" style={{ zIndex: 1000 }}>

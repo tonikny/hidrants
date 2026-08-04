@@ -30,12 +30,12 @@ export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrants
       if (e.name === 'Posicions OwnTracks') { localStorage.setItem(TRACKING_STORAGE_KEY, 'true'); return; }
       if (e.name === 'Hidrants') { setHydrantsVisible(true); return; }
       const technicalLayers = ["Risc d'incendi (FWI)", "Índex Perill (MARK-5 FDI)", "Probabilitat Ignició (NFDRS IC)", "Biomassa Arbrat (ICGC)"];
-      if (technicalLayers.includes(e.name)) setActiveTechnicalLayer(e.name);
+      if (technicalLayers.includes(e.name)) {setActiveTechnicalLayer(e.name);}
     },
     overlayremove: (e) => {
       if (e.name === 'Posicions OwnTracks') { localStorage.setItem(TRACKING_STORAGE_KEY, 'false'); return; }
       if (e.name === 'Hidrants') { setHydrantsVisible(false); return; }
-      if (activeTechnicalLayer === e.name) setActiveTechnicalLayer(null);
+      if (activeTechnicalLayer === e.name) {setActiveTechnicalLayer(null);}
     }
   });
 

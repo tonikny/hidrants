@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HydrantImage } from '../../utils/osmConversion';
+import type { HydrantImage } from '../../utils/osmConversion';
 
 interface HydrantImagesProps {
   images: HydrantImage[];
@@ -11,7 +11,7 @@ const SingleImage: React.FC<{ img: HydrantImage; index: number }> = ({
 }) => {
   const [hasError, setHasError] = useState(false);
 
-  if (hasError) return null;
+  if (hasError) {return null;}
 
   return (
     <a
@@ -31,7 +31,7 @@ const SingleImage: React.FC<{ img: HydrantImage; index: number }> = ({
 };
 
 export const HydrantImages: React.FC<HydrantImagesProps> = ({ images }) => {
-  if (!images || images.length === 0) return null;
+  if (!images || images.length === 0) {return null;}
 
   const displayImages = images.slice(0, 3);
 

@@ -3,6 +3,7 @@ import { GeoJSON, useMap } from 'react-leaflet';
 import * as turf from '@turf/turf';
 import type { Feature, Polygon, MultiPolygon } from 'geojson';
 import { useAdf } from '../../contexts/AdfContext';
+import { logError } from '../../utils/log';
 
 export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) {
   const { activeAdf } = useAdf();
@@ -17,8 +18,6 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
     const nodeId = urlParams.get('node');
 
     if (!activeAdf) {
-      setMask(null);
-      setBoundary(null);
       fittedAdfId.current = null;
       return;
     }
@@ -26,30 +25,29 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
     const fetchAndMaskArea = async () => {
       try {
         const response = await fetch(`/api/adf/boundary?adf=${activeAdf.id}`);
-        if (!response.ok) throw new Error(`API error ${response.status}`);
+        if (!response.ok) {throw new Error(`API error ${response.status}`);}
         const geojson = await response.json();
 
-        if (!isMounted) return;
+        if (!isMounted) {return;}
 
         const areaFeature = (geojson.type === 'Feature' ? geojson : geojson.features?.[0]) as
           | Feature<Polygon | MultiPolygon>
           | undefined;
 
-        if (!areaFeature) return;
+        if (!areaFeature) {return;}
 
         const world = turf.polygon([[[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]]);
         const collection = turf.featureCollection([world, areaFeature]);
         const masked = turf.difference(collection);
 
         if (masked && isMounted) {
-          setMask({ id: activeAdf.id, data: masked as any });
+          setMask({ id: activeAdf.id, data: masked });
           setBoundary({ id: activeAdf.id, data: areaFeature });
 
           if (!nodeId && fittedAdfId.current !== activeAdf.id) {
-            // @ts-ignore
             const container = map.getContainer();
-            // @ts-ignore
-            if (map && map._loaded && container && container.clientWidth > 0) {
+            // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
+            if (map?._loaded && container && container.clientWidth > 0) {
               const bbox = activeAdf.bbox || turf.bbox(areaFeature);
               map.fitBounds(
                 activeAdf.bbox 
@@ -63,15 +61,15 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
           }
         }
       } catch (err) {
-        console.error('Error loading masked area:', err);
+        logError('Error loading masked area', err);
       }
     };
 
-    fetchAndMaskArea();
+    void fetchAndMaskArea();
     return () => { isMounted = false; };
   }, [map, activeAdf?.id]); 
 
-  if (!activeAdf) return null;
+  if (!activeAdf) {return null;}
 
   return (
     <>

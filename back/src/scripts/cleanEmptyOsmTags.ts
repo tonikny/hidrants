@@ -90,12 +90,4 @@ async function cleanEmptyOsmTags() {
 }
 
 // Executar el script
-cleanEmptyOsmTags()
-  .then(() => {
-    console.log('\n👋 Script finalitzat correctament.');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('\n💥 Error fatal:', error);
-    process.exit(1);
-  });
+await cleanEmptyOsmTags();

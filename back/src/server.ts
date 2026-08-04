@@ -1,7 +1,6 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-import Fastify, { FastifyReply, FastifyRequest } from 'fastify';
+/* eslint-disable @typescript-eslint/no-explicit-any -- adapter Express simplificat, vegeu types.ts */
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import Fastify from 'fastify';
 import fastifyJwt from '@fastify/jwt';
 import fastifyCookie from '@fastify/cookie';
 
@@ -17,7 +16,7 @@ import { login, me, logout } from './routes/auth.js';
 import tracking from './routes/tracking.js';
 import { startMqttService } from './services/mqtt.js';
 
-import { ApiHandler, ApiRequest } from './types.js';
+import type { ApiHandler, ApiRequest } from './types.js';
 import { config } from './config.js';
 import { AppError } from './errors.js';
 
@@ -51,17 +50,27 @@ app.setErrorHandler((error: any, request, reply) => {
 /**
  * Adapter de resposta (simplificat, sense subdominis)
  */
-function createRes(reply: FastifyReply, app: any, request: FastifyRequest) {
-  return {
+interface ResAdapter {
+  status: (code: number) => ResAdapter;
+  json: (data: any) => void;
+  send: (data: any) => void;
+  end: () => void;
+  setHeader: (name: string, value: string) => void;
+  _userToSign?: { id: string; username: string; adf_id: number | null; role: string };
+  _clearCookie?: boolean;
+}
+
+function createRes(reply: FastifyReply, app: any, request: FastifyRequest): ResAdapter {
+  const adapter: ResAdapter = {
     status(code: number) {
       reply.code(code);
-      return this;
+      return adapter;
     },
 
     json(data: any) {
       // Si el handler ha marcat un usuari per signar (cas del login)
-      if ((this as any)._userToSign) {
-        const token = app.jwt.sign((this as any)._userToSign);
+      if (adapter._userToSign) {
+        const token = app.jwt.sign(adapter._userToSign);
         data.token = token;
 
         const cookieOptions: any = {
@@ -80,7 +89,7 @@ function createRes(reply: FastifyReply, app: any, request: FastifyRequest) {
       }
 
       // Si el handler ha demanat esborrar la cookie (cas del logout)
-      if ((this as any)._clearCookie) {
+      if (adapter._clearCookie) {
         reply.clearCookie('auth_token', {
           path: '/',
         });
@@ -101,6 +110,8 @@ function createRes(reply: FastifyReply, app: any, request: FastifyRequest) {
       reply.header(name, value);
     },
   };
+
+  return adapter;
 }
 
 /**
@@ -117,8 +128,7 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
       await request.jwtVerify();
       user = (request as any).user;
       // console.log('User verified:', user.username);
-    } catch (err) {
-      // console.log('JWT Verification failed:', (err as Error).message);
+    } catch {
       if (options.protected) {
         return reply.status(401).send({ error: 'Sessió caducada o no vàlida' });
       }
@@ -153,11 +163,7 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
 
     const res = createRes(reply, app, request);
 
-    try {
-      await handler(req, res);
-    } catch (err) {
-      throw err;
-    }
+    await handler(req, res);
   };
 }
 
@@ -218,4 +224,4 @@ const start = async () => {
   }
 };
 
-start();
+void start();

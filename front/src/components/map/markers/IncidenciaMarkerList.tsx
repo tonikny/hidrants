@@ -1,6 +1,6 @@
-import { LatLng } from 'leaflet';
+import type { LatLng } from 'leaflet';
 import { IncidenciaMarker } from './IncidenciaMarker';
-import { IncidenciaFeature } from '../../../types';
+import type { IncidenciaFeature } from '../../../types';
 
 interface IncidenciaMarkerListProps {
   features: IncidenciaFeature[];

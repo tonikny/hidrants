@@ -8,12 +8,13 @@ import {
   selectClass,
 } from '../../styles/uiStyles';
 import { CoordinatesLabel } from '../shared/CoordinatesLabel';
+import { logError } from '../../utils/log';
 
-type NovaIncidenciaFormProps = {
+interface NovaIncidenciaFormProps {
   lat: number;
   lon: number;
   onClose: () => void;
-};
+}
 
 export const NovaIncidenciaForm = ({
   lat,
@@ -43,7 +44,7 @@ export const NovaIncidenciaForm = ({
       toast.success('Incidència reportada amb èxit!');
       onClose();
     } catch (err) {
-      console.error(err);
+      logError('Error enviant incidència', err);
       toast.error('Error enviant la incidència');
     } finally {
       setIsSubmitting(false);
@@ -51,7 +52,12 @@ export const NovaIncidenciaForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col px-2">
+    <form
+      onSubmit={(e) => {
+        void handleSubmit(e);
+      }}
+      className="flex flex-col px-2"
+    >
       <CoordinatesLabel lat={lat} lon={lon} />
 
       {/* Títol */}

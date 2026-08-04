@@ -1,14 +1,15 @@
-import { LatLng } from 'leaflet';
+import type { LatLng } from 'leaflet';
 import { HydrantMarker } from './HydrantMarker';
+import type { HidrantFeature } from '../../../hooks/useHidrantData';
 
 interface HydrantMarkerListProps {
-  features: any[];
+  features: HidrantFeature[];
   setPoi: (latlng: LatLng) => void;
   showRoute: boolean;
   setShowRoute: (show: boolean) => void;
   refreshHidrants?: () => void;
   hasLocation?: boolean;
-  onSelectNode?: (feature: any) => void;
+  onSelectNode?: (feature: HidrantFeature) => void;
   selectedNodeId?: string | null;
 }
 

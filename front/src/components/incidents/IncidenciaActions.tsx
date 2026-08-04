@@ -54,7 +54,7 @@ export function IncidenciaActions({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          openInNativeMaps(incidencia.lat, incidencia.lon, incidencia.titol);
+          openInNativeMaps(incidencia.lat, incidencia.lon);
         }}
         title="Obrir en navegador GPS"
         className="bg-transparent border-0 cursor-pointer text-[1.5rem] p-0"

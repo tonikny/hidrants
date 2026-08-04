@@ -8,6 +8,7 @@ export interface PanelTab {
 }
 
 export interface PanelNode {
+  id?: string;
   content: ReactNode;
   onClose: () => void;
   onEdit?: () => void;

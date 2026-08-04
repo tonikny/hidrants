@@ -25,9 +25,9 @@ export function usePositionPolling(intervalMs = 15000): Record<string, Position>
         }
       } catch { /* ignore */ }
     };
-    poll();
-    intervalRef.current = setInterval(poll, intervalMs);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    void poll();
+    intervalRef.current = setInterval(() => { void poll(); }, intervalMs);
+    return () => { if (intervalRef.current) {clearInterval(intervalRef.current);} };
   }, [intervalMs]);
 
   return positions;

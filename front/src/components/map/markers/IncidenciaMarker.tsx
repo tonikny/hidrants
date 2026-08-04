@@ -1,7 +1,8 @@
 import { Marker } from 'react-leaflet';
-import { latLng, LatLng } from 'leaflet';
+import type { LatLng } from 'leaflet';
+import { latLng } from 'leaflet';
 import { getIncidenciaIcon } from '../../../utils/icons';
-import { IncidenciaFeature } from '../../../types';
+import type { IncidenciaFeature } from '../../../types';
 
 interface IncidenciaMarkerProps {
   feature: IncidenciaFeature;

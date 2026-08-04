@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import L, { LatLng } from 'leaflet';
+import type { LatLng } from 'leaflet';
+import L from 'leaflet';
 import { MapClickHandler } from './MapClickHandler';
 import MapRightClickHandler from './MapRightClickHandler';
 import { Layers } from './Layers';
@@ -22,8 +23,9 @@ function MapNodeCenter() {
   const map = useMap();
 
   useEffect(() => {
-    const handler = (e: any) => {
-      const [lon, lat] = e.detail.geometry.coordinates;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ geometry: { coordinates: [number, number] } }>).detail;
+      const [lon, lat] = detail.geometry.coordinates;
       const sheet = document.querySelector('[class*="z-[1000]"]');
       let targetY = map.getSize().y / 2;
       if (sheet && sheet.getBoundingClientRect().height > 0) {
@@ -57,8 +59,8 @@ function FixMapSize() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // @ts-ignore
-      if (map && map._loaded && map.getContainer()) {
+      // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
+      if (map?._loaded && map.getContainer()) {
         map.invalidateSize();
       }
     }, 200);
@@ -89,7 +91,7 @@ export function LeafletMap({
   onCloseCreate,
   onSelectIncidencia,
 }: {
-  onSelectNode?: (f: any) => void;
+  onSelectNode?: (f: HidrantFeature) => void;
   onMapClick?: () => void;
   selectedNodeId?: string | null;
   features: HidrantFeature[];
@@ -210,7 +212,6 @@ export function LeafletMap({
             onOpenCreate(L.latLng(lat, lon));
             setShowCoordModal(false);
           }}
-          onLocateEdit={user ? openFormAtPosition : undefined}
           setLocatePosition={setPosition}
           setLocateAccuracy={setAccuracy}
         />

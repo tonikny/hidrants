@@ -14,7 +14,7 @@ export function HydrantList({ features }: { features: HidrantFeature[] }) {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    if (!search) return features;
+    if (!search) {return features;}
     const s = search.toLowerCase();
     return features.filter((f) => {
       const ui = f.properties.ui_fields || {};

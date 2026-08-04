@@ -3,9 +3,9 @@ import { randomBytes } from 'node:crypto';
 import { db } from '../db/index.js';
 import { mqttUsers, users } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
-import { ApiHandler } from '../types.js';
+import type { ApiHandler } from '../types.js';
 import { encrypt, decrypt } from '../utils/crypto.js';
-import { isAvailable, createMqttUser, getPositions } from '../services/mqtt.js';
+import { isAvailable, createMqttUser, getPositions, type LocationData } from '../services/mqtt.js';
 import { config } from '../config.js';
 
 /** Retorna si el servei MQTT està disponible i si l'usuari té OwnTracks activat. */
@@ -24,14 +24,14 @@ const positions: ApiHandler = async (req, res) => {
 
   let allowedUsernames: Set<string> | null = null;
   if (userRole !== 'admin') {
-    if (userAdf == null) return res.json({ positions: {} });
+    if (userAdf === null || userAdf === undefined) {return res.json({ positions: {} });}
     const sameAdf = db.select({ username: users.username }).from(users).where(eq(users.adf_id, userAdf)).all();
     allowedUsernames = new Set(sameAdf.map(u => u.username));
   }
 
-  const obj: Record<string, any> = {};
+  const obj: Record<string, LocationData> = {};
   for (const [username, pos] of all) {
-    if (!allowedUsernames || allowedUsernames.has(username)) obj[username] = pos;
+    if (!allowedUsernames || allowedUsernames.has(username)) {obj[username] = pos;}
   }
   return res.json({ positions: obj });
 };
@@ -44,7 +44,7 @@ const enable: ApiHandler = async (req, res) => {
   const password = randomBytes(16).toString('hex');
 
   try { await createMqttUser(username, password); }
-  catch (err: any) { return res.status(503).json({ error: `MQTT no disponible: ${err.message}` }); }
+  catch (err) { return res.status(503).json({ error: `MQTT no disponible: ${err instanceof Error ? err.message : String(err)}` }); }
 
   if (existing) {
     db.update(mqttUsers).set({ mqtt_password_enc: encrypt(password), enabled: true }).where(eq(mqttUsers.id, existing.id)).run();
@@ -62,9 +62,9 @@ const configHandler: ApiHandler = async (req, res) => {
     and(eq(mqttUsers.user_id, userId), eq(mqttUsers.enabled, true))
   ).get();
 
-  if (!row || !row.mqtt_password_enc) return res.status(400).json({ error: 'OwnTracks no activat' });
+  if (!row || !row.mqtt_password_enc) {return res.status(400).json({ error: 'OwnTracks no activat' });}
   const password = decrypt(row.mqtt_password_enc);
-  if (!password) return res.status(500).json({ error: 'No es pot desxifrar. Torna a activar.' });
+  if (!password) {return res.status(500).json({ error: 'No es pot desxifrar. Torna a activar.' });}
   try { await createMqttUser(username, password); }
   catch { /* tornem la config igualment */ }
   return res.json(buildOtrc(username, password));

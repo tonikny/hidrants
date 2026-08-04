@@ -2,6 +2,8 @@ import { db } from '../index.js';
 import { hidrants } from '../schema.js';
 import { count, eq, and, ne, sql } from 'drizzle-orm';
 
+type SyncStatus = 'SYNCED' | 'PENDING_CREATE' | 'PENDING_UPDATE' | 'PENDING_DELETE';
+
 export interface HidrantData {
   id: string;
   osm_id?: number | null;
@@ -76,7 +78,7 @@ export const HidrantsRepository = {
       lon: data.lon,
       osm_tags: data.osm_tags || '{}',
       private_tags: data.private_tags || '{}',
-      sync_status: data.sync_status as any,
+      sync_status: data.sync_status as SyncStatus,
     }).run();
   },
 
@@ -86,7 +88,7 @@ export const HidrantsRepository = {
       lon: data.lon,
       osm_tags: data.osm_tags,
       private_tags: data.private_tags,
-      sync_status: data.sync_status as any,
+      sync_status: data.sync_status as SyncStatus,
       updated_at: sql`CURRENT_TIMESTAMP`,
     }).where(
       and(
@@ -128,7 +130,6 @@ export const HidrantsRepository = {
     for (const res of results) {
       const status = res.status as keyof typeof stats;
       if (status in stats) {
-        // @ts-ignore
         stats[status] = res.count;
         if (status !== 'SYNCED') {
           stats.total_pending += res.count;

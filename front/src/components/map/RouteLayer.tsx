@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { Polyline, Tooltip, useMap } from 'react-leaflet';
-import L, { LatLngExpression } from 'leaflet';
+import type { LatLngExpression } from 'leaflet';
+import type L from 'leaflet';
 import { toast } from 'react-toastify';
+import { logError } from '../../utils/log';
 
 interface RouteLayerProps {
   from: L.LatLng;
@@ -35,17 +37,17 @@ export function RouteLayer({ from, to, color = '#0077ff' }: RouteLayerProps) {
       lastDest.current !== destId || 
       lastFetchPos.current.distanceTo(from) > 20;
 
-    if (!shouldFetch) return;
+    if (!shouldFetch) {return;}
 
     const url = `/api/route?from=${from.lat},${from.lng}&to=${to.lat},${to.lng}`;
     
     fetch(url)
       .then((res) => {
-        if (!res.ok) throw new Error('Error al servidor de rutes');
+        if (!res.ok) {throw new Error('Error al servidor de rutes');}
         return res.json();
       })
       .then((data) => {
-        if (!isMounted) return;
+        if (!isMounted) {return;}
         
         if (data.paths && data.paths.length > 0) {
           const route = data.paths[0];
@@ -64,8 +66,8 @@ export function RouteLayer({ from, to, color = '#0077ff' }: RouteLayerProps) {
           // 2. Decidir si cal ajustar el zoom del mapa
           // Només ho fem la primera vegada que es carrega la ruta cap a aquest destí
           if (hasFittedBounds.current !== destId) {
-            // @ts-ignore
-            if (map && map._loaded && map.getContainer()) {
+            // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
+            if (map?._loaded && map.getContainer()) {
               map.fitBounds(points as L.LatLngBoundsExpression, {
                 padding: [50, 50],
               });
@@ -78,7 +80,7 @@ export function RouteLayer({ from, to, color = '#0077ff' }: RouteLayerProps) {
       })
       .catch((err) => {
         if (isMounted) {
-          console.error('Error carregant ruta:', err);
+          logError('Error carregant ruta', err);
           toast.error('No s’ha pogut calcular la ruta.');
         }
       });
@@ -91,7 +93,7 @@ export function RouteLayer({ from, to, color = '#0077ff' }: RouteLayerProps) {
   const midpoint =
     coords.length > 0 ? coords[Math.floor(coords.length / 2)] : null;
 
-  if (!coords.length) return null;
+  if (!coords.length) {return null;}
 
   return (
     <>

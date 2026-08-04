@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- adapter Express simplificat, tipejar tot seria cerimònia */
 export type ApiRequest = {
   method: string;
   query?: any;
@@ -19,6 +20,8 @@ export type ApiResponse = {
   send: (data: any) => void;
   end: () => void;
   setHeader: (name: string, value: string) => void;
+  _userToSign?: { id: string; username: string; adf_id: number | null; role: string };
+  _clearCookie?: boolean;
 };
 
 export type ApiHandler = (

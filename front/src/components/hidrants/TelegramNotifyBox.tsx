@@ -25,7 +25,7 @@ export function TelegramNotifyBox({ feature }: { feature: HidrantFeature }) {
       });
       toast.success('Notificació enviada');
       setMessage('');
-    } catch (err) {
+    } catch {
       toast.error('Error enviant la notificació');
     }
   };
@@ -43,7 +43,7 @@ export function TelegramNotifyBox({ feature }: { feature: HidrantFeature }) {
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          handleSend();
+          void handleSend();
         }}
         className={`${primaryButtonClass} w-full mt-2 py-[8px] text-[0.8rem] flex items-center justify-center gap-2`}
       >

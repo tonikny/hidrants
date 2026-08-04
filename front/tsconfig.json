@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "target": "ES2022",
     "module": "ESNext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "jsx": "react-jsx",
-    "moduleResolution": "Node",
-    "ignoreDeprecations": "6.0",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "vite-env.d.ts"]
+  "include": ["src", "vite-env.d.ts", "vite.config.ts"]
 }

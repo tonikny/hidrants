@@ -5,6 +5,7 @@ import { Timeline } from './Timeline';
 import { IncidenciaHeader } from './IncidenciaHeader';
 import { IncidenciaActions } from './IncidenciaActions';
 import { IncidenciaEventForm } from './IncidenciaEventForm';
+import { logError } from '../../utils/log';
 
 interface IncidenciaPopupProps {
   incidenciaId: string;
@@ -32,18 +33,19 @@ export const IncidenciaPopup = ({
       const data = await getIncidencia(incidenciaId);
       setIncidencia(data);
     } catch (err) {
-      console.error(err);
+      logError('Error carregant incidència', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadIncidencia();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- càrrega asíncrona legítima
+    void loadIncidencia();
   }, [incidenciaId]);
 
-  if (loading) return <div className="min-w-[280px] p-4">Carregant incidència...</div>;
-  if (!incidencia) return <div className="min-w-[280px] p-4">No s'ha trobat la incidència</div>;
+  if (loading) {return <div className="min-w-[280px] p-4">Carregant incidència...</div>;}
+  if (!incidencia) {return <div className="min-w-[280px] p-4">No s'ha trobat la incidència</div>;}
 
   return (
     <div className="min-w-[280px] p-[0.2rem]">
@@ -67,7 +69,7 @@ export const IncidenciaPopup = ({
           onCancel={() => setShowAddEvent(false)}
           onDone={() => {
             setShowAddEvent(false);
-            loadIncidencia();
+            void loadIncidencia();
             refreshIncidencies();
           }}
         />

@@ -87,6 +87,12 @@ Prova manual amb credencials DynSec vàlides:
 docker compose exec mosquitto mosquitto_pub -h localhost -u <usuari> -P <password> -t 'owntracks/hidrants/<usuari>/phone' -m '{"_type":"location","lat":41.5,"lon":1.8,"tst":1721667688,"acc":10,"batt":80}'
 ```
 
+## Qualitat de codi: ESLint, Husky i CI
+
+- **ESLint** (flat config `eslint.config.mjs`, un per `front/` i `back/`): `npm run lint` i `npm run lint:fix` a la arrel o a cada paquet. Objectiu 0 errors, 0 warnings.
+- **Husky + lint-staged** (hook de pre-commit): `.husky/pre-commit` corre `npx lint-staged` (ESLint amb `--fix` als fitxers staged). Evita saltar-te'l amb `--no-verify` sense justificació.
+- **CI** (`.github/workflows/ci.yml`): es dispara en `push` a `main`/`develop` i en `pull_request`. Pipeline (Node 24): `npm ci` → `typecheck` → `lint` → `build`. És mínim: no fa tests ni desplega encara.
+
 ## Troubleshooting
 
 - `getaddrinfo ENOTFOUND mosquitto`: backend local usa `mqtt://localhost:1883`, backend Docker usa `mqtt://mosquitto:1883`.

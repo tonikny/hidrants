@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
-import { useAuth } from './AuthContext';
+import type { ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import { useAuth } from "./AuthContext";
 
 export interface AdfData {
   id: number;
@@ -7,7 +8,6 @@ export interface AdfData {
   osm_relations: string[];
   bbox: [number, number, number, number] | null;
   center: [number, number] | null;
-  boundary_geojson?: any;
 }
 
 interface AdfContextType {
@@ -27,22 +27,22 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [adfs, setAdfs] = useState<AdfData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [boundaryGeojson, setBoundaryGeojson] = useState<string | null>(null);
+  const [boundaryGeojsonRaw, setBoundaryGeojsonRaw] = useState<string | null>(null);
 
   const setActiveAdf = useCallback((adf: AdfData | null) => {
     setActiveAdfState(adf);
     const url = new URL(window.location.href);
     if (adf) {
-      localStorage.setItem('active_adf_id', adf.id.toString());
+      localStorage.setItem("active_adf_id", adf.id.toString());
       document.title = `Hidrants - ${adf.nom}`;
-      url.searchParams.set('adf', adf.id.toString());
+      url.searchParams.set("adf", adf.id.toString());
     } else {
-      localStorage.removeItem('active_adf_id');
-      document.title = 'Mapa d\'hidrants';
-      url.searchParams.delete('adf');
-      url.searchParams.delete('node');
+      localStorage.removeItem("active_adf_id");
+      document.title = "Mapa d'hidrants";
+      url.searchParams.delete("adf");
+      url.searchParams.delete("node");
     }
-    window.history.replaceState({}, '', url.toString());
+    window.history.replaceState({}, "", url.toString());
   }, []);
 
   // Carregar llista d'ADFs inicial
@@ -50,13 +50,15 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const fetchAdfs = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/adfs'); 
-        if (!response.ok) throw new Error('Error carregant ADFs');
+        const response = await fetch("/api/adfs");
+        if (!response.ok) {
+          throw new Error("Error carregant ADFs");
+        }
         const data = await response.json();
         setAdfs(data);
-        
+
         const urlParams = new URLSearchParams(window.location.search);
-        const urlAdfId = urlParams.get('adf');
+        const urlAdfId = urlParams.get("adf");
 
         // Prioritat 0: Paràmetre ADF a la URL
         if (urlAdfId) {
@@ -68,7 +70,7 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         // Prioritat 1: Recuperar de localStorage (el que l'usuari estava veient realment)
-        const savedAdfId = localStorage.getItem('active_adf_id');
+        const savedAdfId = localStorage.getItem("active_adf_id");
         if (savedAdfId) {
           const savedAdf = data.find((a: AdfData) => a.id === Number(savedAdfId));
           if (savedAdf) {
@@ -78,7 +80,7 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         // Prioritat 2: ADF de l'usuari si és editor (només si no hi ha res guardat)
-        if (user && user.role === 'editor' && user.adf_id) {
+        if (user?.role === "editor" && user.adf_id) {
           const userAdf = data.find((a: AdfData) => a.id === user.adf_id);
           if (userAdf) {
             setActiveAdf(userAdf);
@@ -91,29 +93,37 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setActiveAdf(null);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchAdfs();
-  }, [user, setActiveAdf]); 
+    void fetchAdfs();
+  }, [user, setActiveAdf]);
 
   useEffect(() => {
-    if (!activeAdf) { setBoundaryGeojson(null); return; }
-    fetch(`/api/adf/boundary?adf=${activeAdf.id}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(gj => setBoundaryGeojson(gj ? JSON.stringify(gj) : null))
-      .catch(() => setBoundaryGeojson(null));
+    if (!activeAdf) {return;}
+    void fetch(`/api/adf/boundary?adf=${activeAdf.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((gj) => setBoundaryGeojsonRaw(gj ? JSON.stringify(gj) : null))
+      .catch(() => setBoundaryGeojsonRaw(null));
   }, [activeAdf?.id]);
 
-  const value = useMemo(() => ({ activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson }), [activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson]);
+  const boundaryGeojson = activeAdf ? boundaryGeojsonRaw : null;
+
+  const value = useMemo(
+    () => ({ activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson }),
+    [activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson],
+  );
 
   return <AdfContext.Provider value={value}>{children}</AdfContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- el hook ha de viure amb el context (patró canònic React)
 export const useAdf = () => {
   const context = useContext(AdfContext);
-  if (context === undefined) throw new Error('useAdf must be used within an AdfProvider');
+  if (context === undefined) {
+    throw new Error("useAdf must be used within an AdfProvider");
+  }
   return context;
 };

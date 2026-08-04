@@ -38,7 +38,7 @@ plugin /usr/lib/mosquitto_dynamic_security.so
 plugin_opt_config_file /mosquitto/data/dynamic-security.json
 ```
 
-**Nota:** per a desenvolupament local, usa `mosquitto.dev.conf.example` (sense TLS). Veure `DEV.md`.
+**Nota:** per a desenvolupament local, usa `mosquitto.dev.conf.example` (sense TLS). Veure `docs/DEV.md`.
 
 ### `mosquitto/.env`
 

@@ -1,12 +1,11 @@
 import { db } from '../index.js';
 import { incidencies, incidencia_events, users } from '../schema.js';
-import { eq, and, ne, sql, desc } from 'drizzle-orm';
-import { Incidencia, IncidenciaEvent } from '../../types.js';
+import { eq, and, ne, sql, desc, type SQL } from 'drizzle-orm';
+import type { Incidencia, IncidenciaEvent } from '../../types.js';
 
 export const IncidenciesRepository = {
   findAll(adfId?: number, includeClosed: boolean = false): Incidencia[] {
-    let query = db.select().from(incidencies);
-    const conditions = [];
+    const conditions: SQL[] = [];
 
     if (adfId !== undefined) {
       conditions.push(eq(incidencies.adf_id, adfId));
@@ -16,10 +15,9 @@ export const IncidenciesRepository = {
       conditions.push(ne(incidencies.estat, 'TANCAT'));
     }
 
-    if (conditions.length > 0) {
-      // @ts-ignore
-      query = query.where(and(...conditions));
-    }
+    const query = conditions.length > 0
+      ? db.select().from(incidencies).where(and(...conditions))
+      : db.select().from(incidencies);
 
     return query.orderBy(desc(incidencies.actualitzat_at)).all() as Incidencia[];
   },
@@ -91,13 +89,11 @@ export const IncidenciesRepository = {
         creat_at: event.creat_at
       }).run();
       
-      const incidenciaUpdate: any = {
-        ...updates,
-        actualitzat_at: sql`CURRENT_TIMESTAMP`
-      };
-
       tx.update(incidencies)
-        .set(incidenciaUpdate)
+        .set({
+          ...updates,
+          actualitzat_at: sql`CURRENT_TIMESTAMP`,
+        })
         .where(eq(incidencies.id, event.incidencia_id))
         .run();
     });

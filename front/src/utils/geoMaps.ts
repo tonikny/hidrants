@@ -1,12 +1,8 @@
 /**
  * Obre una ubicació a l’app de mapes nativa (Android o iOS).
  */
-export function openInNativeMaps(lat: number, lng: number, label?: string) {
-  const geoLink =
-    //   label
-    // ? `geo:${lat},${lng}?q=${encodeURIComponent(label)}`
-    // :
-    `geo:${lat},${lng}`;
+export function openInNativeMaps(lat: number, lng: number) {
+  const geoLink = `geo:${lat},${lng}`;
   globalThis.location.href = geoLink;
 }
 

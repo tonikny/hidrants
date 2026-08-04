@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../contexts/AuthContext';
 import { useAdf } from '../../contexts/AdfContext';
+import { logError } from '../../utils/log';
 
 interface SyncButtonProps {
   className?: string;
@@ -22,7 +22,7 @@ export function SyncButton({ className, label }: SyncButtonProps) {
   const { activeAdf } = useAdf();
 
   const fetchStats = async () => {
-    if (!activeAdf) return;
+    if (!activeAdf) {return;}
     try {
       const response = await fetch(`/api/hidrants/stats?adf=${activeAdf.id}`);
       if (response.ok) {
@@ -30,20 +30,21 @@ export function SyncButton({ className, label }: SyncButtonProps) {
         setStats(data);
       }
     } catch (err) {
-      console.error('Error fetching sync stats:', err);
+      logError('Error fetching sync stats', err);
     }
   };
 
   useEffect(() => {
-    fetchStats();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- càrrega asíncrona legítima
+    void fetchStats();
   }, [activeAdf?.id]);
 
   const handleSync = async () => {
-    if (isSyncing || !activeAdf) return;
+    if (isSyncing || !activeAdf) {return;}
 
     if (stats && stats.total_pending > 0) {
       const msg = `Atenció: Tens ${stats.total_pending} canvis pendents (Nous: ${stats.PENDING_CREATE}, Edits: ${stats.PENDING_UPDATE}, Esborrats: ${stats.PENDING_DELETE}).\n\nSi sincronitzes ara de baixada, les dades d'OSM podrien sobreescriure alguns canvis si localment són més antics.\n\nVols continuar amb la sincronització des d'OSM?`;
-      if (!window.confirm(msg)) return;
+      if (!window.confirm(msg)) {return;}
     }
     
     setIsSyncing(true);
@@ -76,9 +77,9 @@ export function SyncButton({ className, label }: SyncButtonProps) {
       // Recarreguem la pàgina per veure els canvis
       setTimeout(() => window.location.reload(), 1000);
       
-    } catch (err: any) {
+    } catch (err) {
       toast.update(toastId, {
-        render: `Error sincronitzant: ${err.message}`,
+        render: `Error sincronitzant: ${err instanceof Error ? err.message : String(err)}`,
         type: 'error',
         isLoading: false,
         autoClose: 5000,
@@ -89,14 +90,14 @@ export function SyncButton({ className, label }: SyncButtonProps) {
   };
 
   const getTitle = () => {
-    if (!stats || stats.total_pending === 0) return "Sincronitzar amb OSM (Baixada)";
+    if (!stats || stats.total_pending === 0) {return "Sincronitzar amb OSM (Baixada)";}
     return `Sincronitzar amb OSM\nCanvis pendents de pujar: ${stats.total_pending}\n(N:${stats.PENDING_CREATE}, E:${stats.PENDING_UPDATE}, B:${stats.PENDING_DELETE})`;
   };
 
   return (
     <div className="relative inline-block">
       <button
-        onClick={handleSync}
+        onClick={() => { void handleSync(); }}
         disabled={isSyncing}
         title={getTitle()}
         className={`${className || ''} disabled:cursor-not-allowed disabled:opacity-70`}

@@ -22,17 +22,17 @@ export const MapClickHandler = ({
 
   useEffect(() => {
     const handleClick = () => {
-      if (isActive) return;
+      if (isActive) {return;}
       onCancel();
     };
 
-    let touchTimeout: number;
+    let touchTimeout: ReturnType<typeof setTimeout>;
     let touchStartPoint: { x: number; y: number } | null = null;
     const TOUCH_MOVE_THRESHOLD = 10;
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (isActive) return;
-      if (e.touches.length > 1) return;
+      if (isActive) {return;}
+      if (e.touches.length > 1) {return;}
 
       const touch = e.touches[0];
       const p = point(touch.clientX, touch.clientY);
@@ -41,7 +41,7 @@ export const MapClickHandler = ({
       touchStartPoint = p;
 
       touchTimeout = setTimeout(() => {
-        if (hasOpenedRef.current) return;
+        if (hasOpenedRef.current) {return;}
         hasOpenedRef.current = true;
         onClick(latlng);
       }, 800);
@@ -52,7 +52,7 @@ export const MapClickHandler = ({
         clearTimeout(touchTimeout);
         return;
       }
-      if (!touchStartPoint) return;
+      if (!touchStartPoint) {return;}
 
       const touch = e.touches[0];
       const current = point(touch.clientX, touch.clientY);

@@ -15,9 +15,9 @@ async function fetchMunicipiBoundary(osmRelation: string) {
     headers: { 'User-Agent': 'HidrantsApp/1.0' },
   });
 
-  if (!response.ok) throw new Error(`Nominatim error ${response.status}`);
+  if (!response.ok) {throw new Error(`Nominatim error ${response.status}`);}
   const data = await response.json();
-  if (!Array.isArray(data) || data.length === 0) throw new Error(`No data for ${osmRelation}`);
+  if (!Array.isArray(data) || data.length === 0) {throw new Error(`No data for ${osmRelation}`);}
   return data[0];
 }
 
@@ -43,7 +43,7 @@ async function run() {
     console.log(`\n🔍 Processant ADF ${adf.id} (${relations.join(', ')})...`);
 
     try {
-      let combinedGeoJson: any = null;
+      let combinedGeoJson: unknown = null;
       let minLat = 90, minLon = 180, maxLat = -90, maxLon = -180;
       let successCount = 0;
 
@@ -99,4 +99,4 @@ async function run() {
   console.log('\n✨ Actualització de boundaries finalitzada.');
 }
 
-run().catch(console.error);
+await run();

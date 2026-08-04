@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db/index.js';
 import { users, mqttUsers } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
-import { ApiHandler } from '../types.js';
+import type { ApiHandler } from '../types.js';
 
 /**
  * Login handler
@@ -26,11 +26,11 @@ export const login: ApiHandler = async (req, res) => {
       return res.status(401).json({ error: 'Usuari o contrasenya incorrectes' });
     }
 
-    (res as any)._userToSign = {
+    res._userToSign = {
       id: user.id,
       username: user.username,
       adf_id: user.adf_id,
-      role: user.role
+      role: user.role ?? 'editor'
     };
     
     return res.status(200).json({ 
@@ -52,7 +52,7 @@ export const login: ApiHandler = async (req, res) => {
  * POST /api/auth/logout
  */
 export const logout: ApiHandler = async (req, res) => {
-  (res as any)._clearCookie = true;
+  res._clearCookie = true;
   return res.status(200).json({ success: true });
 };
 

@@ -57,7 +57,7 @@ class MqttService {
 
   /** Crea o actualitza un usuari MQTT amb rol owntracks-device. */
   async createMqttUser(username: string, password: string): Promise<void> {
-    if (!this.client || !this.client.connected) throw new Error('MQTT no connectat');
+    if (!this.client || !this.client.connected) {throw new Error('MQTT no connectat');}
     try {
       await dynsecCommand(this.client, { command: 'createClient', username, password, roles: [{ rolename: 'owntracks-device' }] });
       console.log(`[MQTT] ✅ MQTT user created: ${username}`);
@@ -69,7 +69,7 @@ class MqttService {
 
   /** Elimina un usuari MQTT del Dynamic Security. */
   async deleteMqttUser(username: string): Promise<void> {
-    if (!this.client || !this.client.connected) throw new Error('MQTT no connectat');
+    if (!this.client || !this.client.connected) {throw new Error('MQTT no connectat');}
     await dynsecCommand(this.client, { command: 'deleteClient', username });
     console.log(`[MQTT] ✅ MQTT user deleted: ${username}`);
   }
@@ -95,8 +95,8 @@ class MqttService {
           { acltype: 'subscribePattern', topic: '$CONTROL/dynamic-security/v1/#', allow: true },
         ]);
         await ensureClient(this.adminClient, config.MQTT_BACKEND_USERNAME, config.MQTT_BACKEND_PASSWORD, 'backend-service');
-      } catch (err: any) {
-        console.log(`[MQTT] ⚠️ Bootstrap error: ${err.message}`);
+      } catch (err) {
+        console.log(`[MQTT] ⚠️ Bootstrap error: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         if (this.adminClient) { this.adminClient.end(); this.adminClient = null; }
         anon.end();
@@ -124,7 +124,7 @@ class MqttService {
         this.available = true;
         console.log('[MQTT] ✅ Connected');
         this.client!.subscribe(`${config.MQTT_TOPIC_PREFIX}/#`, { qos: 1 }, (err) => {
-          if (err) console.log('[MQTT] ❌ Subscribe error:', err.message);
+          if (err) {console.log('[MQTT] ❌ Subscribe error:', err.message);}
         });
         resolveOnce();
       });
@@ -133,20 +133,20 @@ class MqttService {
         try {
           const prefixParts = config.MQTT_TOPIC_PREFIX.split('/').filter(Boolean);
           const username = topic.split('/')[prefixParts.length];
-          if (!username) return;
+          if (!username) {return;}
           // Missatges retained: el broker els reprodueix a cada subscripció
           // (e.g. després d'un deploy), mostrant posicions antigues com a connectades.
           // Només les publicacions live (no retained) representen connexió real.
-          if (packet.retain) return;
+          if (packet.retain) {return;}
           const raw = JSON.parse(payload.toString());
-          if (raw._type !== 'location') return;
+          if (raw._type !== 'location') {return;}
           const parsed = owntracksSchema.safeParse(raw);
-          if (!parsed.success) return;
+          if (!parsed.success) {return;}
           const { lat, lon, acc, batt, ts, tst } = parsed.data;
           const msgTime = ts || tst || Math.floor(Date.now() / 1000);
           // Descartem posicions antigues (> 15 min, mateix llindar que prunePositions):
           // garantim que fins que no arribin dades noves no surt cap usuari al mapa.
-          if (Date.now() / 1000 - msgTime > 900) return;
+          if (Date.now() / 1000 - msgTime > 900) {return;}
           this.positions.set(username, {
             lat, lon, accuracy: acc,
             timestamp: msgTime,
@@ -165,7 +165,7 @@ class MqttService {
   private prunePositions(maxAgeSec = 900): void {
     const now = Date.now();
     for (const [user, pos] of this.positions) {
-      if (now - pos.receivedAt > maxAgeSec * 1000) this.positions.delete(user);
+      if (now - pos.receivedAt > maxAgeSec * 1000) {this.positions.delete(user);}
     }
   }
 }

@@ -3,9 +3,10 @@ import { useMap } from 'react-leaflet';
 import { toast } from 'react-toastify';
 import { useAdf } from '../../contexts/AdfContext';
 import type { IncidenciaFeature } from '../../types';
+import type { HidrantFeature } from '../../hooks/useHidrantData';
 
 interface MapUrlHandlerProps {
-  features: any[];
+  features: HidrantFeature[];
   incidenciaFeatures: IncidenciaFeature[];
   loadingHidrants: boolean;
   loadingIncidencies: boolean;
@@ -42,8 +43,8 @@ export function MapUrlHandler({
         const found = feature || incidencia!;
         const [lon, lat] = found.geometry.coordinates;
 
-        // @ts-ignore
-        if (map && map._loaded && map.getContainer().clientWidth > 0) {
+        // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
+        if (map?._loaded && map.getContainer().clientWidth > 0) {
           map.stop();
 
           const onAnimationEnd = () => {
@@ -77,8 +78,8 @@ export function MapUrlHandler({
 
         // Forcem el fitBounds de l'ADF com si no haguéssim tingut node
         if (activeAdf && fittedAdfId.current !== activeAdf.id) {
-          // @ts-ignore
-          if (map && map._loaded && map.getContainer().clientWidth > 0) {
+          // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
+          if (map?._loaded && map.getContainer().clientWidth > 0) {
             if (activeAdf.bbox) {
               const bbox = activeAdf.bbox;
               map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);

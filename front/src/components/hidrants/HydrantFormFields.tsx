@@ -1,6 +1,6 @@
 import React from 'react';
 import { inputClass, selectClass } from '../../styles/uiStyles';
-import { HydrantUiFields } from '../../utils/osmConversion';
+import type { HydrantUiFields } from '../../utils/osmConversion';
 
 interface HydrantFormFieldsProps {
   data: HydrantUiFields;

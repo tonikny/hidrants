@@ -3,7 +3,6 @@ import type { ReactNode, Ref } from 'react';
 import { TabBar } from './TabBar';
 import { NodeHeader } from './NodeHeader';
 import { BottomSheet } from './BottomSheet';
-import { ICONS_H } from './metrics';
 import type { PanelTab, PanelNode, BottomSheetHandle } from './types';
 
 export type { PanelTab, BottomSheetHandle };
@@ -38,6 +37,7 @@ export function Panel({ map, tabs, node, sheetRef }: PanelProps) {
       </div>
       <BottomSheet
         ref={sheetRef}
+        key={node?.id ?? 'none'}
         tabs={tabs}
         node={node}
         activeTab={activeTab}

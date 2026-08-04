@@ -3,7 +3,7 @@ import { LayersControl, GeoJSON } from 'react-leaflet';
 import L, { type LatLng } from 'leaflet';
 import type { Feature } from 'geojson';
 
-const { BaseLayer, Overlay } = LayersControl;
+const { Overlay } = LayersControl;
 
 export default function IncedenciesLayer({
   active = false,
@@ -13,7 +13,7 @@ export default function IncedenciesLayer({
   const [geojson, setGeojson] = useState(null);
 
   useEffect(() => {
-    fetch('/geojson/incidencies.geojson')
+    void fetch('/geojson/incidencies.geojson')
       .then((r) => r.json())
       .then(setGeojson);
   }, []);

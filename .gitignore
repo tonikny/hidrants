@@ -37,8 +37,7 @@ opencode.json
 
 *.md
 !README.md
-!DEV.md
-!mosquitto/MQTT_DEPLOY.md
+!docs/**
 
 # SQLite databases
 *.db

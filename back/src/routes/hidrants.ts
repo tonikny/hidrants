@@ -64,7 +64,7 @@ const handler: ApiHandler = async (req, res) => {
       throw new BadRequestError(parsed.error.message);
     }
     const id = req.params?.id || parsed.data.id;
-    if (!id) throw new BadRequestError('Missing hydrant ID');
+    if (!id) {throw new BadRequestError('Missing hydrant ID');}
 
     const { lat, lon, ui_fields, private_tags } = parsed.data;
     const result = HidrantsService.updateLocal(id, adf_id, lat, lon, ui_fields, private_tags);

@@ -34,7 +34,7 @@ export interface IncidenciaEvent {
   usuari_id: string | null;
   nom_usuari?: string;
   tipus_event: TipusEvent;
-  dades: any; // Ja ve parsejat del backend
+  dades: { comentari?: string; anterior?: string; nou?: string }; // Ja ve parsejat del backend
   creat_at: string;
 }
 

@@ -4,12 +4,6 @@ import { CreationSelector } from '../shared/CreationSelector';
 import { NewNodeForm } from '../hidrants/NewNodeForm';
 import { NovaIncidenciaForm } from '../incidents/NovaIncidenciaForm';
 
-export function createTitle(form: CreateType): string {
-  if (form === 'hydrant') return '📍 Nou hidrant';
-  if (form === 'incidencia') return '⚠️ Nova incidència';
-  return '📍 Selecciona una acció';
-}
-
 export function CreateNodePanel({
   form,
   position,

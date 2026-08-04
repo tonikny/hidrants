@@ -10,7 +10,7 @@ export function LocationMarker({
   accuracy: number | null; 
   onEdit?: (latlng: L.LatLng) => void;
 }) {
-  if (!position) return null;
+  if (!position) {return null;}
 
   return (
     <>
@@ -24,7 +24,7 @@ export function LocationMarker({
         })}
         eventHandlers={{
           click: () => {
-            if (onEdit) onEdit(position);
+            if (onEdit) {onEdit(position);}
           },
         }}
       />

@@ -1,4 +1,7 @@
 import L from 'leaflet';
+import type { HydrantUiFields } from './osmConversion';
+import type { HidrantFeature } from '../hooks/useHidrantData';
+import type { Incidencia } from '../types';
 
 export const hidrant_op_rev = '/images/icons/hidrant_op_rev.png';
 export const hidrant_op_nrev = '/images/icons/hidrant_op_nrev.png';
@@ -7,7 +10,7 @@ export const hidrant_nop_nrev = '/images/icons/hidrant_nop_nrev.png';
 export const hidrant_no_info = '/images/icons/hidrant_no_info.png';
 export const hidrant_shadow = '/images/icons/marker-shadow.png';
 
-export function getHydrantStatus(ui: any) {
+export function getHydrantStatus(ui: Pick<HydrantUiFields, 'surveyDate' | 'estat'>) {
   const currentYear = new Date().getFullYear();
   const surveyDate = ui.surveyDate;
   const year = Number(surveyDate?.split('-')[0]);
@@ -16,11 +19,11 @@ export function getHydrantStatus(ui: any) {
   const isActive = ui.estat === 'Operatiu';
   const isOutOfService = ui.estat === 'Fora de servei';
 
-  if (!surveyDate) return 'no_info';
-  if (isActive && isCurrentYear) return 'op_rev';
-  if (isActive) return 'op_nrev';
-  if (isOutOfService && isCurrentYear) return 'nop_rev';
-  if (isOutOfService) return 'nop_nrev';
+  if (!surveyDate) {return 'no_info';}
+  if (isActive && isCurrentYear) {return 'op_rev';}
+  if (isActive) {return 'op_nrev';}
+  if (isOutOfService && isCurrentYear) {return 'nop_rev';}
+  if (isOutOfService) {return 'nop_nrev';}
   return 'no_info';
 }
 
@@ -34,7 +37,7 @@ export function getHydrantIconUrl(status: string) {
   }
 }
 
-function getHydrantIcon(properties: Record<string, any>): L.Icon {
+function getHydrantIcon(properties: Pick<HidrantFeature['properties'], 'ui_fields'>): L.Icon {
   const ui = properties.ui_fields || {};
   const status = getHydrantStatus(ui);
   const iconUrl = getHydrantIconUrl(status);
@@ -49,14 +52,14 @@ function getHydrantIcon(properties: Record<string, any>): L.Icon {
   });
 }
 
-export function getIncidenciaIcon(properties: any): L.DivIcon {
+export function getIncidenciaIcon(properties: Incidencia): L.DivIcon {
   const tipus = properties.tipus?.toUpperCase();
   const prioritat = properties.prioritat?.toUpperCase();
   
   let emoji = '⚠️';
-  if (tipus === 'FOC') emoji = '🔥';
-  else if (tipus === 'FUM') emoji = '💨';
-  else if (tipus === 'ACCIDENT') emoji = '🚗';
+  if (tipus === 'FOC') {emoji = '🔥';}
+  else if (tipus === 'FUM') {emoji = '💨';}
+  else if (tipus === 'ACCIDENT') {emoji = '🚗';}
   
   const shadow = prioritat === 'ALTA' ? '0 0 10px red' : '0 0 5px orange';
   

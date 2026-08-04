@@ -4,6 +4,7 @@ import { CoordinateModal } from '../shared/CoordinateModal';
 import { LocateButton } from './LocateButton';
 import { ZoomDisplay } from './ZoomDisplay';
 import { Modal } from '../shared/Modal';
+import type { User } from '../../contexts/AuthContext';
 import {
   floatingButtonClass,
   controlContainerClass,
@@ -11,11 +12,10 @@ import {
 } from '../../styles/uiStyles';
 
 interface MapUIOverlaysProps {
-  user: any;
+  user: User | null;
   showCoordModal: boolean;
   setShowCoordModal: (show: boolean) => void;
   onCoordinateConfirm: (lat: number, lon: number) => void;
-  onLocateEdit?: (latlng: L.LatLng) => void;
   setLocatePosition: (latlng: L.LatLng | null) => void;
   setLocateAccuracy?: (accuracy: number | null) => void;
   loadingHidrants: boolean;
@@ -27,7 +27,6 @@ export function MapUIOverlays({
   showCoordModal,
   setShowCoordModal,
   onCoordinateConfirm,
-  onLocateEdit,
   setLocatePosition,
   setLocateAccuracy,
   loadingHidrants,
@@ -54,7 +53,6 @@ export function MapUIOverlays({
         <div className={controlItemClass}>
           <LocateButton
             className={floatingButtonClass}
-            onEdit={onLocateEdit}
             setPosition={setLocatePosition}
             setAccuracy={setLocateAccuracy}
           />

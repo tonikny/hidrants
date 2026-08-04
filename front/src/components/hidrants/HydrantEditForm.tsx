@@ -1,4 +1,3 @@
-import type { HidrantFeature } from '../../hooks/useHidrantData';
 import type { HydrantUiFields } from '../../utils/osmConversion';
 import { HydrantFormFields } from './HydrantFormFields';
 import { inputClass, primaryButtonClass, secondaryButtonClass } from '../../styles/uiStyles';

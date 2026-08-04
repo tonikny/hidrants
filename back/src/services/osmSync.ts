@@ -1,7 +1,7 @@
 import { db } from '../db/index.js';
 import { adfs, hidrants } from '../db/schema.js';
 import { eq, notInArray, and } from 'drizzle-orm';
-import { queryOverpass } from './overpass.js';
+import { queryOverpass, type OsmElement } from './overpass.js';
 import { v4 as uuidv4 } from 'uuid';
 import { HidrantsRepository } from '../db/repositories/hidrantsRepository.js';
 
@@ -16,7 +16,7 @@ export async function syncAdfFromOSM(adfId: number) {
   }
 
   const relations: string[] = JSON.parse(adf.osm_relations);
-  let allElements: any[] = [];
+  let allElements: OsmElement[] = [];
   let successCount = 0;
 
   for (const rel of relations) {
@@ -82,7 +82,7 @@ export async function syncAdfFromOSM(adfId: number) {
         }
       }
 
-      if (skipUpdate) continue;
+      if (skipUpdate) {continue;}
 
       const id = existing ? existing.id : uuidv4();
 
@@ -113,7 +113,7 @@ export async function syncAdfFromOSM(adfId: number) {
     // 4. Neteja d'hidrants esborrats a OSM
     // NOMÉS esborrem si hem pogut consultar TOTES les relacions de l'ADF amb èxit
     if (successCount === relations.length) {
-      const currentOsmIds = uniqueElements.map((n: any) => n.id);
+      const currentOsmIds = uniqueElements.map((n) => n.id);
       
       if (currentOsmIds.length > 0) {
         tx.delete(hidrants).where(

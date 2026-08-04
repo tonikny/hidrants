@@ -22,7 +22,7 @@ const handler: ApiHandler = async (req, res) => {
     try {
       const data = JSON.parse(text);
       return res.status(200).json(data);
-    } catch (e) {
+    } catch {
       console.error('GraphHopper response was not JSON:\n', text);
       return res
         .status(502)

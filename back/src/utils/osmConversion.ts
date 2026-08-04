@@ -14,7 +14,7 @@ export type HydrantUiFields = {
 export type HydrantOsmTags = Record<string, string>;
 
 function fromOsmCouplings(value: string): string {
-  if (!value) return '';
+  if (!value) {return '';}
   return value
     .split(';')
     .map((v) => v.trim())
@@ -24,7 +24,7 @@ function fromOsmCouplings(value: string): string {
 }
 
 function toOsmCouplings(diameters: string): string {
-  if (!diameters) return '';
+  if (!diameters) {return '';}
   return diameters
     .split(';')
     .filter((d) => d.trim() !== '')
@@ -51,7 +51,7 @@ export function osm2Ui(osmTags: HydrantOsmTags): HydrantUiFields {
 }
 
 export function ui2Osm(uiFields: HydrantUiFields): HydrantOsmTags {
-  const osmTags: any = {
+  const osmTags: HydrantOsmTags = {
     'fire_hydrant:position': uiFields.position,
     'fire_hydrant:type': uiFields.type,
     couplings: uiFields.couplings,
@@ -80,6 +80,6 @@ export function ui2Osm(uiFields: HydrantUiFields): HydrantOsmTags {
 
   // Filtre centralitzat: Eliminem tots els tags amb valor buit, null o undefined
   return Object.fromEntries(
-    Object.entries(osmTags).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+    Object.entries(osmTags).filter((entry) => entry[1] !== '' && entry[1] !== null && entry[1] !== undefined)
   ) as HydrantOsmTags;
 }

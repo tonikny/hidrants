@@ -2,10 +2,24 @@ import { config } from '../config.js';
 
 const OVERPASS_API_URL = config.OVERPASS_URL;
 
+export interface OsmElement {
+  type?: string;
+  id: number;
+  lat: number;
+  lon: number;
+  version: number;
+  timestamp: string;
+  tags?: Record<string, string>;
+}
+
+export type OverpassResult =
+  | { ok: true; status: number; data: { elements?: OsmElement[] } }
+  | { ok: false; status: number; error: string };
+
 /**
  * Execute a query against the Overpass API
  */
-export async function queryOverpass(query: string) {
+export async function queryOverpass(query: string): Promise<OverpassResult> {
   const response = await fetch(OVERPASS_API_URL, {
     method: 'POST',
     headers: {
@@ -27,7 +41,7 @@ export async function queryOverpass(query: string) {
     };
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as { elements?: OsmElement[] };
   return {
     ok: true,
     status: 200,

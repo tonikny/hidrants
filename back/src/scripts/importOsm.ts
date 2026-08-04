@@ -36,7 +36,4 @@ async function run() {
   console.log('\n✨ Importació des d\'OSM finalitzada.');
 }
 
-run().catch(err => {
-  console.error('💥 Error fatal:', err);
-  process.exit(1);
-});
+await run();

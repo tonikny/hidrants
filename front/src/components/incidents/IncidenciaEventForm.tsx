@@ -21,7 +21,7 @@ export function IncidenciaEventForm({
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!newComment && newStatus === incidencia.estat) return;
+    if (!newComment && newStatus === incidencia.estat) {return;}
 
     setIsSubmitting(true);
     try {
@@ -38,7 +38,7 @@ export function IncidenciaEventForm({
       }
       toast.success('Activitat registrada');
       onDone();
-    } catch (err) {
+    } catch {
       toast.error('Error al registrar l\'activitat');
     } finally {
       setIsSubmitting(false);
@@ -46,7 +46,12 @@ export function IncidenciaEventForm({
   };
 
   return (
-    <form onSubmit={handleAddEvent} onClick={(e) => e.stopPropagation()}>
+    <form
+      onSubmit={(e) => {
+        void handleAddEvent(e);
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="mb-3">
         <label className="text-[0.8rem] font-bold block mb-[4px]">Nou estat:</label>
         <select

@@ -3,29 +3,26 @@ import { useEffect } from 'react';
 
 export function LocateButton({
   className,
-  onEdit,
   setPosition,
   setAccuracy,
 }: Readonly<{
   className?: string;
-  onEdit?: (latlng: L.LatLng) => void;
   setPosition: (latlng: L.LatLng | null) => void;
   setAccuracy?: (accuracy: number | null) => void;
 }>) {
-  const { tracking, setTracking, position, accuracy } =
-    useGeolocationTracking(onEdit);
+  const { tracking, toggleTracking, position, accuracy } = useGeolocationTracking();
 
   useEffect(() => {
     setPosition(position ?? null);
   }, [position, setPosition]);
 
   useEffect(() => {
-    if (setAccuracy) setAccuracy(accuracy ?? null);
+    if (setAccuracy) {setAccuracy(accuracy ?? null);}
   }, [accuracy, setAccuracy]);
 
   return (
     <button
-      onClick={() => setTracking((prev) => !prev)}
+      onClick={toggleTracking}
       className={`${className || ''} relative`}
       title={
         tracking

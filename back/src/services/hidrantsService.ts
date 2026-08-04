@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { HidrantsRepository } from '../db/repositories/hidrantsRepository.js';
 import { syncAdfFromOSM } from './osmSync.js';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../errors.js';
-import { osm2Ui, ui2Osm } from '../utils/osmConversion.js';
+import { osm2Ui, ui2Osm, type HydrantUiFields } from '../utils/osmConversion.js';
 import { db } from '../db/index.js';
 import { adfs } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -57,14 +57,14 @@ export const HidrantsService = {
     };
   },
 
-  createLocal(adfId: number, lat: number, lon: number, ui_fields: any, private_tags: any) {
+  createLocal(adfId: number, lat: number, lon: number, ui_fields?: HydrantUiFields, private_tags?: Record<string, unknown>) {
     if (!lat || !lon) {
       throw new BadRequestError('Missing lat or lon');
     }
 
     const adf = db.select({ boundary_geojson: adfs.boundary_geojson }).from(adfs).where(eq(adfs.id, adfId)).get();
     if (!isPointInBoundary(lat, lon, adf?.boundary_geojson ?? null))
-      throw new ForbiddenError('Coordenades fora del límit de l\'ADF');
+      {throw new ForbiddenError('Coordenades fora del límit de l\'ADF');}
 
     const osm_tags = ui_fields ? ui2Osm(ui_fields) : {};
     const id = uuidv4();
@@ -82,25 +82,25 @@ export const HidrantsService = {
     return { id, sync_status: 'PENDING_CREATE' };
   },
 
-  updateLocal(id: string, adfId: number, lat?: number, lon?: number, ui_fields?: any, private_tags?: any) {
-    if (!id) throw new BadRequestError('Missing hydrant ID');
+  updateLocal(id: string, adfId: number, lat?: number, lon?: number, ui_fields?: HydrantUiFields, private_tags?: Record<string, unknown>) {
+    if (!id) {throw new BadRequestError('Missing hydrant ID');}
 
     const current = HidrantsRepository.findByIdAndAdf(id, adfId);
-    if (!current) throw new NotFoundError('Hydrant not found');
+    if (!current) {throw new NotFoundError('Hydrant not found');}
 
     // Determinem si hi ha canvis que afecten OSM (lat, lon, osm_tags)
     let hasOsmChanges = false;
     
     // Comprovar canvis de posició
-    if (lat !== undefined && lat !== current.lat) hasOsmChanges = true;
-    if (lon !== undefined && lon !== current.lon) hasOsmChanges = true;
+    if (lat !== undefined && lat !== current.lat) {hasOsmChanges = true;}
+    if (lon !== undefined && lon !== current.lon) {hasOsmChanges = true;}
     
     if (hasOsmChanges && (lat !== undefined || lon !== undefined)) {
       const finalLat = lat ?? current.lat;
       const finalLon = lon ?? current.lon;
       const adf = db.select({ boundary_geojson: adfs.boundary_geojson }).from(adfs).where(eq(adfs.id, adfId)).get();
       if (!isPointInBoundary(finalLat, finalLon, adf?.boundary_geojson ?? null))
-        throw new ForbiddenError('Coordenades fora del límit de l\'ADF');
+        {throw new ForbiddenError('Coordenades fora del límit de l\'ADF');}
     }
 
     // Comprovar canvis en osm_tags
@@ -143,10 +143,10 @@ export const HidrantsService = {
   },
 
   deleteLocal(id: string, adfId: number) {
-    if (!id) throw new BadRequestError('Missing hydrant ID');
+    if (!id) {throw new BadRequestError('Missing hydrant ID');}
 
     const current = HidrantsRepository.findByIdAndAdf(id, adfId);
-    if (!current) throw new NotFoundError('Hydrant not found');
+    if (!current) {throw new NotFoundError('Hydrant not found');}
 
     if (current.sync_status === 'PENDING_CREATE') {
       HidrantsRepository.delete(id);

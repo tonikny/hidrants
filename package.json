@@ -1,47 +1,59 @@
 {
   "scripts": {
-    "// install": "Instal·la totes les dependències de l'arrel, del backend i del frontend.",
-    "install": "npm install --ignore-scripts && npm install --prefix back && npm install --prefix front",
-    "// dev": "Executa el backend i el frontend en paral·lel per a desenvolupament local.",
-    "dev": "concurrently \"npm run dev --prefix back\" \"sleep 3 && npm run dev --prefix front\"",
-    "// update:boundaries": "Actualitza els límits municipals de les ADFs des de la configuració de dades.",
-    "update:boundaries": "npm run update:boundaries --prefix back",
-    "// build": "Compila el frontend i el backend per a producció.",
-    "build": "npm run build --prefix front && npm run build --prefix back",
-    "// start": "Inicia el servidor backend en mode producció.",
-    "start": "npm run start --prefix back",
-    "// mqtt:up": "Aixeca només el broker Mosquitto en segon pla.",
+    "dev": "concurrently \"npm run dev -w back\" \"sleep 3 && npm run dev -w front\"",
+    "build": "npm run build -w front && npm run build -w back",
+    "start": "npm run start -w back",
+    "lint": "npm run lint -w front && npm run lint -w back",
+    "lint:fix": "npm run lint:fix -w front && npm run lint:fix -w back",
+    "typecheck": "npm run typecheck -w front && npm run typecheck -w back",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check .",
+    "update:boundaries": "npm run update:boundaries -w back",
+    "db:reset": "npm run db:reset -w back",
+    "db:seed": "npm run db:seed -w back",
+    "db:import-osm": "npm run db:import-osm -w back",
+    "db:export-osm": "npm run db:export-osm -w back",
+    "db:reset-hidrants": "npm run db:reset-hidrants -w back",
+    "db:setup": "npm run db:reset && npm run db:seed && npm run db:import-osm && npm run update:boundaries",
     "mqtt:up": "docker compose up -d mosquitto",
-    "// mqtt:regen-dynsec": "Regenera dynamic-security.json (destructiu: esborra clients d'usuari MQTT). Demana confirmació.",
     "mqtt:regen-dynsec": "python3 scripts/init-dynsec.py regen",
-    "// mqtt:sync-dynsec": "Actualitza admin+backend a dynamic-security.json conservant els clients d'usuari.",
     "mqtt:sync-dynsec": "python3 scripts/init-dynsec.py sync",
-    "// docker:up": "Aixeca els contenidors de Docker en segon pla.",
     "docker:up": "docker compose up -d",
-    "// docker:down": "Atura i elimina els contenidors de Docker.",
     "docker:down": "docker compose down",
-    "// docker:build": "Construeix les imatges de Docker.",
     "docker:build": "docker compose build",
-    "// docker:logs": "Mostra els logs dels contenidors de Docker en temps real.",
     "docker:logs": "docker compose logs -f",
-    "// docker:clean": "Elimina imatges de Docker no utilitzades.",
     "docker:clean": "docker image prune -f",
-    "// docker:deploy": "Actualitza el codi, reinstal·la, actualitza fronteres i reinicia Docker.",
-    "docker:deploy": "git pull --ff-only --autostash && npm run install && npm run update:boundaries && docker compose up -d --build && docker image prune -f",
-    "// db:reset": "Esborra tota la base de dades (usuaris, ADFs i hidrants).",
-    "db:reset": "npm run db:reset --prefix back",
-    "// db:seed": "Carrega les ADFs i usuaris administradors inicials.",
-    "db:seed": "npm run db:seed --prefix back",
-    "// db:import-osm": "Importa els hidrants des d'OpenStreetMap segons els municipis de cada ADF.",
-    "db:import-osm": "npm run db:import-osm --prefix back",
-    "// db:export-osm": "Exporta els canvis realitzats en els hidrants a format OSM.",
-    "db:export-osm": "npm run db:export-osm --prefix back",
-    "// db:reset-hidrants": "Esborra només els hidrants i els torna a importar d'OSM.",
-    "db:reset-hidrants": "npm run db:reset-hidrants --prefix back",
-    "// db:setup": "Executa el flux complet de preparació de la base de dades." ,
-    "db:setup": "npm run db:reset && npm run db:seed && npm run db:import-osm && npm run update:boundaries"
+    "docker:deploy": "git pull --ff-only --autostash && npm install && npm run update:boundaries && docker compose up -d --build && docker image prune -f",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "concurrently": "^9.2.4"
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "prettier": "^3.6.2",
+    "typescript-eslint": "^8.46.2"
+  },
+  "private": true,
+  "workspaces": [
+    "front",
+    "back"
+  ],
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

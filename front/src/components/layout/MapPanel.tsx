@@ -1,31 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-import L from 'leaflet';
+import type L from 'leaflet';
 import { LeafletMap } from '../map/LeafletMap';
 import { useAdf } from '../../contexts/AdfContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Panel, type BottomSheetHandle } from './Panel';
 import { buildTabs } from '../panel/PanelTabs';
 import { useHydrantData } from '../../hooks/useHidrantData';
+import type { HidrantFeature } from '../../hooks/useHidrantData';
 import { useIncidencies } from '../../hooks/useIncidencies';
 import { usePositionPolling } from '../../hooks/usePositionPolling';
 import { NodeInfo } from '../hidrants/NodeInfo';
-import { CreateNodePanel, createTitle } from '../panel/CreateNodePanel';
+import { CreateNodePanel } from '../panel/CreateNodePanel';
+import { createTitle } from '../panel/createTitle';
 import { IncidenciaPopup } from '../incidents/IncidenciaPopup';
 import { isPointInBoundary } from '../../utils/geo';
 import type { CreateType, IncidenciaFeature } from '../../types';
 
 function setUrlNodeParam(nodeId: string | null) {
   const url = new URL(window.location.href);
-  if (nodeId) url.searchParams.set('node', nodeId);
-  else url.searchParams.delete('node');
+  if (nodeId) {url.searchParams.set('node', nodeId);}
+  else {url.searchParams.delete('node');}
   window.history.replaceState({}, '', url.toString());
 }
 
 export function MapPanel() {
   const { isLoading, activeAdf, boundaryGeojson } = useAdf();
   const { user } = useAuth();
-  const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [selectedNode, setSelectedNode] = useState<HidrantFeature | null>(null);
   const [selectedIncidencia, setSelectedIncidencia] = useState<IncidenciaFeature | null>(null);
   const [editing, setEditing] = useState(false);
   const [createPos, setCreatePos] = useState<L.LatLng | null>(null);
@@ -39,7 +41,7 @@ export function MapPanel() {
     loading: loadingHidrants,
     error: hidrantsError,
     mutate: refreshHidrants,
-  } = useHydrantData(null, 0);
+  } = useHydrantData();
 
   const {
     features: incidenciaFeatures,
@@ -50,7 +52,7 @@ export function MapPanel() {
   const positions = usePositionPolling(15000);
 
   useEffect(() => {
-    if (!createPos) return;
+    if (!createPos) {return;}
     const timer = setTimeout(() => {
       window.dispatchEvent(new CustomEvent('map-center-node', {
         detail: { geometry: { coordinates: [createPos.lng, createPos.lat] } },
@@ -72,7 +74,7 @@ export function MapPanel() {
     (user.role === 'admin' ||
       (user.role === 'editor' && user.adf_id === activeAdf?.id));
 
-  const handleSelectNode = (feature: any) => {
+  const handleSelectNode = (feature: HidrantFeature) => {
     setUrlNodeParam(feature.id);
     setSelectedNode(feature);
     setSelectedIncidencia(null);
@@ -113,7 +115,7 @@ export function MapPanel() {
   };
 
   const openCreate = (latlng: L.LatLng) => {
-    if (!user) return;
+    if (!user) {return;}
     if (!isPointInBoundary(latlng.lat, latlng.lng, boundaryGeojson)) {
       toast.warning('Coordenades fora del límit de l\'ADF');
       return;
@@ -134,7 +136,7 @@ export function MapPanel() {
           features={features}
           loadingHidrants={loadingHidrants}
           hidrantsError={hidrantsError}
-          refreshHidrants={refreshHidrants}
+          refreshHidrants={() => { void refreshHidrants(); }}
           incidenciaFeatures={incidenciaFeatures}
           loadingIncidencies={loadingIncidencies}
           positions={positions}
@@ -153,8 +155,10 @@ export function MapPanel() {
       node={
         selectedNode
           ? {
+              id: selectedNode.id,
               content: (
                 <NodeInfo
+                  key={selectedNode.id}
                   feature={selectedNode}
                   canEdit={canEdit}
                   editing={editing}
@@ -167,6 +171,7 @@ export function MapPanel() {
             }
           : selectedIncidencia
             ? {
+                id: selectedIncidencia.id,
                 title: '⚠️ Incidència',
                 content: (
                   <div className="p-3">
@@ -174,7 +179,7 @@ export function MapPanel() {
                       incidenciaId={selectedIncidencia.id}
                       showRoute={showRoute}
                       setShowRoute={setShowRoute}
-                      refreshIncidencies={refreshIncidencies}
+refreshIncidencies={() => { void refreshIncidencies(); }}
                       hasLocation={!!position}
                     />
                   </div>
@@ -191,8 +196,8 @@ export function MapPanel() {
                     setForm={setCreateForm}
                     onClose={closeCreate}
                     setNewNodeLatLng={setCreatePos}
-                    refreshHidrants={refreshHidrants}
-                    refreshIncidencies={refreshIncidencies}
+                    refreshHidrants={() => { void refreshHidrants(); }}
+                    refreshIncidencies={() => { void refreshIncidencies(); }}
                   />
                 ),
                 onClose: closeCreate,

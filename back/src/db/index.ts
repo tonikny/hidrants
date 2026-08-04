@@ -1,15 +1,11 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // El volum a Docker està a /app/data, que a local és back/data
-const DATA_DIR = path.resolve(__dirname, '../../data');
+const DATA_DIR = path.resolve(import.meta.dirname, '../../data');
 const DB_PATH = path.join(DATA_DIR, 'hidrants.db');
 
 // Assegurem que el directori de dades existeix

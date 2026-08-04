@@ -1,8 +1,7 @@
 // Context d'autenticació: gestor de sessió via cookie httpOnly, exposa user/login/logout.
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
 
-interface User {
+export interface User {
   id: string;
   username: string;
   adf_id: number | null;
@@ -34,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch { setUser(null); }
       finally { setLoading(false); }
     };
-    verifyToken();
+    void verifyToken();
   }, []);
 
   const login = (_newToken: string, newUser: User) => setUser(newUser);
@@ -45,14 +44,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token: null, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token: null, login, logout: () => { void logout(); }, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- el hook ha de viure amb el context (patró canònic React)
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
+  if (context === undefined) {throw new Error('useAuth must be used within an AuthProvider');}
   return context;
 };

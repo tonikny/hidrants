@@ -92,9 +92,6 @@ const handler: ApiHandler = async (req, res) => {
       ? `${base}/?${adfParam}node=${nodeId}`
       : null;
 
-    // Extreure observacions de private_tags
-    const observacions = tags?.private_tags?.observacions || '';
-
     let contentSection = '';
     if (isEdit && originalData && changes && Object.keys(changes).length > 0) {
       contentSection = `

@@ -14,7 +14,7 @@ async function log(message: string, fileStream?: fs.WriteStream) {
   }
 }
 
-function escapeXml(str: any) {
+function escapeXml(str: unknown) {
   return String(str || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -23,8 +23,8 @@ function escapeXml(str: any) {
     .replace(/'/g, '&apos;');
 }
 
-function parsePrivateDescription(desc: any) {
-  if (!desc) return {};
+function parsePrivateDescription(desc: string | { value?: string }) {
+  if (!desc) {return {};}
 
   const raw = typeof desc === 'string' ? desc : desc.value || '';
   const lines = raw.split(/<br\s*\/?>/i).map((l: string) => l.trim()).filter(Boolean);
@@ -36,13 +36,13 @@ function parsePrivateDescription(desc: any) {
 
   for (const line of lines) {
     const l = line.toLowerCase();
-    if (l.includes('aeri')) type = 'pillar';
+    if (l.includes('aeri')) {type = 'pillar';}
     const cMatch = l.match(/(\d+)\s*ràcords?/);
-    if (cMatch) couplings = cMatch[1];
+    if (cMatch) {couplings = cMatch[1];}
     const dMatch = line.match(/(\d+(?:\s*\/\s*\d+)+)/);
-    if (dMatch) diameters = dMatch[1].replace(/\s*\/\s*/g, ';');
+    if (dMatch) {diameters = dMatch[1].replace(/\s*\/\s*/g, ';');}
     const pMatch = line.match(/(\d+(?:[.,]\d+)?)/);
-    if (pMatch && l.includes('kg')) pressure = pMatch[1].replace(',', '.');
+    if (pMatch && l.includes('kg')) {pressure = pMatch[1].replace(',', '.');}
   }
 
   return { type, couplings, diameters, pressure };
@@ -56,7 +56,7 @@ async function run() {
 
   // Gestió de fitxers de log (rotació)
   if (fs.existsSync(logFile)) {
-    if (fs.existsSync(oldLogFile)) fs.unlinkSync(oldLogFile);
+    if (fs.existsSync(oldLogFile)) {fs.unlinkSync(oldLogFile);}
     fs.renameSync(logFile, oldLogFile);
   }
 
@@ -105,7 +105,7 @@ async function run() {
 
   for (const h of allHidrants) {
     // NOMÉS exportem si l'estat no és SYNCED
-    if (h.sync_status === 'SYNCED') continue;
+    if (h.sync_status === 'SYNCED') {continue;}
 
     changesCount++;
     const id = h.id; // Fem servir el UUID intern per al log
@@ -205,7 +205,4 @@ async function run() {
   logStream.end();
 }
 
-run().catch(async err => {
-  console.error('💥 Error fatal:', err);
-  process.exit(1);
-});
+await run();

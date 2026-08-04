@@ -2,6 +2,7 @@ import { toast } from 'react-toastify';
 import type { HidrantFeature } from '../../hooks/useHidrantData';
 import { openInNativeMaps } from '../../utils/geoMaps';
 import { ShareIcon, OsmIcon } from '../shared/Icons';
+import type { User } from '../../contexts/AuthContext';
 
 export function HydrantActions({
   feature,
@@ -14,7 +15,7 @@ export function HydrantActions({
   showRoute?: boolean;
   setShowRoute?: (v: boolean) => void;
   hasLocation?: boolean;
-  user: any;
+  user: User | null;
 }) {
   const poi = {
     lat: feature.geometry.coordinates[1],
@@ -28,13 +29,13 @@ export function HydrantActions({
     try {
       await navigator.clipboard.writeText(url.toString());
       toast.success('Enllaç copiat al porta-retalls');
-    } catch (err) {
+    } catch {
       toast.error("Error al copiar l'enllaç");
     }
   };
 
   const handleShowRoute = () => {
-    if (!setShowRoute) return;
+    if (!setShowRoute) {return;}
     if (!showRoute && !hasLocation) {
       toast.info('Cal activar el seguiment GPS per veure la ruta');
       return;
@@ -48,7 +49,7 @@ export function HydrantActions({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          handleShare();
+          void handleShare();
         }}
         title="Compartir ubicació"
         className="bg-transparent border-0 cursor-pointer p-0 flex items-center"
@@ -74,7 +75,7 @@ export function HydrantActions({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          openInNativeMaps(poi.lat, poi.lng, 'Destinació');
+          openInNativeMaps(poi.lat, poi.lng);
         }}
         title="Obrir en navegador GPS"
         className="bg-transparent border-0 cursor-pointer text-[1.4rem] p-0"

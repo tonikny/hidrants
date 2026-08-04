@@ -5,10 +5,10 @@ import {
   secondaryButtonClass,
 } from '../../styles/uiStyles';
 
-type CoordinateModalProps = {
+interface CoordinateModalProps {
   onConfirm: (lat: number, lon: number) => void;
   onClose: () => void;
-};
+}
 
 export const CoordinateModal = ({
   onConfirm,

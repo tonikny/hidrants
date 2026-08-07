@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { useIncidencies } from '../../hooks/useIncidencies';
-import { toast } from 'react-toastify';
+import React, { useState } from "react";
+import { useIncidencies } from "../../hooks/useIncidencies";
+import { toast } from "react-toastify";
 import {
   inputClass,
   primaryButtonClass,
   secondaryButtonClass,
   selectClass,
-} from '../../styles/uiStyles';
-import { CoordinatesLabel } from '../shared/CoordinatesLabel';
-import { logError } from '../../utils/log';
+} from "../../styles/uiStyles";
+import { CoordinatesLabel } from "../shared/CoordinatesLabel";
+import { logError } from "../../utils/log";
 
 interface NovaIncidenciaFormProps {
   lat: number;
@@ -16,16 +16,13 @@ interface NovaIncidenciaFormProps {
   onClose: () => void;
 }
 
-export const NovaIncidenciaForm = ({
-  lat,
-  lon,
-  onClose,
-}: NovaIncidenciaFormProps) => {
+export const NovaIncidenciaForm = ({ lat, lon, onClose }: NovaIncidenciaFormProps) => {
   const { createIncidencia } = useIncidencies();
-  const [type, setType] = useState('FOC');
-  const [priority, setPriority] = useState('MITJANA');
-  const [titol, setTitol] = useState('');
-  const [comentari, setComentari] = useState('');
+  const [type, setType] = useState("FOC");
+  const [priority, setPriority] = useState("MITJANA");
+  const [visibilitat, setVisibilitat] = useState("ADF_PRIVADA");
+  const [titol, setTitol] = useState("");
+  const [comentari, setComentari] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,15 +34,16 @@ export const NovaIncidenciaForm = ({
         titol,
         tipus: type,
         prioritat: priority,
+        visibilitat,
         lat,
         lon,
-        comentari
+        comentari,
       });
-      toast.success('Incidència reportada amb èxit!');
+      toast.success("Incidència reportada amb èxit!");
       onClose();
     } catch (err) {
-      logError('Error enviant incidència', err);
-      toast.error('Error enviant la incidència');
+      logError("Error enviant incidència", err);
+      toast.error("Error enviant la incidència");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,6 +102,21 @@ export const NovaIncidenciaForm = ({
         </select>
       </label>
 
+      {/* Visibilitat */}
+      <label className="text-[0.8rem] italic mb-3">
+        Visibilitat:
+        <select
+          value={visibilitat}
+          onChange={(e) => setVisibilitat(e.target.value)}
+          className={selectClass}
+          required
+        >
+          <option value="ADF_PRIVADA">🔒 Només la pròpia ADF</option>
+          <option value="TOTES_ADFS">👥 Totes les ADFs</option>
+          <option value="PUBLICA">🌍 Pública</option>
+        </select>
+      </label>
+
       {/* Comentari inicial */}
       <label className="text-[0.8rem] italic mb-3">
         Observacions inicials:
@@ -122,7 +135,7 @@ export const NovaIncidenciaForm = ({
           disabled={isSubmitting}
           className={`${primaryButtonClass} bg-[#dc3545] flex-1 p-2 text-[0.8rem] disabled:opacity-70 disabled:cursor-not-allowed`}
         >
-          {isSubmitting ? 'Enviant...' : 'Reportar Incidència'}
+          {isSubmitting ? "Enviant..." : "Reportar Incidència"}
         </button>
         <button
           type="button"

@@ -1,21 +1,63 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../../../contexts/AuthContext';
-import type { Position } from '../../../hooks/usePositionPolling';
-import { timeAgo } from '../../../utils/time';
-import { Modal } from '../../shared/Modal';
-import { primaryButtonClass, secondaryButtonClass } from '../../../styles/uiStyles';
-import { toast } from 'react-toastify';
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useAdf } from "../../../contexts/AdfContext";
+import type { Position } from "../../../hooks/usePositionPolling";
+import { timeAgo } from "../../../utils/time";
+import { Modal } from "../../shared/Modal";
+import { primaryButtonClass, secondaryButtonClass } from "../../../styles/uiStyles";
+import { toast } from "react-toastify";
 
 const CONNECTED_MS = 15 * 60 * 1000;
 
 export function SeguimentTab({ positions }: { positions: Record<string, Position> }) {
   const { user } = useAuth();
+  const { activeAdf, setActiveAdf } = useAdf();
   const [loading, setLoading] = useState(false);
   const [available, setAvailable] = useState(false);
   const [enabled, setEnabled] = useState(!!user?.mqtt_enabled);
   const [otrc, setOtrc] = useState<Record<string, unknown> | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [shared, setShared] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const perms = user?.permissions ?? [];
+  const canToggle =
+    !!activeAdf &&
+    perms.includes("manage_own_adf_sharing") &&
+    (user?.role === "admin" || activeAdf?.id === user?.adf_id);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reflecteix l'estat de compartició de l'ADF activa
+    setShared(!!activeAdf?.tracking_shared);
+  }, [activeAdf?.id, activeAdf?.tracking_shared]);
+
+  async function toggleShare(checked: boolean) {
+    if (!activeAdf) {
+      return;
+    }
+    setShared(checked);
+    setSaving(true);
+    try {
+      const r = await fetch(`/api/adfs/${activeAdf.id}/tracking-sharing`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ shared: checked }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        throw new Error(data.error || `API ${r.status}`);
+      }
+      setActiveAdf({ ...activeAdf, tracking_shared: checked });
+      toast.success(checked ? "Tracking compartit amb totes les ADFs" : "Tracking privat de l'ADF");
+    } catch (err) {
+      setShared(!checked);
+      toast.error(err instanceof Error ? err.message : "Error actualitzant el tracking");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30000);
@@ -25,33 +67,40 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
   useEffect(() => {
     const poll = async () => {
       try {
-        const res = await fetch('/api/tracking/status', { credentials: 'same-origin' });
+        const res = await fetch("/api/tracking/status", { credentials: "same-origin" });
         if (res.ok) {
           const data = await res.json();
           setAvailable(data.available);
           setEnabled(data.enabled);
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
     void poll();
-    const t = setInterval(() => { void poll(); }, 300000);
+    const t = setInterval(() => {
+      void poll();
+    }, 300000);
     return () => clearInterval(t);
   }, []);
 
   const handleEnable = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/tracking/enable', { method: 'POST', credentials: 'same-origin' });
+      const res = await fetch("/api/tracking/enable", {
+        method: "POST",
+        credentials: "same-origin",
+      });
       if (!res.ok) {
         const err = await res.json();
-        toast.error(err.error || 'Error activant OwnTracks');
+        toast.error(err.error || "Error activant OwnTracks");
         return;
       }
       setOtrc(await res.json());
       setEnabled(true);
       setShowModal(true);
     } catch {
-      toast.error('Error de connexió');
+      toast.error("Error de connexió");
     } finally {
       setLoading(false);
     }
@@ -60,26 +109,28 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
   const handleConfig = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/tracking/config', { credentials: 'same-origin' });
+      const res = await fetch("/api/tracking/config", { credentials: "same-origin" });
       if (!res.ok) {
         const err = await res.json();
-        toast.error(err.error || 'Error descarregant config');
+        toast.error(err.error || "Error descarregant config");
         return;
       }
       setOtrc(await res.json());
       setShowModal(true);
     } catch {
-      toast.error('Error de connexió');
+      toast.error("Error de connexió");
     } finally {
       setLoading(false);
     }
   };
 
   const downloadCurrent = () => {
-    if (!otrc || !user) {return;}
-    const blob = new Blob([JSON.stringify(otrc, null, 2)], { type: 'application/json' });
+    if (!otrc || !user) {
+      return;
+    }
+    const blob = new Blob([JSON.stringify(otrc, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `${user.username}.otrc`;
     a.click();
@@ -108,34 +159,58 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
         <h3 className="m-0 text-[0.95rem] font-semibold">Seguiment OwnTracks</h3>
         <span className="flex items-center gap-1.5 text-[0.8rem] text-muted">
           <span
-            className={`w-2 h-2 rounded-full ${available ? 'bg-[#22c55e]' : 'bg-[#ef4444]'}`}
-            title={available ? 'disponible' : 'no disponible'}
+            className={`w-2 h-2 rounded-full ${available ? "bg-[#22c55e]" : "bg-[#ef4444]"}`}
+            title={available ? "disponible" : "no disponible"}
           />
-          {available ? 'disponible' : 'no disponible'}
+          {available ? "disponible" : "no disponible"}
         </span>
       </div>
       {!enabled ? (
         <button
-          onClick={() => { void handleEnable(); }}
+          onClick={() => {
+            void handleEnable();
+          }}
           disabled={loading}
           className={`${primaryButtonClass} w-full`}
           title="Activa OwnTracks i genera credencials"
         >
-          {loading ? '⏳' : '🛡️ Activar'}
+          {loading ? "⏳" : "🛡️ Activar"}
         </button>
       ) : (
         <div>
           <button
-            onClick={() => { void handleConfig(); }}
+            onClick={() => {
+              void handleConfig();
+            }}
             disabled={loading}
             className={`${secondaryButtonClass} w-full`}
             title="Descarrega el fitxer de configuració OwnTracks"
           >
-            {loading ? '⏳' : '📥 Baixar credencials'}
+            {loading ? "⏳" : "📥 Baixar credencials"}
           </button>
           <p className="text-muted text-[0.8rem] mt-2 mb-0">
-            Ja tens el seguiment activat. Pots tornar a baixar les credencials d'OwnTracks sempre que vulguis.
+            Ja tens el seguiment activat. Pots tornar a baixar les credencials d'OwnTracks sempre
+            que vulguis.
           </p>
+        </div>
+      )}
+
+      {canToggle && (
+        <div className="mt-4 border border-border rounded p-3">
+          <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
+            Compartir tracking ({activeAdf?.nom})
+          </h4>
+          <label className="flex items-center gap-2 text-[0.85rem] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={shared}
+              disabled={saving}
+              onChange={(e) => {
+                void toggleShare(e.target.checked);
+              }}
+            />
+            Permetre que altres ADFs vegin les posicions OwnTracks d'aquesta ADF
+          </label>
         </div>
       )}
 

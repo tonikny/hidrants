@@ -1,21 +1,21 @@
-import type { HidrantFeature } from '../../hooks/useHidrantData';
-import { getHydrantDisplayData, getHydrantImages } from '../../utils/osmConversion';
-import { HydrantImages } from './HydrantImages';
-import { QuickStatusButtons } from './QuickStatusButtons';
-import { HydrantActions } from './HydrantActions';
-import { TelegramNotifyBox } from './TelegramNotifyBox';
-import type { User } from '../../contexts/AuthContext';
+import type { HidrantFeature } from "../../hooks/useHidrantData";
+import { getHydrantDisplayData, getHydrantImages } from "../../utils/osmConversion";
+import { HydrantImages } from "./HydrantImages";
+import { QuickStatusButtons } from "./QuickStatusButtons";
+import { HydrantActions } from "./HydrantActions";
+import { TelegramNotifyBox } from "./TelegramNotifyBox";
+import type { User } from "../../contexts/AuthContext";
 
 function formatSyncStatus(status: string) {
   switch (status) {
-    case 'SYNCED':
-      return '🟢 Sincronitzat';
-    case 'PENDING_CREATE':
-      return '🟡 Pendent de crear (local)';
-    case 'PENDING_UPDATE':
-      return '🔵 Pendent d\'actualitzar';
-    case 'PENDING_DELETE':
-      return '🔴 Pendent d\'esborrar';
+    case "SYNCED":
+      return "🟢 Sincronitzat";
+    case "PENDING_CREATE":
+      return "🟡 Pendent de crear (local)";
+    case "PENDING_UPDATE":
+      return "🔵 Pendent d'actualitzar";
+    case "PENDING_DELETE":
+      return "🔴 Pendent d'esborrar";
     default:
       return status;
   }
@@ -49,13 +49,15 @@ export function HydrantInfoView({
             {displayData.map(({ label }) => (
               <span key={label}>{label}</span>
             ))}
-            {user?.role === 'admin' && <span>Sync</span>}
+            {(user?.permissions ?? []).includes("view_sync_status") && <span>Sync</span>}
           </div>
           <div className="flex flex-col items-start gap-y-[6px] text-ink">
             {displayData.map(({ label, value }) => (
               <span key={label}>{value}</span>
             ))}
-            {user?.role === 'admin' && <span>{formatSyncStatus(props.sync_status)}</span>}
+            {(user?.permissions ?? []).includes("view_sync_status") && (
+              <span>{formatSyncStatus(props.sync_status)}</span>
+            )}
           </div>
         </div>
         <HydrantImages images={getHydrantImages(props.osm_tags)} />

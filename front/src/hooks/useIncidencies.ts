@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAdf } from '../contexts/AdfContext';
-import type { IncidenciaFeature, Incidencia, IncidenciaEvent } from '../types';
+import { useState, useEffect, useCallback } from "react";
+import { useAdf } from "../contexts/AdfContext";
+import type { IncidenciaFeature, Incidencia, IncidenciaEvent } from "../types";
 
 export function useIncidencies() {
   const { activeAdf } = useAdf();
@@ -16,12 +16,14 @@ export function useIncidencies() {
     try {
       setLoading(true);
       const response = await fetch(`/api/incidencies?adf=${activeAdf.id}`);
-      if (!response.ok) {throw new Error('Error al carregar incidències');}
+      if (!response.ok) {
+        throw new Error("Error al carregar incidències");
+      }
       const data = await response.json();
       setFeatures(data.features || []);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconegut');
+      setError(err instanceof Error ? err.message : "Error desconegut");
     } finally {
       setLoading(false);
     }
@@ -34,7 +36,9 @@ export function useIncidencies() {
 
   const getIncidencia = async (id: string): Promise<Incidencia & { events: IncidenciaEvent[] }> => {
     const response = await fetch(`/api/incidencies/${id}`);
-    if (!response.ok) {throw new Error('Error al carregar el detall de la incidència');}
+    if (!response.ok) {
+      throw new Error("Error al carregar el detall de la incidència");
+    }
     return response.json();
   };
 
@@ -42,46 +46,51 @@ export function useIncidencies() {
     titol: string;
     tipus: string;
     prioritat: string;
+    visibilitat?: string;
     lat: number;
     lon: number;
     comentari: string;
   }) => {
-    const response = await fetch('/api/incidencies', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, adf_id: activeAdf?.id })
+    const response = await fetch("/api/incidencies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, adf_id: activeAdf?.id }),
     });
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.error || 'Error al crear la incidència');
+      throw new Error(err.error || "Error al crear la incidència");
     }
     const result = await response.json();
     void fetchIncidencies(); // Recarregar llista
     return result;
   };
 
-  const addEvent = async (incidenciaId: string, tipusEvent: string, dades: Record<string, unknown>) => {
+  const addEvent = async (
+    incidenciaId: string,
+    tipusEvent: string,
+    dades: Record<string, unknown>,
+  ) => {
     const response = await fetch(`/api/incidencies/${incidenciaId}/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipus_event: tipusEvent, dades })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tipus_event: tipusEvent, dades }),
     });
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.error || 'Error al afegir l\'esdeveniment');
+      throw new Error(err.error || "Error al afegir l'esdeveniment");
     }
     const result = await response.json();
     void fetchIncidencies(); // Recarregar llista per actualitzar estat denormalitzat
     return result;
   };
 
-  return { 
-    features, 
-    loading, 
-    error, 
+  return {
+    features,
+    loading,
+    error,
     refresh: fetchIncidencies,
     getIncidencia,
     createIncidencia,
-    addEvent
+    addEvent,
   };
 }

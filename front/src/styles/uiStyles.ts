@@ -16,6 +16,9 @@ export const primaryButtonClass =
 export const secondaryButtonClass =
   'bg-[#e0e0e0] text-ink px-3 py-3 border-0 rounded cursor-pointer text-[0.85rem]';
 
+export const dangerButtonClass =
+  'bg-[#c0392b] text-white px-3 py-3 border-0 rounded cursor-pointer text-[0.85rem] w-full';
+
 export const popupContainerClass =
   'bg-white p-4 rounded-lg shadow-[0_4px_15px_rgba(0,0,0,0.2)] w-[min(calc(100vw-60px),340px)] max-h-[85vh] overflow-y-auto z-[2000] font-sans relative';
 

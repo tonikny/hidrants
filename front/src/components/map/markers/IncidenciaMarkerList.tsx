@@ -6,12 +6,14 @@ interface IncidenciaMarkerListProps {
   features: IncidenciaFeature[];
   setPoi: (latlng: LatLng) => void;
   onSelectIncidencia: (feature: IncidenciaFeature) => void;
+  selectedIncidenciaId?: string | null;
 }
 
 export function IncidenciaMarkerList({
   features,
   setPoi,
   onSelectIncidencia,
+  selectedIncidenciaId,
 }: IncidenciaMarkerListProps) {
   return (
     <>
@@ -21,6 +23,7 @@ export function IncidenciaMarkerList({
           feature={feature}
           setPoi={setPoi}
           onSelectIncidencia={onSelectIncidencia}
+          selected={selectedIncidenciaId === feature.id}
         />
       ))}
     </>

@@ -13,7 +13,7 @@ export function TabBar({
   showLabels: boolean;
 }) {
   return (
-    <div className="flex w-full border-b border-soft" style={{ height: ICONS_H }}>
+    <div className="flex w-full bg-neutral-100 border-b border-soft" style={{ height: ICONS_H }}>
       {tabs.map((t) => (
         <button
           key={t.id}

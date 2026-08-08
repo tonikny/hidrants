@@ -1,7 +1,11 @@
 import type { IncidenciaFeature } from '../../types';
+import { emojiPrioritatIncidencia, emojiTipusIncidencia, PRIORITATS_INCIDENCIA, labelDeCategoria } from '../../utils/incidenciaConstants';
 
-function centerIncidencia(feature: IncidenciaFeature) {
-  window.dispatchEvent(new CustomEvent('map-center-node', { detail: feature }));
+function centerIncidencia(incidenciaId: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('node', incidenciaId);
+  window.history.replaceState({}, '', url.toString());
+  window.dispatchEvent(new CustomEvent('map-force-url-check'));
 }
 
 export function IncidenciaList({ features }: { features: IncidenciaFeature[] }) {
@@ -16,11 +20,11 @@ export function IncidenciaList({ features }: { features: IncidenciaFeature[] }) 
         return (
           <div
             key={f.id}
-            onClick={() => centerIncidencia(f)}
+            onClick={() => centerIncidencia(f.id)}
             className="flex items-center gap-3 px-3 py-[10px] border-b border-soft cursor-pointer transition-colors duration-100 hover:bg-[#f5f5f5]"
           >
             <span className="text-[1.1rem]">
-              {p.tipus?.toUpperCase() === 'FOC' ? '🔥' : p.tipus?.toUpperCase() === 'FUM' ? '💨' : p.tipus?.toUpperCase() === 'ACCIDENT' ? '🚗' : '⚠️'}
+              {emojiTipusIncidencia(p.tipus)}
             </span>
             <div className="flex-1 min-w-0">
               <div className="font-bold text-[0.95rem] whitespace-nowrap overflow-hidden text-ellipsis text-ink">
@@ -35,7 +39,7 @@ export function IncidenciaList({ features }: { features: IncidenciaFeature[] }) 
                   {p.estat}
                 </span>
                 <span>•</span>
-                <span>{p.prioritat}</span>
+                <span>{emojiPrioritatIncidencia(p.prioritat)} {labelDeCategoria(PRIORITATS_INCIDENCIA, p.prioritat)}</span>
                 <span>•</span>
                 <span>{new Date(p.actualitzat_at).toLocaleString('ca-ES')}</span>
               </div>

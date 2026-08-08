@@ -3,10 +3,10 @@ import { useMap } from 'react-leaflet';
 
 export const ZoomDisplay = () => {
   const map = useMap();
-  const [zoom, setZoom] = useState(map.getZoom());
+  const [zoom, setZoom] = useState(Math.round(map.getZoom()));
 
   useEffect(() => {
-    const sync = () => setZoom(map.getZoom());
+    const sync = () => setZoom(Math.round(map.getZoom()));
     map.on('zoom', sync);
     map.on('zoomend', sync);
     map.whenReady(sync);

@@ -9,11 +9,11 @@ export interface PanelTab {
 
 export interface PanelNode {
   id?: string;
+  title?: string;
   content: ReactNode;
   onClose: () => void;
   onEdit?: () => void;
-  showDelete?: boolean;
-  title?: string;
+  editing?: boolean;
 }
 
 export interface BottomSheetHandle {

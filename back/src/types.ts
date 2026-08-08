@@ -53,6 +53,8 @@ export type TipusEvent =
   | "CANVI_ESTAT"
   | "CANVI_TIPUS"
   | "CANVI_PRIORITAT"
+  | "CANVI_PRECISIO"
+  | "CANVI_VISIBILITAT"
   | "OBSERVACIO"
   | "CANVI_UBICACIO"
   | "MULTIMEDIA"

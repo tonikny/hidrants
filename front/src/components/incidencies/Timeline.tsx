@@ -52,6 +52,24 @@ export const Timeline = ({ events }: TimelineProps) => {
             Tipus: <s>{dades.anterior}</s> ➡️ <strong>{dades.nou}</strong>
           </div>
         );
+      case 'CANVI_PRIORITAT':
+        return (
+          <div className="font-inherit">
+            Prioritat: <s>{dades.anterior}</s> ➡️ <strong>{dades.nou}</strong>
+          </div>
+        );
+      case 'CANVI_PRECISIO':
+        return (
+          <div className="font-inherit">
+            Precissió de l'ubicació: <s>{dades.anterior}</s> ➡️ <strong>{dades.nou}</strong>
+          </div>
+        );
+      case 'CANVI_VISIBILITAT':
+        return (
+          <div className="font-inherit">
+            Visibilitat: <s>{dades.anterior}</s> ➡️ <strong>{dades.nou}</strong>
+          </div>
+        );
       default:
         return <div className="font-inherit">{tipus_event}</div>;
     }

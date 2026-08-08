@@ -13,8 +13,10 @@ import { usePositionPolling } from "../../hooks/usePositionPolling";
 import { NodeInfo } from "../hidrants/NodeInfo";
 import { CreateNodePanel } from "../panel/CreateNodePanel";
 import { createTitle } from "../panel/createTitle";
-import { IncidenciaPopup } from "../incidents/IncidenciaPopup";
+import { IncidenciaInfo } from "../incidencies/IncidenciaInfo";
 import { isPointInBoundary } from "../../utils/geo";
+import { emojiPrioritatIncidencia } from "../../utils/incidenciaConstants";
+import { confirmDiscardChanges } from "../../utils/formDirty";
 import type { CreateType, IncidenciaFeature } from "../../types";
 
 function setUrlNodeParam(nodeId: string | null) {
@@ -61,7 +63,7 @@ export function MapPanel() {
     const timer = setTimeout(() => {
       window.dispatchEvent(
         new CustomEvent("map-center-node", {
-          detail: { geometry: { coordinates: [createPos.lng, createPos.lat] } },
+          detail: { geometry: { coordinates: [createPos.lng, createPos.lat] }, keepZoom: true },
         }),
       );
     }, 400);
@@ -75,6 +77,7 @@ export function MapPanel() {
   const canEdit = !!user && (user.role === "admin" || user.adf_id === activeAdf?.id);
 
   const handleSelectNode = (feature: HidrantFeature) => {
+    if (!confirmDiscardChanges()) {return;}
     setUrlNodeParam(feature.id);
     setSelectedNode(feature);
     setSelectedIncidencia(null);
@@ -87,12 +90,14 @@ export function MapPanel() {
   };
 
   const handleDeselectNode = () => {
+    if (!confirmDiscardChanges()) {return;}
     setUrlNodeParam(null);
     setSelectedNode(null);
     setEditing(false);
   };
 
   const handleSelectIncidencia = (feature: IncidenciaFeature) => {
+    if (!confirmDiscardChanges()) {return;}
     setUrlNodeParam(feature.id);
     setSelectedIncidencia(feature);
     setSelectedNode(null);
@@ -105,8 +110,10 @@ export function MapPanel() {
   };
 
   const handleDeselectIncidencia = () => {
+    if (!confirmDiscardChanges()) {return;}
     setUrlNodeParam(null);
     setSelectedIncidencia(null);
+    setEditing(false);
   };
 
   const closeCreate = () => {
@@ -143,6 +150,7 @@ export function MapPanel() {
           }}
           incidenciaFeatures={incidenciaFeatures}
           loadingIncidencies={loadingIncidencies}
+          selectedIncidenciaId={selectedIncidencia?.id}
           positions={positions}
           position={position}
           setPosition={setPosition}
@@ -170,27 +178,31 @@ export function MapPanel() {
                 />
               ),
               onClose: handleDeselectNode,
-              onEdit: canEdit ? () => setEditing(true) : undefined,
-              showDelete: canEdit && (user.permissions ?? []).includes("delete_hydrant"),
+              onEdit: canEdit ? () => setEditing((prev) => !prev) : undefined,
+              editing,
             }
           : selectedIncidencia
             ? {
                 id: selectedIncidencia.id,
-                title: "⚠️ Incidència",
+                title: `${emojiPrioritatIncidencia(selectedIncidencia.properties.prioritat)} ${selectedIncidencia.properties.titol}`,
                 content: (
-                  <div className="p-3">
-                    <IncidenciaPopup
-                      incidenciaId={selectedIncidencia.id}
-                      showRoute={showRoute}
-                      setShowRoute={setShowRoute}
-                      refreshIncidencies={() => {
-                        void refreshIncidencies();
-                      }}
-                      hasLocation={!!position}
-                    />
-                  </div>
+                  <IncidenciaInfo
+                    key={selectedIncidencia.id}
+                    incidencia={selectedIncidencia}
+                    canEdit={canEdit}
+                    editing={editing}
+                    setEditing={setEditing}
+                    showRoute={showRoute}
+                    setShowRoute={setShowRoute}
+                    refreshIncidencies={() => {
+                      void refreshIncidencies();
+                    }}
+                    hasLocation={!!position}
+                  />
                 ),
                 onClose: handleDeselectIncidencia,
+                onEdit: canEdit ? () => setEditing((prev) => !prev) : undefined,
+                editing,
               }
             : createPos && createForm && user
               ? {

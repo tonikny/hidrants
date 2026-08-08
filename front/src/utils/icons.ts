@@ -2,6 +2,7 @@ import L from 'leaflet';
 import type { HydrantUiFields } from './osmConversion';
 import type { HidrantFeature } from '../hooks/useHidrantData';
 import type { Incidencia } from '../types';
+import { emojiTipusIncidencia } from './incidenciaConstants';
 
 export const hidrant_op_rev = '/images/icons/hidrant_op_rev.png';
 export const hidrant_op_nrev = '/images/icons/hidrant_op_nrev.png';
@@ -53,14 +54,10 @@ function getHydrantIcon(properties: Pick<HidrantFeature['properties'], 'ui_field
 }
 
 export function getIncidenciaIcon(properties: Incidencia): L.DivIcon {
-  const tipus = properties.tipus?.toUpperCase();
   const prioritat = properties.prioritat?.toUpperCase();
-  
-  let emoji = '⚠️';
-  if (tipus === 'FOC') {emoji = '🔥';}
-  else if (tipus === 'FUM') {emoji = '💨';}
-  else if (tipus === 'ACCIDENT') {emoji = '🚗';}
-  
+
+  const emoji = emojiTipusIncidencia(properties.tipus);
+
   const shadow = prioritat === 'ALTA' ? '0 0 10px red' : '0 0 5px orange';
   
   return L.divIcon({

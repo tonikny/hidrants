@@ -134,7 +134,7 @@ export const IncidenciesService = {
 
     // Notificació Telegram
     const emojiPrioritat =
-      incidencia.prioritat === "ALTA" ? "🔴" : incidencia.prioritat === "MITJANA" ? "🟠" : "🟡";
+      incidencia.prioritat === "ALTA" ? "🔴" : incidencia.prioritat === "MITJANA" ? "🟠" : "🟢";
     const appUrl = data.clientBaseUrl
       ? `${data.clientBaseUrl}/?adf=${incidencia.adf_id}&node=${incidencia.id}`
       : null;
@@ -200,6 +200,22 @@ ${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ""}
 👤 Per: ${escapeHtml(displayUser)}${linkHtml}`;
     } else if (tipusEvent === "CANVI_PRIORITAT" && dades.nou) {
       updates.prioritat = dades.nou as IncidenciaPrioritat;
+      msgTelegram = `🎯 <b>CANVI DE PRIORITAT</b>
+📌 Incidència: ${escapeHtml(incidencia.titol)}
+🔻 Prioritat: ${escapeHtml(dades.anterior)} ➡️ <b>${escapeHtml(dades.nou)}</b>
+👤 Per: ${escapeHtml(displayUser)}${linkHtml}`;
+    } else if (tipusEvent === "CANVI_PRECISIO" && dades.nou) {
+      updates.precisio = dades.nou as IncidenciaPrecisio;
+      msgTelegram = `🎯 <b>CANVI DE PRECISIÓ</b>
+📌 Incidència: ${escapeHtml(incidencia.titol)}
+📍 Precisió: ${escapeHtml(dades.anterior)} ➡️ <b>${escapeHtml(dades.nou)}</b>
+👤 Per: ${escapeHtml(displayUser)}${linkHtml}`;
+    } else if (tipusEvent === "CANVI_VISIBILITAT" && dades.nou) {
+      updates.visibilitat = dades.nou as IncidenciaVisibilitat;
+      msgTelegram = `👁️ <b>CANVI DE VISIBILITAT</b>
+📌 Incidència: ${escapeHtml(incidencia.titol)}
+🔭 Visibilitat: ${escapeHtml(dades.anterior)} ➡️ <b>${escapeHtml(dades.nou)}</b>
+👤 Per: ${escapeHtml(displayUser)}${linkHtml}`;
     } else if (tipusEvent === "CANVI_UBICACIO" && dades.nova) {
       updates.lat = dades.nova.lat;
       updates.lon = dades.nova.lon;

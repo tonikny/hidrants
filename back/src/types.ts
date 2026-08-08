@@ -24,16 +24,14 @@ export type ApiResponse = {
   _clearCookie?: boolean;
 };
 
-export type ApiHandler = (
-  req: ApiRequest,
-  res: ApiResponse
-) => Promise<void> | void;
+export type ApiHandler = (req: ApiRequest, res: ApiResponse) => Promise<void> | void;
 
 // --- Incidències ---
 
-export type IncidenciaEstat = 'OBERT' | 'EN_PROGRES' | 'RESOLT' | 'TANCAT';
-export type IncidenciaPrioritat = 'BAIXA' | 'MITJANA' | 'ALTA';
-export type IncidenciaPrecisio = 'DESCONEGUDA' | 'MUNICIPI' | 'AREA' | 'EXACTA';
+export type IncidenciaEstat = "OBERT" | "EN_PROGRES" | "RESOLT" | "TANCAT";
+export type IncidenciaPrioritat = "BAIXA" | "MITJANA" | "ALTA";
+export type IncidenciaPrecisio = "DESCONEGUDA" | "MUNICIPI" | "AREA" | "EXACTA";
+export type IncidenciaVisibilitat = "PUBLICA" | "TOTES_ADFS" | "ADF_PRIVADA";
 
 export interface Incidencia {
   id: string;
@@ -45,19 +43,20 @@ export interface Incidencia {
   lat: number;
   lon: number;
   precisio: IncidenciaPrecisio;
+  visibilitat: IncidenciaVisibilitat;
   creat_at: string;
   actualitzat_at: string;
 }
 
-export type TipusEvent = 
-  | 'CREACIO' 
-  | 'CANVI_ESTAT' 
-  | 'CANVI_TIPUS'
-  | 'CANVI_PRIORITAT'
-  | 'OBSERVACIO' 
-  | 'CANVI_UBICACIO' 
-  | 'MULTIMEDIA' 
-  | 'ASSIGNACIO';
+export type TipusEvent =
+  | "CREACIO"
+  | "CANVI_ESTAT"
+  | "CANVI_TIPUS"
+  | "CANVI_PRIORITAT"
+  | "OBSERVACIO"
+  | "CANVI_UBICACIO"
+  | "MULTIMEDIA"
+  | "ASSIGNACIO";
 
 export interface IncidenciaEvent {
   id: string;
@@ -105,5 +104,5 @@ export interface EventDataObservacio {
 export interface EventDataMultimedia {
   titol?: string;
   url: string;
-  tipus: 'imatge' | 'video';
+  tipus: "imatge" | "video";
 }

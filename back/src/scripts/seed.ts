@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { users, adfs } from '../db/schema.js';
 
@@ -13,11 +14,24 @@ const ADFS_INICIALS = [
   { id: 202, nom: 'ADF la Torre de Claramunt', relations: ['R343659'] },
 ];
 
+// Format de nom d'usuari vàlid per a usuaris no-admin: XXX/YYY o XXX/GI/YYY (XXX = id ADF, YYY = 3 dígits)
+const USERNAME_RE = /^(\d{3})\/(GI\/)?\d{3}$/;
+
+// Usuaris d'inici per ADF. TOTS han de complir el format de nom vàlid.
+const USERS_INICIALS: { username: string; role: 'coordinador' | 'voluntari' }[] = [
+  { username: '278/001', role: 'coordinador' },
+  { username: '278/GI/001', role: 'voluntari' },
+  { username: '266/001', role: 'coordinador' },
+  { username: '266/GI/001', role: 'voluntari' },
+  { username: '256/001', role: 'coordinador' },
+  { username: '279/001', role: 'coordinador' },
+  { username: '202/001', role: 'coordinador' },
+];
+
 async function run() {
   console.log('🌱 Iniciant seed de dades (ADF i Usuaris)...');
 
   const DEFAULT_PASSWORD = 'anoia';
-  const USER_PREFIX = 'adf';
   const hash = bcrypt.hashSync(DEFAULT_PASSWORD, 10);
 
   try {
@@ -34,7 +48,7 @@ async function run() {
       console.log(`✅ ADF ${adfData.id} - ${adfData.nom} creada.`);
     }
 
-    // 2. Inserir admin global (no lligat a cap ADF per defecte, o podem triar-ne una)
+    // 2. Admin global (únic usuari fora de la nomenclatura per ADF)
     db.insert(users)
       .values({
         id: uuidv4(),
@@ -45,23 +59,29 @@ async function run() {
       })
       .onConflictDoNothing()
       .run();
-    console.log('👤 Usuari admin global creat (admin/admin)');
+    console.log('👤 Usuari admin global creat (admin/anoia)');
 
-    // 3. Inserir editors per a cada ADF
-    for (const adfData of ADFS_INICIALS) {
+    // 3. Usuaris operatius definits a USERS_INICIALS (valida format i es deriva l'ADF del prefix)
+    for (const u of USERS_INICIALS) {
+      if (!USERNAME_RE.test(u.username)) {
+        throw new Error(`Nom d'usuari invàlid per al seed: ${u.username}`);
+      }
+      const adfId = Number(u.username.slice(0, 3));
+      const adf = db.select({ id: adfs.id, nom: adfs.nom }).from(adfs).where(eq(adfs.id, adfId)).get();
+      if (!adf) {
+        throw new Error(`L'ADF ${adfId} del usuari ${u.username} no existeix a la base de dades`);
+      }
       db.insert(users)
         .values({
           id: uuidv4(),
-          username: `adf${adfData.id}`,
+          username: u.username,
           password_hash: hash,
-          adf_id: adfData.id,
-          role: 'editor',
+          adf_id: adfId,
+          role: u.role,
         })
         .onConflictDoNothing()
         .run();
-      console.log(
-        `👤 Usuari editor per a ${adfData.nom} creat (${USER_PREFIX}${adfData.id}/${DEFAULT_PASSWORD})`
-      );
+      console.log(`👤 Usuari ${u.username} (${u.role}) per a ${adf.nom}, creat (${u.username}/${DEFAULT_PASSWORD})`);
     }
 
     console.log('✨ Seed completat correctament.');

@@ -8,6 +8,7 @@ export interface AdfData {
   osm_relations: string[];
   bbox: [number, number, number, number] | null;
   center: [number, number] | null;
+  tracking_shared?: boolean;
 }
 
 interface AdfContextType {
@@ -43,6 +44,9 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       url.searchParams.delete("node");
     }
     window.history.replaceState({}, "", url.toString());
+    window.dispatchEvent(
+      new CustomEvent("hidrant-adf-active", { detail: { id: adf?.id ?? null } }),
+    );
   }, []);
 
   // Carregar llista d'ADFs inicial
@@ -79,8 +83,8 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           }
         }
 
-        // Prioritat 2: ADF de l'usuari si és editor (només si no hi ha res guardat)
-        if (user?.role === "editor" && user.adf_id) {
+        // Prioritat 2: ADF de l'usuari si té ADF assignada (només si no hi ha res guardat)
+        if (user && user.role !== "admin" && user.adf_id) {
           const userAdf = data.find((a: AdfData) => a.id === user.adf_id);
           if (userAdf) {
             setActiveAdf(userAdf);
@@ -102,7 +106,9 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [user, setActiveAdf]);
 
   useEffect(() => {
-    if (!activeAdf) {return;}
+    if (!activeAdf) {
+      return;
+    }
     void fetch(`/api/adf/boundary?adf=${activeAdf.id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((gj) => setBoundaryGeojsonRaw(gj ? JSON.stringify(gj) : null))

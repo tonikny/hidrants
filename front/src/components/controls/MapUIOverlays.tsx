@@ -1,15 +1,15 @@
-import { FullscreenButton } from './FullscreenButton';
-import { NewNodeButton } from './NewNodeButton';
-import { CoordinateModal } from '../shared/CoordinateModal';
-import { LocateButton } from './LocateButton';
-import { ZoomDisplay } from './ZoomDisplay';
-import { Modal } from '../shared/Modal';
-import type { User } from '../../contexts/AuthContext';
+import { FullscreenButton } from "./FullscreenButton";
+import { NewNodeButton } from "./NewNodeButton";
+import { CoordinateModal } from "../shared/CoordinateModal";
+import { LocateButton } from "./LocateButton";
+import { ZoomDisplay } from "./ZoomDisplay";
+import { Modal } from "../shared/Modal";
+import type { User } from "../../contexts/AuthContext";
 import {
   floatingButtonClass,
   controlContainerClass,
   controlItemClass,
-} from '../../styles/uiStyles';
+} from "../../styles/uiStyles";
 
 interface MapUIOverlaysProps {
   user: User | null;
@@ -32,15 +32,13 @@ export function MapUIOverlays({
   loadingHidrants,
   hidrantsError,
 }: MapUIOverlaysProps) {
-  const isEditor = user?.role === 'admin' || user?.role === 'editor';
+  const isEditor = (user?.permissions ?? []).includes("create_hydrant");
 
   return (
     <>
       {/* Top Right: Native Layers Control is at top: 10px, right: 10px.
           We place our controls under it with enough gap. */}
-      <div
-        className={`${controlContainerClass} top-[66px] right-[12px] items-end gap-2`}
-      >
+      <div className={`${controlContainerClass} top-[66px] right-[12px] items-end gap-2`}>
         {isEditor && (
           <div className={controlItemClass}>
             <NewNodeButton
@@ -59,10 +57,7 @@ export function MapUIOverlays({
         </div>
 
         <div className={controlItemClass}>
-          <FullscreenButton
-            targetId="app-shell"
-            className={floatingButtonClass}
-          />
+          <FullscreenButton targetId="app-shell" className={floatingButtonClass} />
         </div>
       </div>
 

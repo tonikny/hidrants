@@ -1,8 +1,8 @@
-import { toast } from 'react-toastify';
-import type { HidrantFeature } from '../../hooks/useHidrantData';
-import { openInNativeMaps } from '../../utils/geoMaps';
-import { ShareIcon, OsmIcon } from '../shared/Icons';
-import type { User } from '../../contexts/AuthContext';
+import { toast } from "react-toastify";
+import type { HidrantFeature } from "../../hooks/useHidrantData";
+import { openInNativeMaps } from "../../utils/geoMaps";
+import { ShareIcon, OsmIcon } from "../shared/Icons";
+import type { User } from "../../contexts/AuthContext";
 
 export function HydrantActions({
   feature,
@@ -25,19 +25,21 @@ export function HydrantActions({
 
   const handleShare = async () => {
     const url = new URL(window.location.href);
-    url.searchParams.set('node', feature.id);
+    url.searchParams.set("node", feature.id);
     try {
       await navigator.clipboard.writeText(url.toString());
-      toast.success('Enllaç copiat al porta-retalls');
+      toast.success("Enllaç copiat al porta-retalls");
     } catch {
       toast.error("Error al copiar l'enllaç");
     }
   };
 
   const handleShowRoute = () => {
-    if (!setShowRoute) {return;}
+    if (!setShowRoute) {
+      return;
+    }
     if (!showRoute && !hasLocation) {
-      toast.info('Cal activar el seguiment GPS per veure la ruta');
+      toast.info("Cal activar el seguiment GPS per veure la ruta");
       return;
     }
     setShowRoute(!showRoute);
@@ -64,8 +66,8 @@ export function HydrantActions({
             e.stopPropagation();
             handleShowRoute();
           }}
-          title={showRoute ? 'Tanca ruta' : 'Mostra ruta'}
-          className={`bg-transparent border-0 cursor-pointer text-[1.4rem] p-0 ${showRoute ? '' : 'grayscale'}`}
+          title={showRoute ? "Tanca ruta" : "Mostra ruta"}
+          className={`bg-transparent border-0 cursor-pointer text-[1.4rem] p-0 ${showRoute ? "" : "grayscale"}`}
         >
           🛣️
         </button>
@@ -83,12 +85,12 @@ export function HydrantActions({
         🚕
       </button>
 
-      {user?.role === 'admin' && osmId && (
+      {(user?.permissions ?? []).includes("view_osm_link") && osmId && (
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            window.open(`https://www.openstreetmap.org/node/${osmId}`, '_blank');
+            window.open(`https://www.openstreetmap.org/node/${osmId}`, "_blank");
           }}
           title="Veure a OpenStreetMap"
           className="bg-transparent border-0 cursor-pointer p-0 flex items-center"

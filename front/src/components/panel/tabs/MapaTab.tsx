@@ -1,6 +1,6 @@
-import { useAuth } from '../../../contexts/AuthContext';
-import { useAdf } from '../../../contexts/AdfContext';
-import { SyncButton } from '../../controls/SyncButton';
+import { useAuth } from "../../../contexts/AuthContext";
+import { useAdf } from "../../../contexts/AdfContext";
+import { SyncButton } from "../../controls/SyncButton";
 
 export function MapaTab() {
   const { adfs, isLoading, activeAdf, setActiveAdf } = useAdf();
@@ -19,18 +19,16 @@ export function MapaTab() {
             key={adf.id}
             onClick={() => setActiveAdf(adf)}
             className={`w-full text-left px-4 py-3 flex items-center gap-2 border-b border-soft last:border-b-0 cursor-pointer text-[0.9rem] transition-colors ${
-              activeAdf?.id === adf.id
-                ? 'bg-[#e3f2fd] text-ink font-semibold'
-                : 'bg-white text-ink'
+              activeAdf?.id === adf.id ? "bg-[#e3f2fd] text-ink font-semibold" : "bg-white text-ink"
             }`}
           >
-            <span className={activeAdf?.id === adf.id ? 'text-primary' : 'text-muted'}>-</span>
+            <span className={activeAdf?.id === adf.id ? "text-primary" : "text-muted"}>-</span>
             <span>{adf.nom}</span>
           </button>
         ))}
       </div>
 
-      {user?.role === 'admin' && (
+      {(user?.permissions ?? []).includes("sync_osm") && (
         <div className="mt-4">
           <h4 className="m-0 mb-2 text-[0.85rem] font-semibold">Sincronització amb OSM</h4>
           <SyncButton
@@ -38,7 +36,8 @@ export function MapaTab() {
             className="w-full bg-white text-ink border border-border rounded cursor-pointer p-2 flex items-center justify-center gap-2 text-[0.9rem]"
           />
           <p className="text-muted text-[0.8rem] mt-2 mb-0">
-            Descarrega les dades d'OSM cap a l'app. Els canvis locals pendents podrien sobreescriure's si són més antics que els d'OSM.
+            Descarrega les dades d'OSM cap a l'app. Els canvis locals pendents podrien
+            sobreescriure's si són més antics que el d'OSM.
           </p>
         </div>
       )}

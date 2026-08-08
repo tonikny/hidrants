@@ -53,6 +53,7 @@ URLs:
 ## Scripts
 
 - `npm run mqtt:up`: aixeca només Mosquitto.
+- `npm run mqtt:cleanup`: alinea `mqtt_users.mqtt_username` amb el nom d'usuari actual i esborra clients DynSec orfes. Dry-run per defecte; aplica els canvis amb `npm run mqtt:cleanup -- --apply` (`back/src/scripts/cleanupMqtt.ts`).
 - `npm run docker:up`: aixeca tots els contenidors.
 - `npm run docker:down`: atura contenidors.
 - `npm run docker:deploy`: deploy complet (pull `--ff-only --autostash` + rebuild).
@@ -62,6 +63,8 @@ URLs:
 ## MQTT / OwnTracks
 
 El backend escolta `${MQTT_TOPIC_PREFIX}/#`. Per defecte: `owntracks/hidrants/#`.
+
+**Identitat MQTT aplanada**: l'ACL de Mosquitto DynSec no admet usernames MQTT amb `/`. Per això la identitat OwnTracks (client DynSec `owntracks-device` i topics) substitueix les `/` per `_`: `278/GI/011` → `278_GI_011` (conversió amb `mqttNameFor()` a `back/src/services/mqtt.ts`). `/api/tracking/positions` la reverteix per mostrar l'username real a la UI. Si queden clients antics orfes, neteja amb `npm run mqtt:cleanup -- --apply`.
 
 OwnTracks rep `.otrc` des de la UI. En producció ha d'apuntar a:
 

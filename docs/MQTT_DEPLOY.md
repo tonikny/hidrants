@@ -155,7 +155,7 @@ El backend connecta com `backend` i envia comandaments JSON a `$CONTROL/dynamic-
   "commands": [
     {
       "command": "createClient",
-      "username": "adf278",
+      "username": "278_GI_011",
       "password": "4061a25e...",
       "roles": [{ "rolename": "owntracks-device" }]
     }
@@ -163,7 +163,19 @@ El backend connecta com `backend` i envia comandaments JSON a `$CONTROL/dynamic-
 }
 ```
 
+**Nota**: l'ACL DynSec no admet `/` als usernames, per això la identitat MQTT està aplanada (`278/GI/011` → `278_GI_011`, conversió amb `mqttNameFor()` a `back/src/services/mqtt.ts`). El `.otrc` també es genera amb la identitat plana i `/api/tracking/positions` la reviereix a l'username real per a la UI.
+
 **No cal**: docker exec, mosquitto_ctrl, ni mount del socket Docker.
+
+### Neteja d'identitats MQTT (`mqtt:cleanup`)
+
+`npm run mqtt:cleanup` alinea `mqtt_users.mqtt_username` amb el nom d'usuari actual (si ha canviat de format) i esborra clients DynSec orfes (`owntracks-device`) que no corresponguin a cap usuari de la BD. Dry-run per defecte; per aplicar els canvis:
+
+```bash
+npm run mqtt:cleanup -- --apply
+```
+
+Útil després de renombrar usuaris (ex. migració a `XXX/YYY` / `XXX/GI/YYY`) o per treure clients antics. Script: `back/src/scripts/cleanupMqtt.ts`.
 
 ---
 

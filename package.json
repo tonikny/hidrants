@@ -16,6 +16,7 @@
     "db:reset-hidrants": "npm run db:reset-hidrants -w back",
     "db:setup": "npm run db:reset && npm run db:seed && npm run db:import-osm && npm run update:boundaries",
     "mqtt:up": "docker compose up -d mosquitto",
+    "mqtt:cleanup": "npm run mqtt:cleanup -w back",
     "mqtt:regen-dynsec": "python3 scripts/init-dynsec.py regen",
     "mqtt:sync-dynsec": "python3 scripts/init-dynsec.py sync",
     "docker:up": "docker compose up -d",

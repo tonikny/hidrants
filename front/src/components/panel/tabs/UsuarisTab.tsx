@@ -398,7 +398,7 @@ export function UsuarisTab() {
                                 </span>
                                 <NumberField
                                   value={editDraft.numero}
-                                  onChange={(v) => setEditDraft((d) => (d ? { ...d, numero: v } : d))}
+onChange={(v) => setEditDraft((d) => (d ? { ...d, numero: v } : d))}
                                 />
                               </div>
                             </label>
@@ -407,7 +407,7 @@ export function UsuarisTab() {
                                 type="checkbox"
                                 checked={editDraft.gi}
                                 onChange={(e) =>
-                                  setEditDraft((d) => (d ? { ...d, gi: e.target.checked } : d))
+setEditDraft((d) => (d ? { ...d, gi: e.target.checked } : d))
                                 }
                               />
                               Grup d'Intervenció (GI)
@@ -417,7 +417,7 @@ export function UsuarisTab() {
                               <select
                                 value={editDraft.role}
                                 onChange={(e) =>
-                                  setEditDraft((d) => (d ? { ...d, role: e.target.value } : d))
+setEditDraft((d) => (d ? { ...d, role: e.target.value } : d))
                                 }
                                 className={selectClass}
                               >
@@ -434,7 +434,7 @@ export function UsuarisTab() {
                                 type="password"
                                 value={editDraft.password}
                                 onChange={(e) =>
-                                  setEditDraft((d) => (d ? { ...d, password: e.target.value } : d))
+setEditDraft((d) => (d ? { ...d, password: e.target.value } : d))
                                 }
                                 className={`${inputClass} bg-white`}
                               />

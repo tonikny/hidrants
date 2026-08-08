@@ -5,7 +5,8 @@ import { users, adfs, mqttUsers, incidencia_events } from "../db/schema.js";
 import { eq, and, ne } from "drizzle-orm";
 import type { ApiHandler } from "../types.js";
 import { BadRequestError } from "../errors.js";
-import { deleteMqttUser } from "../services/mqtt.js";
+import { createMqttUser, deleteMqttUser, mqttNameFor } from "../services/mqtt.js";
+import { decrypt } from "../utils/crypto.js";
 
 // Nom d'usuari: XXX/YYY o XXX/GI/YYY (XXX = id ADF, YYY = número dins l'ADF, 3 dígits).
 const USERNAME_RE = /^(\d{3})\/(GI\/)?(\d{3})$/;
@@ -93,6 +94,33 @@ const create: ApiHandler = async (req, res) => {
   return res.status(201).json(row);
 };
 
+/** Manté la identitat MQTT (client DynSec + mqtt_users) alineada amb el nom d'usuari
+ *  quan es re-num amb el username d'un usuari amb OwnTracks activat. */
+async function propagateMqttRename(userId: string, newUsername: string): Promise<void> {
+  const row = db.select().from(mqttUsers).where(eq(mqttUsers.user_id, userId)).get();
+  const newMqName = mqttNameFor(newUsername);
+  if (!row || row.mqtt_username === newMqName) {
+    return;
+  }
+  const oldUsername = row.mqtt_username;
+  if (oldUsername && row.mqtt_password_enc) {
+    const password = decrypt(row.mqtt_password_enc);
+    if (password) {
+      try {
+        await createMqttUser(newMqName, password);
+      } catch {
+        /* MQTT no disponible; es re-cread a la propera baixada de config */
+      }
+      try {
+        await deleteMqttUser(oldUsername);
+      } catch {
+        /* client antic podria no existir a DynSec */
+      }
+    }
+  }
+  db.update(mqttUsers).set({ mqtt_username: newMqName }).where(eq(mqttUsers.id, row.id)).run();
+}
+
 /** PUT /api/users/:id: editar rol, contrasenya (reset) o username. */
 const update: ApiHandler = async (req, res) => {
   const caller = req.user!;
@@ -158,6 +186,9 @@ const update: ApiHandler = async (req, res) => {
 
   if (Object.keys(updates).length > 0) {
     db.update(users).set(updates).where(eq(users.id, targetId)).run();
+  }
+  if (username !== undefined && username !== target.username) {
+    await propagateMqttRename(targetId, username);
   }
   const row = db.select(PUBLIC_FIELDS).from(users).where(eq(users.id, targetId)).get();
   return res.json(row);

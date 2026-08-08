@@ -132,7 +132,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${user.username}.otrc`;
+    a.download = `${user.username.replace(/\//g, "_")}.otrc`;
     a.click();
     URL.revokeObjectURL(url);
     setShowModal(false);
@@ -144,6 +144,18 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
       .filter((p) => now - p.ts < CONNECTED_MS)
       .sort((a, b) => b.ts - a.ts);
   }, [positions, now]);
+
+  const handleCenterOnUser = (username: string) => {
+    const pos = positions[username];
+    if (!pos) {
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent("map-center-node", {
+        detail: { geometry: { coordinates: [pos.lon, pos.lat] } },
+      }),
+    );
+  };
 
   if (!user) {
     return (
@@ -224,7 +236,9 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
           {connected.map((p) => (
             <li
               key={p.username}
-              className="flex justify-between items-center px-3 py-[10px] border-b border-soft"
+              onClick={() => handleCenterOnUser(p.username)}
+              className="flex justify-between items-center px-3 py-[10px] border-b border-soft cursor-pointer hover:bg-soft"
+              title="Centra el mapa en aquesta posició"
             >
               <span className="text-[0.9rem] font-medium text-ink">{p.username}</span>
               <span className="text-[0.8rem] text-muted">{timeAgo(p.ts)}</span>
@@ -269,7 +283,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
               onClick={downloadCurrent}
               className="w-full p-[10px] bg-primary text-white border-0 rounded text-[0.9rem] cursor-pointer mt-2"
             >
-              📥 Baixar {user.username}.otrc
+              📥 Baixar {user.username.replace(/\//g, "_")}.otrc
             </button>
           </div>
         </Modal>

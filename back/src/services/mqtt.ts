@@ -14,6 +14,14 @@ export interface LocationData {
   receivedAt: number;
 }
 
+/** Converteix un username d'app (XXX/YYY o XXX/GI/YYY) a una identitat MQTT sense
+ *  barres ("278_GI_001"). El broker MQTT (DynSec, ACL %u als topics) no encamina
+ *  publicacions quan el username conté "/"; per això la identitat MQTT va aplanada
+ *  i es mapeja de nou a l'username real a la capa d'API. */
+export function mqttNameFor(username: string): string {
+  return username.replaceAll('/', '_');
+}
+
 // Schema Zod per validar payloads d'OwnTracks (només _type=location).
 const owntracksSchema = z.object({
   _type: z.literal('location'),
@@ -129,15 +137,17 @@ class MqttService {
         resolveOnce();
       });
 
-      this.client.on('message', (topic, payload, packet) => {
+this.client.on('message', (topic, payload) => {
         try {
-          const prefixParts = config.MQTT_TOPIC_PREFIX.split('/').filter(Boolean);
-          const username = topic.split('/')[prefixParts.length];
+          const prefixLength = config.MQTT_TOPIC_PREFIX.split('/').filter(Boolean).length;
+          // El topic és ${prefix}/<identitatMQTT> (ex. owntracks/hidrants/278_GI_011, o amb
+          // un sub-topic de dispositiu). La identitat MQTT és el primer segment després
+          // del prefix; la resta del topic (device, "status") s'ignora.
+          const username = topic.split('/')[prefixLength];
           if (!username) {return;}
-          // Missatges retained: el broker els reprodueix a cada subscripció
-          // (e.g. després d'un deploy), mostrant posicions antigues com a connectades.
-          // Només les publicacions live (no retained) representen connexió real.
-          if (packet.retain) {return;}
+          // Algunes versions/vehicles d'OwnTracks (Android) publiquen totes les posicions
+          // amb retain=true per refrescar la darrera posició. Aquestes SÍ són posicions
+          // vives; la guarda d'edat (15 min) descarta els replays antics del broker.
           const raw = JSON.parse(payload.toString());
           if (raw._type !== 'location') {return;}
           const parsed = owntracksSchema.safeParse(raw);

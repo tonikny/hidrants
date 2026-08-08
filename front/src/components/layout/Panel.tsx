@@ -1,11 +1,13 @@
-import { useState } from 'react';
 import type { ReactNode, Ref } from 'react';
 import { TabBar } from './TabBar';
 import { NodeHeader } from './NodeHeader';
 import { BottomSheet } from './BottomSheet';
+import { useLocalStorage } from '../../utils/useLocalStorage';
 import type { PanelTab, PanelNode, BottomSheetHandle } from './types';
 
 export type { PanelTab, BottomSheetHandle };
+
+const ACTIVE_TAB_KEY = 'hidrants_active_tab';
 
 interface PanelProps {
   map: ReactNode;
@@ -15,7 +17,9 @@ interface PanelProps {
 }
 
 export function Panel({ map, tabs, node, sheetRef }: PanelProps) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? '');
+  const [storedTab, setStoredTab] = useLocalStorage<string | null>(ACTIVE_TAB_KEY, null);
+  const activeTab = tabs.some((t) => t.id === storedTab) ? storedTab! : tabs[0]?.id ?? '';
+  const setActiveTab = (id: string) => setStoredTab(id);
   const activeContent = tabs.find((t) => t.id === activeTab)?.content;
 
   return (

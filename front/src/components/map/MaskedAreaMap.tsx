@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { GeoJSON, useMap } from 'react-leaflet';
+import { useEffect, useState } from 'react';
+import { GeoJSON } from 'react-leaflet';
 import * as turf from '@turf/turf';
 import type { Feature, Polygon, MultiPolygon } from 'geojson';
 import { useAdf } from '../../contexts/AdfContext';
@@ -7,20 +7,13 @@ import { logError } from '../../utils/log';
 
 export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) {
   const { activeAdf } = useAdf();
-  const map = useMap();
   const [mask, setMask] = useState<{ id: number; data: Feature<Polygon | MultiPolygon> } | null>(null);
   const [boundary, setBoundary] = useState<{ id: number; data: Feature<Polygon | MultiPolygon> } | null>(null);
-  const fittedAdfId = useRef<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    const urlParams = new URLSearchParams(window.location.search);
-    const nodeId = urlParams.get('node');
 
-    if (!activeAdf) {
-      fittedAdfId.current = null;
-      return;
-    }
+    if (!activeAdf) {return;}
 
     const fetchAndMaskArea = async () => {
       try {
@@ -43,22 +36,6 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
         if (masked && isMounted) {
           setMask({ id: activeAdf.id, data: masked });
           setBoundary({ id: activeAdf.id, data: areaFeature });
-
-          if (!nodeId && fittedAdfId.current !== activeAdf.id) {
-            const container = map.getContainer();
-            // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
-            if (map?._loaded && container && container.clientWidth > 0) {
-              const bbox = activeAdf.bbox || turf.bbox(areaFeature);
-              map.fitBounds(
-                activeAdf.bbox 
-                  ? [[bbox[0], bbox[1]], [bbox[2], bbox[3]]]
-                  : [[bbox[1], bbox[0]], [bbox[3], bbox[2]]]
-              );
-              fittedAdfId.current = activeAdf.id;
-            }
-          } else {
-            fittedAdfId.current = activeAdf.id;
-          }
         }
       } catch (err) {
         logError('Error loading masked area', err);
@@ -67,7 +44,7 @@ export default function MaskedAreaMap({ hidden = false }: { hidden?: boolean }) 
 
     void fetchAndMaskArea();
     return () => { isMounted = false; };
-  }, [map, activeAdf?.id]); 
+  }, [activeAdf]); 
 
   if (!activeAdf) {return null;}
 

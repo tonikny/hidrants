@@ -6,14 +6,14 @@ export const ZoomDisplay = () => {
   const [zoom, setZoom] = useState(map.getZoom());
 
   useEffect(() => {
-    const onZoom = () => {
-      setZoom(map.getZoom());
-    };
-
-    map.on('zoomend', onZoom);
+    const sync = () => setZoom(map.getZoom());
+    map.on('zoom', sync);
+    map.on('zoomend', sync);
+    map.whenReady(sync);
 
     return () => {
-      map.off('zoomend', onZoom);
+      map.off('zoom', sync);
+      map.off('zoomend', sync);
     };
   }, [map]);
 

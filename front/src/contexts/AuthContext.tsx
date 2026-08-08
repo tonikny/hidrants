@@ -13,6 +13,8 @@ export interface User {
 
 type ViewRole = "admin" | "coordinador" | "voluntari";
 
+const VIEW_ROLE_KEY = "hidrants_view_role";
+
 // Mirall de la matriu de permisos del backend (back/src/permissions.ts).
 const VIEW_PERMS: Record<ViewRole, string[]> = {
   admin: [
@@ -55,7 +57,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [rawUser, setRawUser] = useState<User | null>(null);
-  const [viewRole, setViewRole] = useState<ViewRole | null>(null);
+  const [viewRole, setViewRole] = useState<ViewRole | null>(() => {
+    const saved = localStorage.getItem(VIEW_ROLE_KEY);
+    return saved === "admin" || saved === "coordinador" || saved === "voluntari" ? saved : null;
+  });
   const [activeAdfId, setActiveAdfId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -88,12 +93,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Els usuaris no-admin no poden tenir vista "com" i es neteja en desloguejar.
+  // La restauració del rol persistit la fa el lazy-init del useState.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- neteja la vista "com" en canviar d'usuari
-    if (!rawUser || rawUser.role !== "admin") {
+    if (rawUser && rawUser.role !== "admin") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- neteja la vista "com" de l'usuari no admin
       setViewRole(null);
+      localStorage.removeItem(VIEW_ROLE_KEY);
     }
   }, [rawUser]);
+
+  // Persisteix cada canvi de vista "com".
+  useEffect(() => {
+    if (viewRole) {
+      localStorage.setItem(VIEW_ROLE_KEY, viewRole);
+    } else {
+      localStorage.removeItem(VIEW_ROLE_KEY);
+    }
+  }, [viewRole]);
 
   const login = (_newToken: string, newUser: User) => {
     setRawUser(newUser);

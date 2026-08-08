@@ -6,7 +6,7 @@ import {
 } from './layers/MeteoLayers';
 import { TrackingLayer } from './TrackingLayer';
 import { useAuth } from '../../contexts/AuthContext';
-import { useState } from 'react';
+import { useLocalStorage } from '../../utils/useLocalStorage';
 
 const { BaseLayer } = LayersControl;
 
@@ -15,25 +15,30 @@ interface LayersProps {
   setActiveTechnicalLayer: (layer: string | null) => void;
   hydrantsVisible: boolean;
   setHydrantsVisible: (v: boolean) => void;
+  baseLayer: string;
+  setBaseLayer: (layer: string) => void;
   positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
 }
 
 const TRACKING_STORAGE_KEY = 'hidrants_tracking_visible';
 const hiddenIcon = L.divIcon({ className: '', iconSize: [0, 0], html: '<div style="width:1px;height:1px;opacity:0"></div>' });
 
-export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrantsVisible, setHydrantsVisible, positions }: LayersProps) => {
+export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrantsVisible, setHydrantsVisible, baseLayer, setBaseLayer, positions }: LayersProps) => {
   const { user } = useAuth();
-  const [trackingChecked] = useState(() => localStorage.getItem(TRACKING_STORAGE_KEY) === 'true');
+  const [trackingChecked, setTrackingChecked] = useLocalStorage<boolean>(TRACKING_STORAGE_KEY, false);
 
   useMapEvents({
+    baselayerchange: (e) => {
+      setBaseLayer(e.name);
+    },
     overlayadd: (e) => {
-      if (e.name === 'Posicions OwnTracks') { localStorage.setItem(TRACKING_STORAGE_KEY, 'true'); return; }
+      if (e.name === 'Posicions OwnTracks') { setTrackingChecked(true); return; }
       if (e.name === 'Hidrants') { setHydrantsVisible(true); return; }
       const technicalLayers = ["Risc d'incendi (FWI)", "Índex Perill (MARK-5 FDI)", "Probabilitat Ignició (NFDRS IC)", "Biomassa Arbrat (ICGC)"];
       if (technicalLayers.includes(e.name)) {setActiveTechnicalLayer(e.name);}
     },
     overlayremove: (e) => {
-      if (e.name === 'Posicions OwnTracks') { localStorage.setItem(TRACKING_STORAGE_KEY, 'false'); return; }
+      if (e.name === 'Posicions OwnTracks') { setTrackingChecked(false); return; }
       if (e.name === 'Hidrants') { setHydrantsVisible(false); return; }
       if (activeTechnicalLayer === e.name) {setActiveTechnicalLayer(null);}
     }
@@ -49,16 +54,16 @@ export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrants
         .leaflet-control-layers-overlays label:nth-child(5) input,
         .leaflet-control-layers-overlays label:nth-child(5) span { display: none; }
       `}</style>
-      <BaseLayer checked name="OpenStreetMap">
+      <BaseLayer checked={baseLayer === 'OpenStreetMap'} name="OpenStreetMap">
         <TileLayer url="/tiles/osm/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' maxZoom={18} maxNativeZoom={18} />
       </BaseLayer>
-      <BaseLayer name="OpenTopoMap">
+      <BaseLayer checked={baseLayer === 'OpenTopoMap'} name="OpenTopoMap">
         <TileLayer url="/tiles/opentopo/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' maxZoom={17} maxNativeZoom={17} />
       </BaseLayer>
-      <BaseLayer name="Raster IGN">
+      <BaseLayer checked={baseLayer === 'Raster IGN'} name="Raster IGN">
         <TileLayer url="/tiles/ign-raster/{z}/{x}/{-y}.jpeg" attribution="&copy; IGN" maxZoom={17} maxNativeZoom={17} />
       </BaseLayer>
-      <BaseLayer name="Ortoimagen IGN">
+      <BaseLayer checked={baseLayer === 'Ortoimagen IGN'} name="Ortoimagen IGN">
         <TileLayer url="/tiles/ign-orto/{z}/{x}/{-y}.jpeg" attribution="&copy; IGN" maxZoom={18} maxNativeZoom={18} />
       </BaseLayer>
       <LayersControl.Overlay checked={activeTechnicalLayer === "Risc d'incendi (FWI)"} name="Risc d'incendi (FWI)"><EffisFwiLayer /></LayersControl.Overlay>

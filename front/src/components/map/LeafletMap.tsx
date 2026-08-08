@@ -11,8 +11,10 @@ import { useAdf } from '../../contexts/AdfContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { HydrantMarkerList } from './markers/HydrantMarkerList';
 import { MapUrlHandler } from './MapUrlHandler';
+import { MapViewPersist } from './MapViewPersist';
 import { MapUIOverlays } from '../controls/MapUIOverlays';
 import { LocationMarker } from './LocationMarker';
+import { useLocalStorage } from '../../utils/useLocalStorage';
 
 import { IncidenciaMarkerList } from './markers/IncidenciaMarkerList';
 import type { HidrantFeature } from '../../hooks/useHidrantData';
@@ -113,10 +115,9 @@ export function LeafletMap({
 }) {
   const { activeAdf, isLoading } = useAdf();
   const { user } = useAuth();
-  const [activeTechnicalLayer, setActiveTechnicalLayer] = useState<
-    string | null
-  >(null);
-  const [hydrantsVisible, setHydrantsVisible] = useState(true);
+  const [activeTechnicalLayer, setActiveTechnicalLayer] = useLocalStorage<string | null>('hidrants_technical_layer', null);
+  const [hydrantsVisible, setHydrantsVisible] = useLocalStorage<boolean>('hidrants_hydrants_visible', true);
+  const [baseLayer, setBaseLayer] = useLocalStorage<string>('hidrants_base_layer', 'OpenStreetMap');
 
   const [showCoordModal, setShowCoordModal] = useState(false);
   const [accuracy, setAccuracy] = useState<number | null>(null);
@@ -148,12 +149,15 @@ export function LeafletMap({
           onSelectIncidencia={onSelectIncidencia}
         />
         <MapStateListener onMapClick={onMapClick} />
+        <MapViewPersist />
         <MaskedAreaMap hidden={!!activeTechnicalLayer} />
         <Layers
           activeTechnicalLayer={activeTechnicalLayer}
           setActiveTechnicalLayer={setActiveTechnicalLayer}
           hydrantsVisible={hydrantsVisible}
           setHydrantsVisible={setHydrantsVisible}
+          baseLayer={baseLayer}
+          setBaseLayer={setBaseLayer}
           positions={positions}
         />
         <MapRightClickHandler

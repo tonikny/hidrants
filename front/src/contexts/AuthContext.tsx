@@ -58,6 +58,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [viewRole, setViewRole] = useState<ViewRole | null>(null);
   const [activeAdfId, setActiveAdfId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [prevRawUser, setPrevRawUser] = useState<User | null>(null);
+
+  // Els usuaris no-admin no poden mantenir la vista "com": s'ajusta en render, sense setState a l'effect.
+  if (rawUser !== prevRawUser) {
+    setPrevRawUser(rawUser);
+    if (!rawUser || rawUser.role !== "admin") {
+      setViewRole(null);
+    }
+  }
 
   // Segueix l'ADF activa (emesa per AdfContext) per assignar-la quan un admin "veu com" un rol d'ADF.
   useEffect(() => {
@@ -86,14 +95,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     void verifyToken();
   }, []);
-
-  // Els usuaris no-admin no poden tenir vista "com" i es neteja en desloguejar.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- neteja la vista "com" en canviar d'usuari
-    if (!rawUser || rawUser.role !== "admin") {
-      setViewRole(null);
-    }
-  }, [rawUser]);
 
   const login = (_newToken: string, newUser: User) => {
     setRawUser(newUser);

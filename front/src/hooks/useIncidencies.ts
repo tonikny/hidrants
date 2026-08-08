@@ -46,6 +46,7 @@ export function useIncidencies() {
     titol: string;
     tipus: string;
     prioritat: string;
+    precisio?: string;
     visibilitat?: string;
     lat: number;
     lon: number;

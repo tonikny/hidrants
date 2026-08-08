@@ -3,6 +3,7 @@ export type CreateType = 'selection' | 'hydrant' | 'incidencia' | null;
 export type IncidenciaEstat = 'OBERT' | 'EN_PROGRES' | 'RESOLT' | 'TANCAT';
 export type IncidenciaPrioritat = 'BAIXA' | 'MITJANA' | 'ALTA';
 export type IncidenciaPrecisio = 'DESCONEGUDA' | 'MUNICIPI' | 'AREA' | 'EXACTA';
+export type IncidenciaVisibilitat = 'PUBLICA' | 'TOTES_ADFS' | 'ADF_PRIVADA';
 
 export interface Incidencia {
   id: string;
@@ -14,6 +15,7 @@ export interface Incidencia {
   lat: number;
   lon: number;
   precisio: IncidenciaPrecisio;
+  visibilitat: IncidenciaVisibilitat;
   creat_at: string;
   actualitzat_at: string;
 }
@@ -23,6 +25,8 @@ export type TipusEvent =
   | 'CANVI_ESTAT' 
   | 'CANVI_TIPUS'
   | 'CANVI_PRIORITAT'
+  | 'CANVI_PRECISIO'
+  | 'CANVI_VISIBILITAT'
   | 'OBSERVACIO' 
   | 'CANVI_UBICACIO' 
   | 'MULTIMEDIA' 

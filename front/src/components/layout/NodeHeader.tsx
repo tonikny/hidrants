@@ -1,6 +1,21 @@
 import { ICONS_H } from './metrics';
+import { confirmDiscardChanges } from '../../utils/formDirty';
 
-export function NodeHeader({ onEdit, showDelete, title }: { onEdit?: () => void; showDelete?: boolean; title?: string }) {
+export function NodeHeader({
+  onEdit,
+  title,
+  editing,
+}: {
+  onEdit?: () => void;
+  title?: string;
+  editing?: boolean;
+}) {
+  const handleEditClick = () => {
+    if (!onEdit) {return;}
+    if (editing && !confirmDiscardChanges()) {return;}
+    onEdit();
+  };
+
   return (
     <div
       className="flex items-center justify-between px-3 border-b border-soft"
@@ -11,19 +26,11 @@ export function NodeHeader({ onEdit, showDelete, title }: { onEdit?: () => void;
         {onEdit && (
           <button
             type="button"
-            onClick={onEdit}
-            className="bg-transparent border-0 cursor-pointer text-[0.85rem] text-primary flex items-center gap-1 px-1"
+            onClick={handleEditClick}
+            className="bg-transparent border-0 cursor-pointer text-[0.85rem] flex items-center gap-1 px-1"
+            style={{ color: editing ? '#c0392b' : '#007bff' }}
           >
-            ✏️ Editar
-          </button>
-        )}
-        {showDelete && (
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('node-delete-request'))}
-            className="bg-transparent border-0 cursor-pointer text-[0.85rem] text-[#c0392b] flex items-center gap-1 px-1"
-          >
-            🗑️ Esborrar
+            {editing ? '✖ Tancar' : '✏️ Editar'}
           </button>
         )}
       </div>

@@ -108,12 +108,15 @@ const handler: ApiHandler = async (req, res) => {
 `;
     }
 
+    const displayUser = req.user?.username || 'Anònim';
+
     const text = `
 ${title}
 
 ${appUrl ? `📍 <a href="${appUrl}">Veure a l'aplicació</a>` : ''}
 📍 Coord: <code>${lat}, ${lon}</code>
 💬 Missatge: ${escapeHtml(message || '(cap)')}
+👤 Per: ${escapeHtml(displayUser)}
 
 ${contentSection}
     `;

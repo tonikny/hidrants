@@ -20,21 +20,29 @@ import { IncidenciaMarkerList } from './markers/IncidenciaMarkerList';
 import type { HidrantFeature } from '../../hooks/useHidrantData';
 import type { IncidenciaFeature, CreateType } from '../../types';
 
-// ✅ Centra el mapa en el node seleccionat, tenint en compte el bottomsheet obert
+// ✅ Centra el mapa en el node seleccionat amb un sol moviment,
+// tenint en compte el bottomsheet obert (espai visible més petit).
 function MapNodeCenter() {
   const map = useMap();
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ geometry: { coordinates: [number, number] } }>).detail;
+      const detail = (e as CustomEvent<{ geometry: { coordinates: [number, number] }; keepZoom?: boolean }>).detail;
       const [lon, lat] = detail.geometry.coordinates;
+      const size = map.getSize();
+      if (size.y === 0) {return;}
+
       const sheet = document.querySelector('[class*="z-[1000]"]');
-      let targetY = map.getSize().y / 2;
+      let targetY = size.y / 2;
       if (sheet && sheet.getBoundingClientRect().height > 0) {
         targetY = sheet.getBoundingClientRect().top / 2;
       }
-      const p = map.latLngToContainerPoint([lat, lon]);
-      map.panBy(L.point(0, p.y - targetY), { animate: true });
+
+      const delta = size.y / 2 - targetY;
+      const zoom = detail.keepZoom ? map.getZoom() : 15;
+      const nodePx = map.project([lat, lon], zoom);
+      const center = map.unproject(nodePx.add(L.point(0, delta)), zoom);
+      map.flyTo(center, zoom, { animate: true, duration: 1.2 });
     };
 
     window.addEventListener('map-center-node', handler);
@@ -82,6 +90,7 @@ export function LeafletMap({
   refreshHidrants,
   incidenciaFeatures,
   loadingIncidencies,
+  selectedIncidenciaId,
   positions,
   position,
   setPosition,
@@ -102,6 +111,7 @@ export function LeafletMap({
   refreshHidrants: () => void;
   incidenciaFeatures: IncidenciaFeature[];
   loadingIncidencies: boolean;
+  selectedIncidenciaId?: string | null;
   positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
   position: L.LatLng | null;
   setPosition: (pos: L.LatLng | null) => void;
@@ -117,6 +127,7 @@ export function LeafletMap({
   const { user } = useAuth();
   const [activeTechnicalLayer, setActiveTechnicalLayer] = useLocalStorage<string | null>('hidrants_technical_layer', null);
   const [hydrantsVisible, setHydrantsVisible] = useLocalStorage<boolean>('hidrants_hydrants_visible', true);
+  const [incidenciesVisible, setIncidenciesVisible] = useLocalStorage<boolean>('hidrants_incidencies_visible', true);
   const [baseLayer, setBaseLayer] = useLocalStorage<string>('hidrants_base_layer', 'OpenStreetMap');
 
   const [showCoordModal, setShowCoordModal] = useState(false);
@@ -156,6 +167,8 @@ export function LeafletMap({
           setActiveTechnicalLayer={setActiveTechnicalLayer}
           hydrantsVisible={hydrantsVisible}
           setHydrantsVisible={setHydrantsVisible}
+          incidenciesVisible={incidenciesVisible}
+          setIncidenciesVisible={setIncidenciesVisible}
           baseLayer={baseLayer}
           setBaseLayer={setBaseLayer}
           positions={positions}
@@ -174,11 +187,12 @@ export function LeafletMap({
           onSelectNode={onSelectNode}
           selectedNodeId={selectedNodeId}
         />}
-        <IncidenciaMarkerList
+        {incidenciesVisible && <IncidenciaMarkerList
           features={incidenciaFeatures}
           setPoi={setPoi}
           onSelectIncidencia={onSelectIncidencia}
-        />
+          selectedIncidenciaId={selectedIncidenciaId}
+        />}
         {user && (
           <MapClickHandler
             onClick={onOpenCreate}

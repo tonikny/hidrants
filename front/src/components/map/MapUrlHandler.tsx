@@ -40,32 +40,18 @@ export function MapUrlHandler({
 
       if (feature || incidencia) {
         lastNodeId.current = nodeId;
-        const found = feature || incidencia!;
-        const [lon, lat] = found.geometry.coordinates;
 
+        // La selecció obre el panell; el centratge amb correcció del
+        // bottomsheet el fa MapNodeCenter en un sol moviment.
         // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
         if (map?._loaded && map.getContainer().clientWidth > 0) {
-          map.stop();
-
-          const onAnimationEnd = () => {
-            const center = map.getCenter();
-            const dist = center.distanceTo([lat, lon]);
-
-            if (dist < 1) {
-              map.off('moveend zoomend', onAnimationEnd);
-              setTimeout(() => {
-                if (feature) {
-                  window.dispatchEvent(new CustomEvent('map-node-centered', { detail: { nodeId } }));
-                } else {
-                  onSelectIncidencia(incidencia!);
-                }
-              }, 300);
-            }
-          };
-
-          map.on('moveend zoomend', onAnimationEnd);
-          map.flyTo([lat, lon], 18, { animate: true, duration: 1.5 });
+          if (feature) {
+            window.dispatchEvent(new CustomEvent('map-node-centered', { detail: { nodeId } }));
+          } else {
+            onSelectIncidencia(incidencia!);
+          }
         }
+        // Si encara estan carregant, esperem: l'effect tornarà a executar checkUrl
       } else if (!loadingHidrants && !loadingIncidencies) {
         // Node no trobat i ja no carreguen les llistes: decidim definitivament
         toast.warn(`No s'ha trobat el node: ${nodeId}`);

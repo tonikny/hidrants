@@ -5,8 +5,7 @@ import { useAdf } from '../../contexts/AdfContext';
 import { useHydrantActions } from './useHydrantActions';
 import { HydrantInfoView } from './HydrantInfoView';
 import { HydrantEditForm } from './HydrantEditForm';
-
-let deleteInFlight = false;
+import { confirmDiscardChanges, setFormDirty } from '../../utils/formDirty';
 
 export const NodeInfo = ({
   feature,
@@ -35,6 +34,8 @@ export const NodeInfo = ({
   const [data, setData] = useState(props.ui_fields);
   const [observacions, setObservacions] = useState(props.private_tags?.observacions || '');
 
+  const canDelete = canEdit && (user?.permissions ?? []).includes('delete_hydrant');
+
   const { busy, save, quickStatus, remove } = useHydrantActions(feature, activeAdf, refreshHidrants);
 
   const handleSave = async () => {
@@ -52,20 +53,23 @@ export const NodeInfo = ({
     if (newData) {setData(newData);}
   };
 
+  const handleCancelEdit = () => {
+    if (confirmDiscardChanges()) {setEditing(false);}
+  };
+
   useEffect(() => {
-    const onDeleteRequest = async () => {
-      if (deleteInFlight) {return;}
-      deleteInFlight = true;
-      try {
-        await remove();
-      } finally {
-        deleteInFlight = false;
-      }
-    };
-    window.addEventListener('node-delete-request', () => { void onDeleteRequest(); });
-    return () => window.removeEventListener('node-delete-request', () => { void onDeleteRequest(); });
+    if (!editing) {
+      setFormDirty(false);
+      return;
+    }
+    const hasChanges =
+      JSON.stringify(data) !== JSON.stringify(props.ui_fields) ||
+      observacions !== (props.private_tags?.observacions || '');
+    setFormDirty(hasChanges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feature.id]);
+  }, [editing, data, observacions]);
+
+  useEffect(() => () => { setFormDirty(false); }, []);
 
   return (
     <div className={`${className} p-3 flex flex-col gap-3`}>
@@ -87,7 +91,8 @@ export const NodeInfo = ({
           setObservacions={setObservacions}
           busy={busy}
           onSave={() => { void handleSave(); }}
-          onCancel={() => setEditing(false)}
+          onCancel={handleCancelEdit}
+          onDelete={canDelete ? () => { void remove(); } : undefined}
         />
       )}
     </div>

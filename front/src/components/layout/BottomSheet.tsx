@@ -126,7 +126,7 @@ function BottomSheetView(
       }}
     >
       <div
-        className="touch-none"
+        className="touch-none bg-neutral-100"
         style={{ height: nodeMode ? HANDLE_H + ICONS_H : BAR_HEIGHT }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -141,7 +141,7 @@ function BottomSheetView(
           <span className="h-[3px] w-9 rounded-full bg-faint" aria-hidden />
         </div>
         {nodeMode && node ? (
-          <NodeHeader title={node.title} onEdit={node.onEdit} showDelete={node.showDelete} />
+          <NodeHeader title={node.title} onEdit={node.onEdit} editing={node.editing} />
         ) : (
           <TabBar tabs={tabs} activeId={activeTab} onSelect={handleTabSelect} showLabels={open} />
         )}

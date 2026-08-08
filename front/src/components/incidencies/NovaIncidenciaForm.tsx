@@ -9,6 +9,12 @@ import {
 } from "../../styles/uiStyles";
 import { CoordinatesLabel } from "../shared/CoordinatesLabel";
 import { logError } from "../../utils/log";
+import {
+  PRIORITATS_INCIDENCIA,
+  PRECISIONS_INCIDENCIA,
+  TIPUS_INCIDENCIA,
+  VISIBILITATS_INCIDENCIA,
+} from "../../utils/incidenciaConstants";
 
 interface NovaIncidenciaFormProps {
   lat: number;
@@ -18,8 +24,9 @@ interface NovaIncidenciaFormProps {
 
 export const NovaIncidenciaForm = ({ lat, lon, onClose }: NovaIncidenciaFormProps) => {
   const { createIncidencia } = useIncidencies();
-  const [type, setType] = useState("FOC");
+  const [type, setType] = useState("GENERICA");
   const [priority, setPriority] = useState("MITJANA");
+  const [precisio, setPrecisio] = useState("EXACTA");
   const [visibilitat, setVisibilitat] = useState("ADF_PRIVADA");
   const [titol, setTitol] = useState("");
   const [comentari, setComentari] = useState("");
@@ -34,6 +41,7 @@ export const NovaIncidenciaForm = ({ lat, lon, onClose }: NovaIncidenciaFormProp
         titol,
         tipus: type,
         prioritat: priority,
+        precisio,
         visibilitat,
         lat,
         lon,
@@ -80,10 +88,11 @@ export const NovaIncidenciaForm = ({ lat, lon, onClose }: NovaIncidenciaFormProp
           className={selectClass}
           required
         >
-          <option value="FOC">🔥 Foc de vegetació / forestal</option>
-          <option value="FUM">💨 Columna de fum</option>
-          <option value="ACCIDENT">🚗 Accident de trànsit</option>
-          <option value="ALTRA">⚠️ Altres incidències / Anomalies</option>
+          {TIPUS_INCIDENCIA.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.icon ? `${t.icon} ${t.label}` : t.label}
+            </option>
+          ))}
         </select>
       </label>
 
@@ -96,9 +105,28 @@ export const NovaIncidenciaForm = ({ lat, lon, onClose }: NovaIncidenciaFormProp
           className={selectClass}
           required
         >
-          <option value="BAIXA">🟢 Baixa (No urgent)</option>
-          <option value="MITJANA">🟡 Mitjana (Cal atenció)</option>
-          <option value="ALTA">🔴 Alta (Urgent! Perillós)</option>
+          {PRIORITATS_INCIDENCIA.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.icon ? `${p.icon} ${p.label}` : p.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {/* Precissió de l'ubicació */}
+      <label className="text-[0.8rem] italic mb-2">
+        Precissió de l'ubicació:
+        <select
+          value={precisio}
+          onChange={(e) => setPrecisio(e.target.value)}
+          className={selectClass}
+          required
+        >
+          {PRECISIONS_INCIDENCIA.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.icon ? `${p.icon} ${p.label}` : p.label}
+            </option>
+          ))}
         </select>
       </label>
 
@@ -111,9 +139,11 @@ export const NovaIncidenciaForm = ({ lat, lon, onClose }: NovaIncidenciaFormProp
           className={selectClass}
           required
         >
-          <option value="ADF_PRIVADA">🔒 Només la pròpia ADF</option>
-          <option value="TOTES_ADFS">👥 Totes les ADFs</option>
-          <option value="PUBLICA">🌍 Pública</option>
+          {VISIBILITATS_INCIDENCIA.map((v) => (
+            <option key={v.value} value={v.value}>
+              {v.icon ? `${v.icon} ${v.label}` : v.label}
+            </option>
+          ))}
         </select>
       </label>
 

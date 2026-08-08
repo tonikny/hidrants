@@ -15,6 +15,8 @@ interface LayersProps {
   setActiveTechnicalLayer: (layer: string | null) => void;
   hydrantsVisible: boolean;
   setHydrantsVisible: (v: boolean) => void;
+  incidenciesVisible: boolean;
+  setIncidenciesVisible: (v: boolean) => void;
   baseLayer: string;
   setBaseLayer: (layer: string) => void;
   positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
@@ -23,7 +25,7 @@ interface LayersProps {
 const TRACKING_STORAGE_KEY = 'hidrants_tracking_visible';
 const hiddenIcon = L.divIcon({ className: '', iconSize: [0, 0], html: '<div style="width:1px;height:1px;opacity:0"></div>' });
 
-export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrantsVisible, setHydrantsVisible, baseLayer, setBaseLayer, positions }: LayersProps) => {
+export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrantsVisible, setHydrantsVisible, incidenciesVisible, setIncidenciesVisible, baseLayer, setBaseLayer, positions }: LayersProps) => {
   const { user } = useAuth();
   const [trackingChecked, setTrackingChecked] = useLocalStorage<boolean>(TRACKING_STORAGE_KEY, false);
 
@@ -34,12 +36,14 @@ export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrants
     overlayadd: (e) => {
       if (e.name === 'Posicions OwnTracks') { setTrackingChecked(true); return; }
       if (e.name === 'Hidrants') { setHydrantsVisible(true); return; }
+      if (e.name === 'Incidències') { setIncidenciesVisible(true); return; }
       const technicalLayers = ["Risc d'incendi (FWI)", "Índex Perill (MARK-5 FDI)", "Probabilitat Ignició (NFDRS IC)", "Biomassa Arbrat (ICGC)"];
       if (technicalLayers.includes(e.name)) {setActiveTechnicalLayer(e.name);}
     },
     overlayremove: (e) => {
       if (e.name === 'Posicions OwnTracks') { setTrackingChecked(false); return; }
       if (e.name === 'Hidrants') { setHydrantsVisible(false); return; }
+      if (e.name === 'Incidències') { setIncidenciesVisible(false); return; }
       if (activeTechnicalLayer === e.name) {setActiveTechnicalLayer(null);}
     }
   });
@@ -71,6 +75,7 @@ export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrants
       <LayersControl.Overlay checked={activeTechnicalLayer === "Probabilitat Ignició (NFDRS IC)"} name="Probabilitat Ignició (NFDRS IC)"><EffisNfdrsIcLayer /></LayersControl.Overlay>
       <LayersControl.Overlay checked={activeTechnicalLayer === "Biomassa Arbrat (ICGC)"} name="Biomassa Arbrat (ICGC)"><IcgxBiomassLayer /></LayersControl.Overlay>
       <LayersControl.Overlay checked name=""><Marker position={[0, 0]} icon={hiddenIcon} /></LayersControl.Overlay>
+      <LayersControl.Overlay checked={incidenciesVisible} name="Incidències"><Marker position={[0, 0]} icon={hiddenIcon} /></LayersControl.Overlay>
       <LayersControl.Overlay checked={hydrantsVisible} name="Hidrants"><Marker position={[0, 0]} icon={hiddenIcon} /></LayersControl.Overlay>
       {user && (
         <LayersControl.Overlay checked={trackingChecked} name="Posicions OwnTracks"><TrackingLayer positions={positions} /></LayersControl.Overlay>

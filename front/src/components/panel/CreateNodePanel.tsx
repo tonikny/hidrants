@@ -2,7 +2,7 @@ import type { LatLng } from 'leaflet';
 import type { CreateType } from '../../types';
 import { CreationSelector } from '../shared/CreationSelector';
 import { NewNodeForm } from '../hidrants/NewNodeForm';
-import { NovaIncidenciaForm } from '../incidents/NovaIncidenciaForm';
+import { NovaIncidenciaForm } from '../incidencies/NovaIncidenciaForm';
 
 export function CreateNodePanel({
   form,

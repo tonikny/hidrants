@@ -1,6 +1,11 @@
 import type { HydrantUiFields } from '../../utils/osmConversion';
 import { HydrantFormFields } from './HydrantFormFields';
-import { inputClass, primaryButtonClass, secondaryButtonClass } from '../../styles/uiStyles';
+import {
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  dangerButtonClass,
+} from '../../styles/uiStyles';
 
 export function HydrantEditForm({
   data,
@@ -10,6 +15,7 @@ export function HydrantEditForm({
   busy,
   onSave,
   onCancel,
+  onDelete,
 }: {
   data: HydrantUiFields;
   setData: (d: HydrantUiFields) => void;
@@ -18,6 +24,7 @@ export function HydrantEditForm({
   busy: boolean;
   onSave: () => void;
   onCancel: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -57,6 +64,20 @@ export function HydrantEditForm({
           Cancel·lar
         </button>
       </div>
+
+      {onDelete && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          disabled={busy}
+          className={`${dangerButtonClass} disabled:opacity-70`}
+        >
+          🗑️ Esborrar hidrant
+        </button>
+      )}
     </div>
   );
 }

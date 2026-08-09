@@ -206,6 +206,7 @@ export function MapPanel() {
               }
             : createPos && createForm && user
               ? {
+                  id: "create",
                   title: createTitle(createForm),
                   content: (
                     <CreateNodePanel

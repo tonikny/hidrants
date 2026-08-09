@@ -1,27 +1,29 @@
-import { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import { useMap } from 'react-leaflet';
-import { toast } from 'react-toastify';
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import { useMap } from "react-leaflet";
+import { toast } from "react-toastify";
+import { useLocalStorage } from "../utils/useLocalStorage";
 
-const geoAvailable = typeof navigator.geolocation?.watchPosition === 'function';
+const geoAvailable = typeof navigator.geolocation?.watchPosition === "function";
 
 export function useGeolocationTracking() {
   const map = useMap();
-  const [tracking, setTracking] = useState(false);
+  const [tracking, setTracking] = useLocalStorage<boolean>("hidrants_gps_follow", false);
   const [position, setPosition] = useState<L.LatLng | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const firstUpdateRef = useRef(true);
+  const manualToggleRef = useRef(false);
 
   useEffect(() => {
     const onError = () => {
-      toast.error('Permís de localització denegat o no disponible');
+      toast.error("Permís de localització denegat o no disponible");
     };
 
-    map.on('locationerror', onError);
+    map.on("locationerror", onError);
 
     return () => {
-      map.off('locationerror', onError);
+      map.off("locationerror", onError);
     };
   }, [map]);
 
@@ -31,13 +33,19 @@ export function useGeolocationTracking() {
     }
 
     if (tracking) {
-      toast.success('Seguiment de la posició activat');
+      const manual = manualToggleRef.current;
+      manualToggleRef.current = false;
+      if (manual) {
+        toast.success("Seguiment de la posició activat");
+      }
       firstUpdateRef.current = true;
 
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
           // @ts-expect-error accés intern de Leaflet per verificar estat del mapa
-          if (!map?._loaded || !map.getContainer()) {return;}
+          if (!map?._loaded || !map.getContainer()) {
+            return;
+          }
 
           const { latitude, longitude, accuracy } = pos.coords;
           const latlng = L.latLng(latitude, longitude);
@@ -63,13 +71,13 @@ export function useGeolocationTracking() {
           enableHighAccuracy: true,
           maximumAge: 10000,
           timeout: 10000,
-        }
+        },
       );
     } else {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
-        toast.info('Seguiment de la posició desactivat');
+        toast.info("Seguiment de la posició desactivat");
       }
     }
 
@@ -80,13 +88,14 @@ export function useGeolocationTracking() {
         watchIdRef.current = null;
       }
     };
-  }, [tracking, map]);
+  }, [tracking, map, setTracking]);
 
   const toggleTracking = () => {
     if (!tracking && !geoAvailable) {
-      toast.error('Geolocalització no disponible al teu navegador');
+      toast.error("Geolocalització no disponible al teu navegador");
       return;
     }
+    manualToggleRef.current = !tracking;
     setTracking((prev) => !prev);
     if (tracking) {
       setPosition(null);

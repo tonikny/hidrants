@@ -3,7 +3,6 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useAdf } from "../../../contexts/AdfContext";
 import type { Position } from "../../../hooks/usePositionPolling";
 import { timeAgo } from "../../../utils/time";
-import { Modal } from "../../shared/Modal";
 import { primaryButtonClass, secondaryButtonClass } from "../../../styles/uiStyles";
 import { toast } from "react-toastify";
 
@@ -15,8 +14,6 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
   const [loading, setLoading] = useState(false);
   const [available, setAvailable] = useState(false);
   const [enabled, setEnabled] = useState(!!user?.mqtt_enabled);
-  const [otrc, setOtrc] = useState<Record<string, unknown> | null>(null);
-  const [showModal, setShowModal] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [shared, setShared] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -96,9 +93,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
         toast.error(err.error || "Error activant OwnTracks");
         return;
       }
-      setOtrc(await res.json());
       setEnabled(true);
-      setShowModal(true);
     } catch {
       toast.error("Error de connexió");
     } finally {
@@ -115,8 +110,8 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
         toast.error(err.error || "Error descarregant config");
         return;
       }
-      setOtrc(await res.json());
-      setShowModal(true);
+      const otrc = (await res.json()) as Record<string, unknown>;
+      downloadOtrc(otrc);
     } catch {
       toast.error("Error de connexió");
     } finally {
@@ -124,18 +119,17 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
     }
   };
 
-  const downloadCurrent = () => {
-    if (!otrc || !user) {
+  const downloadOtrc = (config: Record<string, unknown>) => {
+    if (!user) {
       return;
     }
-    const blob = new Blob([JSON.stringify(otrc, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `${user.username.replace(/\//g, "_")}.otrc`;
     a.click();
     URL.revokeObjectURL(url);
-    setShowModal(false);
   };
 
   const connected = useMemo(() => {
@@ -178,16 +172,92 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
         </span>
       </div>
       {!enabled ? (
-        <button
-          onClick={() => {
-            void handleEnable();
-          }}
-          disabled={loading}
-          className={`${primaryButtonClass} w-full`}
-          title="Activa OwnTracks i genera credencials"
-        >
-          {loading ? "⏳" : "🛡️ Activar"}
-        </button>
+        <ol className="m-0 p-0 list-none space-y-3 text-[0.85rem] leading-relaxed">
+          <li>
+            <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
+              <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
+                1
+              </span>
+              Instal·la l'app OwnTracks
+            </h4>
+            <p className="m-0 mb-2 text-[0.8rem] text-muted">
+              Tria la tenda segons la teva plataforma:
+            </p>
+            <div className="flex gap-2">
+              <a
+                href="https://play.google.com/store/apps/details?id=org.owntracks.android"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex flex-col items-center gap-[2px] border border-border rounded-xl p-2 no-underline text-center hover:bg-soft"
+              >
+                <span className="text-[1.3rem]">📱</span>
+                <span className="text-[0.8rem] font-semibold text-ink">Android</span>
+                <span className="text-[0.7rem] text-muted">Google Play</span>
+              </a>
+              <a
+                href="https://apps.apple.com/app/owntracks/id692424691"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex flex-col items-center gap-[2px] border border-border rounded-xl p-2 no-underline text-center hover:bg-soft"
+              >
+                <span className="text-[1.3rem]">🍏</span>
+                <span className="text-[0.8rem] font-semibold text-ink">iPhone</span>
+                <span className="text-[0.7rem] text-muted">App Store</span>
+              </a>
+            </div>
+            <p className="text-[0.75rem] text-muted mt-1 mb-0">
+              Per que l'app funcioni bé, concedeix els permissos de localització precissa a
+              OwnTracks i desactiva l'optimització de bateria per evitar que s'aturi sola.
+            </p>
+          </li>
+          <li>
+            <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
+              <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
+                2
+              </span>
+              Activa el seguiment
+            </h4>
+            <p className="m-0 mb-2 text-[0.8rem] text-muted">
+              Genera les teves credencials personals i habilita la recepció de posicions:
+            </p>
+            <button
+              onClick={() => {
+                void handleEnable();
+              }}
+              disabled={loading}
+              className={`${primaryButtonClass} w-full`}
+              title="Activa OwnTracks i genera credencials"
+            >
+              {loading ? "⏳" : "🛡️ Activar"}
+            </button>
+          </li>
+          <li>
+            <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
+              <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
+                3
+              </span>
+              Importa les credencials
+            </h4>
+            <p className="m-0 text-[0.8rem] text-muted">
+              Un cop activat apareixerà el botó <strong>📥 Baixar credencials</strong>: baixa el
+              fitxer <strong>.otrc</strong> i obra'l amb OwnTracks. El fitxer conté les teves
+              credencials: <strong>no el comparteixis amb ningú</strong>.
+            </p>
+          </li>
+          <li>
+            <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
+              <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
+                4
+              </span>
+              Comparteix la teva posició
+            </h4>
+            <p className="m-0 text-[0.8rem] text-muted">
+              Per aparèixer al mapa, obre OwnTracks i deixa-la oberta (pot funcionar en segon pla,
+              amb la pantalla bloquejada). Quan la tanquis ("Sortir" al menú), deixaràs de compartir
+              la teva posició.
+            </p>
+          </li>
+        </ol>
       ) : (
         <div>
           <button
@@ -202,7 +272,8 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
           </button>
           <p className="text-muted text-[0.8rem] mt-2 mb-0">
             Ja tens el seguiment activat. Pots tornar a baixar les credencials d'OwnTracks sempre
-            que vulguis.
+            que vulguis. Per compartir la posició, obra OwnTracks; quan la tanquis, deixa de
+            compartir.
           </p>
         </div>
       )}
@@ -245,48 +316,6 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
             </li>
           ))}
         </ul>
-      )}
-
-      {showModal && (
-        <Modal title="OwnTracks" onClose={() => setShowModal(false)}>
-          <div className="text-[0.9rem] leading-normal">
-            <p className="mt-0">Per activar el seguiment de posicions:</p>
-            <ol className="pl-[1.2rem] my-2">
-              <li>
-                Instal·la <strong>OwnTracks</strong> al teu mòbil:
-                <div className="mt-[4px] flex gap-2">
-                  <a
-                    href="https://play.google.com/store/apps/details?id=org.owntracks.android"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[0.8rem] text-primary"
-                  >
-                    📱 Android
-                  </a>
-                  <a
-                    href="https://apps.apple.com/app/owntracks/id692424691"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[0.8rem] text-primary"
-                  >
-                    🍏 iOS
-                  </a>
-                </div>
-              </li>
-              <li className="mt-2">Descarrega el fitxer de configuració</li>
-              <li>Obre'l amb OwnTracks per importar-lo</li>
-            </ol>
-            <p className="text-muted text-[0.8rem] my-2">
-              El fitxer conté les credencials del teu usuari. No el comparteixis.
-            </p>
-            <button
-              onClick={downloadCurrent}
-              className="w-full p-[10px] bg-primary text-white border-0 rounded text-[0.9rem] cursor-pointer mt-2"
-            >
-              📥 Baixar {user.username.replace(/\//g, "_")}.otrc
-            </button>
-          </div>
-        </Modal>
       )}
     </div>
   );

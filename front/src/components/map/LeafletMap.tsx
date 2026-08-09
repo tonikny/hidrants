@@ -130,7 +130,6 @@ export function LeafletMap({
   const [incidenciesVisible, setIncidenciesVisible] = useLocalStorage<boolean>('hidrants_incidencies_visible', true);
   const [baseLayer, setBaseLayer] = useLocalStorage<string>('hidrants_base_layer', 'OpenStreetMap');
 
-  const [showCoordModal, setShowCoordModal] = useState(false);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [poi, setPoi] = useState<LatLng | null>(null);
 
@@ -221,15 +220,8 @@ export function LeafletMap({
         />
 
         <MapUIOverlays
-          user={user}
           loadingHidrants={loadingHidrants}
           hidrantsError={hidrantsError}
-          showCoordModal={showCoordModal}
-          setShowCoordModal={setShowCoordModal}
-          onCoordinateConfirm={(lat, lon) => {
-            onOpenCreate(L.latLng(lat, lon));
-            setShowCoordModal(false);
-          }}
           setLocatePosition={setPosition}
           setLocateAccuracy={setAccuracy}
         />

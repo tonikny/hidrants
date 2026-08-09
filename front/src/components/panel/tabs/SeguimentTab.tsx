@@ -3,6 +3,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useAdf } from "../../../contexts/AdfContext";
 import type { Position } from "../../../hooks/usePositionPolling";
 import { timeAgo } from "../../../utils/time";
+import { CollapsibleSection } from "../shared/CollapsibleSection";
 import { primaryButtonClass, secondaryButtonClass } from "../../../styles/uiStyles";
 import { toast } from "react-toastify";
 
@@ -161,15 +162,23 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
 
   return (
     <div className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="m-0 text-[0.95rem] font-semibold">Seguiment OwnTracks</h3>
-        <span className="flex items-center gap-1.5 text-[0.8rem] text-muted">
-          <span
-            className={`w-2 h-2 rounded-full ${available ? "bg-[#22c55e]" : "bg-[#ef4444]"}`}
-            title={available ? "disponible" : "no disponible"}
-          />
-          {available ? "disponible" : "no disponible"}
-        </span>
+      <div className="mb-3">
+        <div className="flex items-baseline justify-between leading-none">
+          <h3 className="m-0 text-[0.95rem] font-semibold">Seguiment OwnTracks</h3>
+          <span className="flex items-center gap-1.5 text-[0.8rem] text-muted">
+            {available ? "disponible" : "no disponible"}
+            <span
+              className={`w-2 h-2 rounded-full ${available ? "bg-[#22c55e]" : "bg-[#ef4444]"}`}
+              title={available ? "disponible" : "no disponible"}
+            />
+          </span>
+        </div>
+        {enabled && (
+          <div className="flex items-center justify-end gap-1.5 leading-none text-[0.8rem] text-muted mt-[1px]">
+            <span>usuari activat</span>
+            <span className="w-2 h-2 rounded-full bg-[#22c55e]" title="usuari activat" />
+          </div>
+        )}
       </div>
       {!enabled ? (
         <ol className="m-0 p-0 list-none space-y-3 text-[0.85rem] leading-relaxed">
@@ -240,7 +249,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
             </h4>
             <p className="m-0 text-[0.8rem] text-muted">
               Un cop activat apareixerà el botó <strong>📥 Baixar credencials</strong>: baixa el
-              fitxer <strong>.otrc</strong> i obra'l amb OwnTracks. El fitxer conté les teves
+              fitxer <strong>.otrc</strong> i obre'l amb OwnTracks. El fitxer conté les teves
               credencials: <strong>no el comparteixis amb ningú</strong>.
             </p>
           </li>
@@ -252,29 +261,41 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
               Comparteix la teva posició
             </h4>
             <p className="m-0 text-[0.8rem] text-muted">
-              Per aparèixer al mapa, obre OwnTracks i deixa-la oberta (pot funcionar en segon pla,
+              Per aparèixer al mapa, obre OwnTracks i deixa-la oberta (pot funcionar en segon plà,
               amb la pantalla bloquejada). Quan la tanquis ("Sortir" al menú), deixaràs de compartir
               la teva posició.
             </p>
           </li>
         </ol>
       ) : (
-        <div>
-          <button
-            onClick={() => {
-              void handleConfig();
-            }}
-            disabled={loading}
-            className={`${secondaryButtonClass} w-full`}
-            title="Descarrega el fitxer de configuració OwnTracks"
-          >
-            {loading ? "⏳" : "📥 Baixar credencials"}
-          </button>
-          <p className="text-muted text-[0.8rem] mt-2 mb-0">
-            Ja tens el seguiment activat. Pots tornar a baixar les credencials d'OwnTracks sempre
-            que vulguis. Per compartir la posició, obra OwnTracks; quan la tanquis, deixa de
-            compartir.
-          </p>
+        <div className="space-y-3">
+          <CollapsibleSection title="Com compartir la teva posició">
+            <div className="space-y-2">
+              <p className="m-0 text-[0.8rem] text-muted">
+                <span className="text-[0.9rem]">📡</span> Obre OwnTracks i deixa-la oberta (pot ser
+                en segon pla o amb la pantalla bloquejada) i la teva posició es mostrarà al mapa.
+              </p>
+              <p className="m-0 text-[0.8rem] text-muted">
+                <span className="text-[0.9rem]">⏹</span> Quan la tanquis ("Sortir" al menú),
+                deixaràs de compartir la teva posició.
+              </p>
+              <p className="m-0 text-[0.8rem] text-muted">
+                <span className="text-[0.9rem]">🔑</span> Si cal, pots tornar a baixar el fitxer{" "}
+                <strong>.otrc</strong> amb les teves credencials (són personals, no les
+                comparteixis):
+              </p>
+              <button
+                onClick={() => {
+                  void handleConfig();
+                }}
+                disabled={loading}
+                className={`${secondaryButtonClass} w-full`}
+                title="Descarrega el fitxer de configuració OwnTracks"
+              >
+                {loading ? "⏳" : "📥 Baixar credencials"}
+              </button>
+            </div>
+          </CollapsibleSection>
         </div>
       )}
 

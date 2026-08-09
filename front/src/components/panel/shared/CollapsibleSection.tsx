@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { useState } from 'react';
+import type { ReactNode } from "react";
+import { useState } from "react";
 
 export function CollapsibleSection({
   title,
@@ -8,7 +8,7 @@ export function CollapsibleSection({
   children,
 }: {
   title: string;
-  count: number;
+  count?: number;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
@@ -20,9 +20,10 @@ export function CollapsibleSection({
         className="w-full flex items-center justify-between bg-transparent border-0 cursor-pointer p-0 m-0 text-[0.95rem] font-semibold text-ink"
       >
         <span>
-          {title} ({count})
+          {title}
+          {count !== undefined ? ` (${count})` : ""}
         </span>
-        <span className="text-muted text-[0.8rem]">{open ? '▾' : '▸'}</span>
+        <span className="text-muted text-[0.8rem]">{open ? "▾" : "▸"}</span>
       </button>
       {open && <div className="mt-2">{children}</div>}
     </div>

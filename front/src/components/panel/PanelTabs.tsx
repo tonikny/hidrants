@@ -19,7 +19,7 @@ export function buildTabs({
   positions: Record<string, Position>;
 }): PanelTab[] {
   return [
-    { id: "mapa", icon: "🗺️", label: "Mapa", content: <MapaTab /> },
+    { id: "mapa", icon: "🗺️", label: "ADF", content: <MapaTab /> },
     {
       id: "seguiment",
       icon: "👣",

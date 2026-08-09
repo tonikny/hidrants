@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+import { adfLabel } from "../utils/adfLabel";
 
 export interface AdfData {
   id: number;
@@ -35,7 +36,7 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const url = new URL(window.location.href);
     if (adf) {
       localStorage.setItem("active_adf_id", adf.id.toString());
-      document.title = `Hidrants - ${adf.nom}`;
+      document.title = `Hidrants - ${adfLabel(adf.id, adf.nom)}`;
       url.searchParams.set("adf", adf.id.toString());
     } else {
       localStorage.removeItem("active_adf_id");

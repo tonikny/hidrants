@@ -4,6 +4,7 @@ import { useAdf } from "../../../contexts/AdfContext";
 import type { Position } from "../../../hooks/usePositionPolling";
 import { timeAgo } from "../../../utils/time";
 import { CollapsibleSection } from "../shared/CollapsibleSection";
+import { adfLabel } from "../../../utils/adfLabel";
 import { primaryButtonClass, secondaryButtonClass } from "../../../styles/uiStyles";
 import { toast } from "react-toastify";
 
@@ -254,7 +255,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
             </p>
           </li>
           <li>
-            <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
+            <h4 className="m-0 mb-1 text-[0.85rem]">
               <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
                 4
               </span>
@@ -302,7 +303,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
       {canToggle && (
         <div className="mt-4 border border-border rounded p-3">
           <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
-            Compartir tracking ({activeAdf?.nom})
+            Compartir tracking ({activeAdf ? adfLabel(activeAdf.id, activeAdf.nom) : ""})
           </h4>
           <label className="flex items-center gap-2 text-[0.85rem] cursor-pointer">
             <input

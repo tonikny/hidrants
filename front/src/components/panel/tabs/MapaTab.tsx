@@ -1,6 +1,7 @@
 import { useAuth } from "../../../contexts/AuthContext";
 import { useAdf } from "../../../contexts/AdfContext";
 import { SyncButton } from "../../controls/SyncButton";
+import { adfLabel } from "../../../utils/adfLabel";
 
 export function MapaTab() {
   const { adfs, isLoading, activeAdf, setActiveAdf } = useAdf();
@@ -23,7 +24,12 @@ export function MapaTab() {
             }`}
           >
             <span className={activeAdf?.id === adf.id ? "text-primary" : "text-muted"}>-</span>
-            <span>{adf.nom}</span>
+            <span>{adfLabel(adf.id, adf.nom)}</span>
+            {user?.adf_id === adf.id && (
+              <span className="ml-auto text-muted" title="La teva ADF">
+                👤
+              </span>
+            )}
           </button>
         ))}
       </div>

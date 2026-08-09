@@ -10,6 +10,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "../../../styles/uiStyles";
+import { adfLabel } from "../../../utils/adfLabel";
 
 interface ManagedUser {
   id: string;
@@ -98,7 +99,10 @@ export function UsuarisTab() {
     return [...map.entries()].sort((a, b) => a[0] - b[0]);
   }, [rows]);
 
-  const adfNom = (id: number) => adfs.find((a) => a.id === id)?.nom ?? `ADF ${id}`;
+  const adfNom = (id: number) => {
+    const found = adfs.find((a) => a.id === id);
+    return found ? adfLabel(found.id, found.nom) : `ADF ${id}`;
+  };
   const roles = isAdmin ? ROLES_ADMIN : ROLES_COORD;
 
   // Defensa extra: un coordinador només veu la seva ADF a la llista d'usuaris.
@@ -215,9 +219,11 @@ export function UsuarisTab() {
       <h3 className="m-0 mb-2 text-[0.95rem] font-semibold">Usuari</h3>
       <div className="border border-border rounded p-3 bg-soft">
         <div className="font-semibold text-ink">{user.username}</div>
-        <div className="text-muted text-[0.8rem] capitalize mt-[2px]">{user.role}</div>
+        <div className="text-muted text-[0.8rem] capitalize mt-[2px]">
+          {actualRole === "admin" ? "admin" : user.role}
+        </div>
         {user.adf_id !== null && (
-          <div className="text-muted text-[0.8rem] mt-[2px]">ADF: {adfNom(user.adf_id)}</div>
+          <div className="text-muted text-[0.8rem] mt-[2px]">{adfNom(user.adf_id)}</div>
         )}
         {actualRole === "admin" && (
           <label className="flex items-center gap-2 mt-2 text-[0.8rem]">
@@ -398,7 +404,9 @@ export function UsuarisTab() {
                                 </span>
                                 <NumberField
                                   value={editDraft.numero}
-onChange={(v) => setEditDraft((d) => (d ? { ...d, numero: v } : d))}
+                                  onChange={(v) =>
+                                    setEditDraft((d) => (d ? { ...d, numero: v } : d))
+                                  }
                                 />
                               </div>
                             </label>
@@ -407,7 +415,7 @@ onChange={(v) => setEditDraft((d) => (d ? { ...d, numero: v } : d))}
                                 type="checkbox"
                                 checked={editDraft.gi}
                                 onChange={(e) =>
-setEditDraft((d) => (d ? { ...d, gi: e.target.checked } : d))
+                                  setEditDraft((d) => (d ? { ...d, gi: e.target.checked } : d))
                                 }
                               />
                               Grup d'Intervenció (GI)
@@ -417,7 +425,7 @@ setEditDraft((d) => (d ? { ...d, gi: e.target.checked } : d))
                               <select
                                 value={editDraft.role}
                                 onChange={(e) =>
-setEditDraft((d) => (d ? { ...d, role: e.target.value } : d))
+                                  setEditDraft((d) => (d ? { ...d, role: e.target.value } : d))
                                 }
                                 className={selectClass}
                               >
@@ -434,7 +442,7 @@ setEditDraft((d) => (d ? { ...d, role: e.target.value } : d))
                                 type="password"
                                 value={editDraft.password}
                                 onChange={(e) =>
-setEditDraft((d) => (d ? { ...d, password: e.target.value } : d))
+                                  setEditDraft((d) => (d ? { ...d, password: e.target.value } : d))
                                 }
                                 className={`${inputClass} bg-white`}
                               />

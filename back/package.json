@@ -16,7 +16,8 @@
     "db:seed": "tsx src/scripts/seed.ts",
     "db:import-osm": "tsx src/scripts/importOsm.ts",
     "db:export-osm": "tsx src/scripts/exportAllToOsm.ts",
-    "mqtt:cleanup": "tsx src/scripts/cleanupMqtt.ts"
+    "mqtt:cleanup": "tsx src/scripts/cleanupMqtt.ts",
+    "telegram:selftest": "tsx src/scripts/telegramSelftest.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

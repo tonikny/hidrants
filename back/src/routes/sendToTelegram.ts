@@ -2,6 +2,7 @@ import type { ApiHandler } from '../types.js';
 import { ui2Osm } from '../utils/osmConversion.js';
 import { HidrantsService } from '../services/hidrantsService.js';
 import { sendTelegramMessage } from '../utils/telegram.js';
+import { sendToAdf } from '../services/telegramService.js';
 import { appBaseUrl } from '../utils/appUrl.js';
 
 function escapeHtml(text: string): string {
@@ -122,6 +123,10 @@ ${contentSection}
     `;
 
     await sendTelegramMessage(text);
+    // A més del bot global de l'admin, notifiquem el grup de la mateixa ADF
+    if (adf_id) {
+      await sendToAdf(Number(adf_id), text);
+    }
     res.status(200).json({ ok: true });
   } catch (error) {
     res

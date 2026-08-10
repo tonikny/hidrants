@@ -1,6 +1,6 @@
-import type { Incidencia, IncidenciaEvent } from '../../types';
-import { Timeline } from './Timeline';
-import { NodeActions } from '../shared/NodeActions';
+import type { Incidencia, IncidenciaEvent } from "../../types";
+import { Timeline } from "./Timeline";
+import { NodeActions } from "../shared/NodeActions";
 import {
   ESTATS_INCIDENCIA,
   PRECISIONS_INCIDENCIA,
@@ -8,15 +8,15 @@ import {
   TIPUS_INCIDENCIA,
   VISIBILITATS_INCIDENCIA,
   displayCategoria,
-} from '../../utils/incidenciaConstants';
+} from "../../utils/incidenciaConstants";
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('ca-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(dateStr).toLocaleString("ca-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -36,24 +36,24 @@ export function IncidenciaInfoView({
   hasLocation?: boolean;
 }) {
   const rows: Array<[string, string]> = [
-    ['Tipus', displayCategoria(TIPUS_INCIDENCIA, incidencia.tipus)],
-    ['Estat', displayCategoria(ESTATS_INCIDENCIA, incidencia.estat)],
-    ['Prioritat', displayCategoria(PRIORITATS_INCIDENCIA, incidencia.prioritat)],
-    ['Precisió', displayCategoria(PRECISIONS_INCIDENCIA, incidencia.precisio)],
-    ['Visibilitat', displayCategoria(VISIBILITATS_INCIDENCIA, incidencia.visibilitat)],
-    ['Creada', formatDate(incidencia.creat_at)],
-    ['Actualitzada', formatDate(incidencia.actualitzat_at)],
+    ["Tipus", displayCategoria(TIPUS_INCIDENCIA, incidencia.tipus)],
+    ["Estat", displayCategoria(ESTATS_INCIDENCIA, incidencia.estat)],
+    ["Prioritat", displayCategoria(PRIORITATS_INCIDENCIA, incidencia.prioritat)],
+    ["Precisió", displayCategoria(PRECISIONS_INCIDENCIA, incidencia.precisio)],
+    ["Visibilitat", displayCategoria(VISIBILITATS_INCIDENCIA, incidencia.visibilitat)],
+    ["Creada", formatDate(incidencia.creat_at)],
+    ["Actualitzada", formatDate(incidencia.actualitzat_at)],
   ];
 
   return (
     <>
       <div className="flex gap-3 text-[0.85rem]">
-        <div className="flex flex-col items-end gap-y-[6px] text-muted">
+        <div className="flex flex-col items-end gap-y-1.5 text-muted">
           {rows.map(([label]) => (
             <span key={label}>{label}</span>
           ))}
         </div>
-        <div className="flex flex-col items-start gap-y-[6px] text-ink">
+        <div className="flex flex-col items-start gap-y-1.5 text-ink">
           {rows.map(([label, value]) => (
             <span key={label}>{value}</span>
           ))}
@@ -63,7 +63,7 @@ export function IncidenciaInfoView({
       {loadingEvents ? (
         <div className="text-muted text-[0.8rem]">Carregant historial...</div>
       ) : (
-        <div className="max-h-[180px] overflow-y-auto">
+        <div className="max-h-45 overflow-y-auto">
           <Timeline events={events} />
         </div>
       )}

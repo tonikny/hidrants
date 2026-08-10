@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { useAdf } from '../../contexts/AdfContext';
-import { sendToTelegram } from '../../utils/sendToTelegram';
-import { toast } from 'react-toastify';
-import type { HidrantFeature } from '../../hooks/useHidrantData';
-import { inputClass, primaryButtonClass } from '../../styles/uiStyles';
+import { useState } from "react";
+import { useAdf } from "../../contexts/AdfContext";
+import { sendToTelegram } from "../../utils/sendToTelegram";
+import { toast } from "react-toastify";
+import type { HidrantFeature } from "../../hooks/useHidrantData";
+import { inputClass, primaryButtonClass } from "../../styles/uiStyles";
 
 export function TelegramNotifyBox({ feature }: { feature: HidrantFeature }) {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const { activeAdf } = useAdf();
   const poi = {
     lat: feature.geometry.coordinates[1],
@@ -23,10 +23,10 @@ export function TelegramNotifyBox({ feature }: { feature: HidrantFeature }) {
         adf_id: activeAdf?.id,
         isEdit: false,
       });
-      toast.success('Notificació enviada');
-      setMessage('');
+      toast.success("Notificació enviada");
+      setMessage("");
     } catch {
-      toast.error('Error enviant la notificació');
+      toast.error("Error enviant la notificació");
     }
   };
 
@@ -37,7 +37,7 @@ export function TelegramNotifyBox({ feature }: { feature: HidrantFeature }) {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         rows={2}
-        className={`${inputClass} w-full p-[6px] text-[0.8rem] font-inherit`}
+        className={`${inputClass} w-full p-1.5 text-[0.8rem] font-inherit`}
       />
       <button
         type="button"
@@ -45,9 +45,9 @@ export function TelegramNotifyBox({ feature }: { feature: HidrantFeature }) {
           e.stopPropagation();
           void handleSend();
         }}
-        className={`${primaryButtonClass} w-full mt-2 py-[8px] text-[0.8rem] flex items-center justify-center gap-2`}
+        className={`${primaryButtonClass} w-full mt-2 py-2 text-[0.8rem] flex items-center justify-center gap-2`}
       >
-        Notificar <span className="text-[1rem]">➤</span>
+        Notificar <span className="text-base">➤</span>
       </button>
     </div>
   );

@@ -154,7 +154,7 @@ export const NovaIncidenciaForm = ({ lat, lon, onClose }: NovaIncidenciaFormProp
           value={comentari}
           onChange={(e) => setComentari(e.target.value)}
           placeholder="Més detalls..."
-          className={`${inputClass} font-inherit h-[60px] resize-y p-[4px_6px]!`}
+          className={`${inputClass} font-inherit h-15 resize-y p-[4px_6px]!`}
         />
       </label>
 

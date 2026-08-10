@@ -42,7 +42,7 @@ function NumberField({ value, onChange }: { value: string; onChange: (v: string)
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 3))}
       placeholder="---"
-      className="border border-border rounded text-[1rem] font-semibold w-[4ch] text-center py-0.5 bg-white"
+      className="border border-border rounded text-base font-semibold w-[4ch] text-center py-0.5 bg-white"
     />
   );
 }
@@ -219,11 +219,11 @@ export function UsuarisTab() {
       <h3 className="m-0 mb-2 text-[0.95rem] font-semibold">Usuari</h3>
       <div className="border border-border rounded p-3 bg-soft">
         <div className="font-semibold text-ink">{user.username}</div>
-        <div className="text-muted text-[0.8rem] capitalize mt-[2px]">
+        <div className="text-muted text-[0.8rem] capitalize mt-0.5">
           {actualRole === "admin" ? "admin" : user.role}
         </div>
         {user.adf_id !== null && (
-          <div className="text-muted text-[0.8rem] mt-[2px]">{adfNom(user.adf_id)}</div>
+          <div className="text-muted text-[0.8rem] mt-0.5">{adfNom(user.adf_id)}</div>
         )}
         {actualRole === "admin" && (
           <label className="flex items-center gap-2 mt-2 text-[0.8rem]">
@@ -237,7 +237,7 @@ export function UsuarisTab() {
                     : (e.target.value as "admin" | "coordinador" | "voluntari"),
                 )
               }
-              className={`${selectClass} max-w-[9rem] px-1`}
+              className={`${selectClass} max-w-36 px-1`}
             >
               <option value="admin">Admin</option>
               <option value="coordinador">Coordinador</option>
@@ -266,8 +266,8 @@ export function UsuarisTab() {
               </div>
               <label className="block text-[0.8rem] italic mb-2">
                 Número:
-                <div className="flex gap-2 items-center mt-[2px]">
-                  <span className="text-[1rem] font-semibold whitespace-nowrap">
+                <div className="flex gap-2 items-center mt-0.5">
+                  <span className="text-base font-semibold whitespace-nowrap">
                     {prefixFor(createAdf, createDraft.gi)}
                   </span>
                   <NumberField
@@ -348,7 +348,7 @@ export function UsuarisTab() {
                           e.stopPropagation();
                           startCreate(adfId);
                         }}
-                        className={`${primaryButtonClass} p-1 px-2 text-[0.75rem]`}
+                        className={`${primaryButtonClass} p-1 px-2 text-xs`}
                       >
                         Nou
                       </button>
@@ -363,7 +363,7 @@ export function UsuarisTab() {
                         <div className="flex justify-between items-center gap-2 px-3 py-2 border-t border-soft text-[0.85rem]">
                           <div>
                             <div className="font-medium text-ink">{u.username}</div>
-                            <div className="text-muted text-[0.75rem] capitalize">{u.role}</div>
+                            <div className="text-muted text-xs capitalize">{u.role}</div>
                           </div>
                           {u.id !== user.id && (
                             <div className="flex gap-1 shrink-0">
@@ -399,7 +399,7 @@ export function UsuarisTab() {
                             <label className="block text-[0.8rem] italic mb-2">
                               Número:
                               <div className="flex gap-2 items-center">
-                                <span className="text-[1rem] font-semibold whitespace-nowrap">
+                                <span className="text-base font-semibold whitespace-nowrap">
                                   {prefixFor(editDraft.adfId, editDraft.gi)}
                                 </span>
                                 <NumberField

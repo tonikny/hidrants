@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { FONT_SCALES, getFontScale, setFontScale } from '../../../utils/fontScale';
-import { selectClass } from '../../../styles/uiStyles';
+import { useState } from "react";
+import { FONT_SCALES, getFontScale, setFontScale } from "../../../utils/fontScale";
+import { selectClass } from "../../../styles/uiStyles";
 
 export function ConfigTab() {
   const [fontScale, setFontScaleValue] = useState(getFontScale());
@@ -17,7 +17,7 @@ export function ConfigTab() {
             setFontScaleValue(v);
             setFontScale(v);
           }}
-          className={`${selectClass} max-w-[8rem] px-1`}
+          className={`${selectClass} max-w-32 px-1`}
         >
           {FONT_SCALES.map((s) => (
             <option key={s.value} value={s.value}>

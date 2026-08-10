@@ -1,5 +1,5 @@
-import { useGeolocationTracking } from '../../hooks/useGeolocationTracking';
-import { useEffect } from 'react';
+import { useGeolocationTracking } from "../../hooks/useGeolocationTracking";
+import { useEffect } from "react";
 
 export function LocateButton({
   className,
@@ -17,22 +17,24 @@ export function LocateButton({
   }, [position, setPosition]);
 
   useEffect(() => {
-    if (setAccuracy) {setAccuracy(accuracy ?? null);}
+    if (setAccuracy) {
+      setAccuracy(accuracy ?? null);
+    }
   }, [accuracy, setAccuracy]);
 
   return (
     <button
       onClick={toggleTracking}
-      className={`${className || ''} relative`}
+      className={`${className || ""} relative`}
       title={
         tracking
-          ? 'Desactiva el seguiment de la teva posició'
-          : 'Activa el seguiment de la teva posició'
+          ? "Desactiva el seguiment de la teva posició"
+          : "Activa el seguiment de la teva posició"
       }
     >
       🛰️
       {tracking && (
-        <span className="w-2 h-2 rounded-full bg-[#22c55e] border-[1.5px] border-white absolute top-[1px] right-[1px]" />
+        <span className="w-2 h-2 rounded-full bg-[#22c55e] border-[1.5px] border-white absolute top-0.25 right-0.25" />
       )}
     </button>
   );

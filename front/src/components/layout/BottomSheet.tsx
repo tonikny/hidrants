@@ -1,14 +1,8 @@
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-  type PointerEvent,
-} from 'react';
-import { HANDLE_H, ICONS_H, BAR_HEIGHT } from './metrics';
-import { TabBar } from './TabBar';
-import { NodeHeader } from './NodeHeader';
-import type { PanelTab, PanelNode, BottomSheetHandle } from './types';
+import { forwardRef, useImperativeHandle, useRef, useState, type PointerEvent } from "react";
+import { HANDLE_H, ICONS_H, BAR_HEIGHT } from "./metrics";
+import { TabBar } from "./TabBar";
+import { NodeHeader } from "./NodeHeader";
+import type { PanelTab, PanelNode, BottomSheetHandle } from "./types";
 
 function BottomSheetView(
   {
@@ -22,15 +16,20 @@ function BottomSheetView(
     activeTab: string;
     onSelectTab: (id: string) => void;
   },
-  ref: React.ForwardedRef<BottomSheetHandle>
+  ref: React.ForwardedRef<BottomSheetHandle>,
 ) {
   const nodeMode = !!node;
   const [open, setOpen] = useState(nodeMode);
-  const [height, setHeight] = useState(
-    node ? Math.round(window.innerHeight * 0.6) : BAR_HEIGHT
-  );
+  const [height, setHeight] = useState(node ? Math.round(window.innerHeight * 0.6) : BAR_HEIGHT);
   const [snapping, setSnapping] = useState(false);
-  const dragRef = useRef<{ startY: number; startH: number; h: number; moved: boolean; handleHit: boolean; tabId: string | null } | null>(null);
+  const dragRef = useRef<{
+    startY: number;
+    startH: number;
+    h: number;
+    moved: boolean;
+    handleHit: boolean;
+    tabId: string | null;
+  } | null>(null);
   const dragMovedRef = useRef(false);
 
   const positions = () => [
@@ -45,12 +44,19 @@ function BottomSheetView(
     setSnapping(true);
   };
 
-  useImperativeHandle(ref, () => ({
-    close() {
-      if (node) {node.onClose();}
-      else {setSnap(positions()[0]);}
-    },
-  }), [node]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      close() {
+        if (node) {
+          node.onClose();
+        } else {
+          setSnap(positions()[0]);
+        }
+      },
+    }),
+    [node],
+  );
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -59,48 +65,62 @@ function BottomSheetView(
       startH: height,
       h: height,
       moved: false,
-      handleHit: !!target.closest('[data-handle]'),
-      tabId: target.closest('[data-tab]')?.getAttribute('data-tab') ?? null,
+      handleHit: !!target.closest("[data-handle]"),
+      tabId: target.closest("[data-tab]")?.getAttribute("data-tab") ?? null,
     };
     dragMovedRef.current = false;
     setSnapping(false);
-    if (e.pointerType !== 'mouse') {
+    if (e.pointerType !== "mouse") {
       e.currentTarget.setPointerCapture(e.pointerId);
     }
   };
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
-    if (!d) {return;}
+    if (!d) {
+      return;
+    }
     const delta = d.startY - e.clientY;
     if (!d.moved) {
-      if (Math.abs(delta) < 6) {return;}
+      if (Math.abs(delta) < 6) {
+        return;
+      }
       d.moved = true;
       dragMovedRef.current = true;
     }
-    const next = Math.max(BAR_HEIGHT, Math.min(d.startH + delta, positions()[positions().length - 1]));
+    const next = Math.max(
+      BAR_HEIGHT,
+      Math.min(d.startH + delta, positions()[positions().length - 1]),
+    );
     d.h = next;
     setHeight(next);
   };
 
   const endDrag = () => {
     const d = dragRef.current;
-    if (!d) {return;}
+    if (!d) {
+      return;
+    }
     dragRef.current = null;
     if (!d.moved) {
       if (d.tabId) {
         onSelectTab(d.tabId);
-        if (!open) {setSnap(positions()[1]);}
+        if (!open) {
+          setSnap(positions()[1]);
+        }
       } else if (d.handleHit) {
-        if (nodeMode) {node.onClose();}
-        else {setSnap(open ? positions()[0] : positions()[1]);}
+        if (nodeMode) {
+          node.onClose();
+        } else {
+          setSnap(open ? positions()[0] : positions()[1]);
+        }
       }
       return;
     }
     const pos = positions();
     const target = pos.reduce(
       (acc, p) => (Math.abs(p - d.h) < Math.abs(acc - d.h) ? p : acc),
-      pos[0]
+      pos[0],
     );
     if (nodeMode && target === pos[0]) {
       node.onClose();
@@ -110,9 +130,13 @@ function BottomSheetView(
   };
 
   const handleTabSelect = (id: string) => {
-    if (dragMovedRef.current) {return;}
+    if (dragMovedRef.current) {
+      return;
+    }
     onSelectTab(id);
-    if (!open) {setSnap(positions()[1]);}
+    if (!open) {
+      setSnap(positions()[1]);
+    }
   };
 
   const activeContent = tabs.find((t) => t.id === activeTab)?.content;
@@ -122,7 +146,7 @@ function BottomSheetView(
       className="fixed inset-x-0 bottom-0 z-[1000] lg:hidden bg-white border-t border-border rounded-t-xl shadow-[0_-2px_10px_rgba(0,0,0,0.2)]"
       style={{
         height,
-        transition: snapping ? 'height 0.25s ease' : 'none',
+        transition: snapping ? "height 0.25s ease" : "none",
       }}
     >
       <div
@@ -135,10 +159,10 @@ function BottomSheetView(
       >
         <div
           data-handle
-          className="flex justify-center items-start pt-[3px] select-none cursor-grab"
+          className="flex justify-center items-start pt-0.75 select-none cursor-grab"
           style={{ height: HANDLE_H }}
         >
-          <span className="h-[3px] w-9 rounded-full bg-faint" aria-hidden />
+          <span className="h-0.75 w-9 rounded-full bg-faint" aria-hidden />
         </div>
         {nodeMode && node ? (
           <NodeHeader title={node.title} onEdit={node.onEdit} editing={node.editing} />
@@ -146,7 +170,10 @@ function BottomSheetView(
           <TabBar tabs={tabs} activeId={activeTab} onSelect={handleTabSelect} showLabels={open} />
         )}
       </div>
-      <div className="overflow-y-auto" style={{ height: height - (nodeMode ? HANDLE_H + ICONS_H : BAR_HEIGHT) }}>
+      <div
+        className="overflow-y-auto"
+        style={{ height: height - (nodeMode ? HANDLE_H + ICONS_H : BAR_HEIGHT) }}
+      >
         {nodeMode && node ? node.content : activeContent}
       </div>
     </div>

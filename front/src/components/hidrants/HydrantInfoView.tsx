@@ -45,13 +45,13 @@ export function HydrantInfoView({
     <>
       <div className="flex flex-col items-center gap-3">
         <div className="flex gap-3 text-[0.85rem]">
-          <div className="flex flex-col items-end gap-y-[6px] text-muted">
+          <div className="flex flex-col items-end gap-y-1.5 text-muted">
             {displayData.map(({ label }) => (
               <span key={label}>{label}</span>
             ))}
             {(user?.permissions ?? []).includes("view_sync_status") && <span>Sync</span>}
           </div>
-          <div className="flex flex-col items-start gap-y-[6px] text-ink">
+          <div className="flex flex-col items-start gap-y-1.5 text-ink">
             {displayData.map(({ label, value }) => (
               <span key={label}>{value}</span>
             ))}
@@ -65,7 +65,7 @@ export function HydrantInfoView({
 
       {props.private_tags?.observacions && (
         <div className="border border-border rounded p-2">
-          <div className="text-[0.75rem] text-muted mb-1">Observacions</div>
+          <div className="text-xs text-muted mb-1">Observacions</div>
           <div className="text-[0.85rem] text-ink whitespace-pre-wrap">
             {props.private_tags.observacions}
           </div>

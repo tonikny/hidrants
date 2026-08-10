@@ -24,7 +24,7 @@ export function MapUIOverlays({
     <>
       {/* Top Right: Native Layers Control is at top: 10px, right: 10px.
           We place our controls under it with enough gap. */}
-      <div className={`${controlContainerClass} top-[66px] right-[12px] items-end gap-2`}>
+      <div className={`${controlContainerClass} top-18 right-3 items-end gap-2`}>
         <div className={controlItemClass}>
           <LocateButton
             className={floatingButtonClass}
@@ -40,7 +40,7 @@ export function MapUIOverlays({
 
       {/* Bottom Left: Zoom Display (Above Attribution if it were there, but on the left).
           On mobile it sits above the bottomsheet bar (60px), aligned with the attribution. */}
-      <div className={`${controlContainerClass} bottom-[60px] lg:bottom-[5px] left-[5px]`}>
+      <div className={`${controlContainerClass} bottom-15 lg:bottom-1.25 left-1.25`}>
         <div className={controlItemClass}>
           <ZoomDisplay />
         </div>

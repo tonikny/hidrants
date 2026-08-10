@@ -175,7 +175,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
           </span>
         </div>
         {enabled && (
-          <div className="flex items-center justify-end gap-1.5 leading-none text-[0.8rem] text-muted mt-[1px]">
+          <div className="flex items-center justify-end gap-1.5 leading-none text-[0.8rem] text-muted mt-0.25">
             <span>usuari activat</span>
             <span className="w-2 h-2 rounded-full bg-[#22c55e]" title="usuari activat" />
           </div>
@@ -185,7 +185,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
         <ol className="m-0 p-0 list-none space-y-3 text-[0.85rem] leading-relaxed">
           <li>
             <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
-              <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
+              <span className="inline-flex items-center justify-center w-4.5 h-4.5 mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
                 1
               </span>
               Instal·la l'app OwnTracks
@@ -198,7 +198,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
                 href="https://play.google.com/store/apps/details?id=org.owntracks.android"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 flex flex-col items-center gap-[2px] border border-border rounded-xl p-2 no-underline text-center hover:bg-soft"
+                className="flex-1 flex flex-col items-center gap-0.5 border border-border rounded-xl p-2 no-underline text-center hover:bg-soft"
               >
                 <span className="text-[1.3rem]">📱</span>
                 <span className="text-[0.8rem] font-semibold text-ink">Android</span>
@@ -208,21 +208,21 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
                 href="https://apps.apple.com/app/owntracks/id692424691"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 flex flex-col items-center gap-[2px] border border-border rounded-xl p-2 no-underline text-center hover:bg-soft"
+                className="flex-1 flex flex-col items-center gap-0.5 border border-border rounded-xl p-2 no-underline text-center hover:bg-soft"
               >
                 <span className="text-[1.3rem]">🍏</span>
                 <span className="text-[0.8rem] font-semibold text-ink">iPhone</span>
                 <span className="text-[0.7rem] text-muted">App Store</span>
               </a>
             </div>
-            <p className="text-[0.75rem] text-muted mt-1 mb-0">
+            <p className="text-xs text-muted mt-1 mb-0">
               Per que l'app funcioni bé, concedeix els permissos de localització precissa a
               OwnTracks i desactiva l'optimització de bateria per evitar que s'aturi sola.
             </p>
           </li>
           <li>
             <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
-              <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
+              <span className="inline-flex items-center justify-center w-4.5 h-4.5 mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
                 2
               </span>
               Activa el seguiment
@@ -243,7 +243,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
           </li>
           <li>
             <h4 className="m-0 mb-1 text-[0.85rem] font-semibold">
-              <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
+              <span className="inline-flex items-center justify-center w-4.5 h-4.5 mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
                 3
               </span>
               Importa les credencials
@@ -256,7 +256,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
           </li>
           <li>
             <h4 className="m-0 mb-1 text-[0.85rem]">
-              <span className="inline-flex items-center justify-center w-[18px] h-[18px] mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
+              <span className="inline-flex items-center justify-center w-4.5 h-4.5 mr-1 rounded-full bg-primary text-white text-[0.7rem] align-middle">
                 4
               </span>
               Comparteix la teva posició
@@ -330,7 +330,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
             <li
               key={p.username}
               onClick={() => handleCenterOnUser(p.username)}
-              className="flex justify-between items-center px-3 py-[10px] border-b border-soft cursor-pointer hover:bg-soft"
+              className="flex justify-between items-center px-3 py-2.5 border-b border-soft cursor-pointer hover:bg-soft"
               title="Centra el mapa en aquesta posició"
             >
               <span className="text-[0.9rem] font-medium text-ink">{p.username}</span>

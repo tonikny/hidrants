@@ -1,11 +1,11 @@
-import type { HydrantUiFields } from '../../utils/osmConversion';
-import { HydrantFormFields } from './HydrantFormFields';
+import type { HydrantUiFields } from "../../utils/osmConversion";
+import { HydrantFormFields } from "./HydrantFormFields";
 import {
   inputClass,
   primaryButtonClass,
   secondaryButtonClass,
   dangerButtonClass,
-} from '../../styles/uiStyles';
+} from "../../styles/uiStyles";
 
 export function HydrantEditForm({
   data,
@@ -30,18 +30,18 @@ export function HydrantEditForm({
     <div className="flex flex-col gap-3">
       <HydrantFormFields data={data} onChange={setData} showSurveyDateAndStatus={true} />
 
-      <label className="text-[0.8rem] italic flex flex-col gap-[4px]">
+      <label className="text-[0.8rem] italic flex flex-col gap-1">
         Observacions:
         <textarea
           value={observacions}
           onChange={(e) => setObservacions(e.target.value)}
           rows={3}
-          className={`${inputClass} w-full resize-y text-[0.8rem] p-[6px]`}
+          className={`${inputClass} w-full resize-y text-[0.8rem] p-1.5`}
           placeholder="Observacions internes de l'hidrant..."
         />
       </label>
 
-      <div className="flex gap-[8px]">
+      <div className="flex gap-2">
         <button
           type="button"
           onClick={(e) => {
@@ -49,9 +49,9 @@ export function HydrantEditForm({
             onSave();
           }}
           disabled={busy}
-          className={`${primaryButtonClass} flex-1 py-[8px] text-[0.8rem] disabled:opacity-70`}
+          className={`${primaryButtonClass} flex-1 py-2 text-[0.8rem] disabled:opacity-70`}
         >
-          {busy ? 'Guardant...' : 'Guardar'}
+          {busy ? "Guardant..." : "Guardar"}
         </button>
         <button
           type="button"
@@ -59,7 +59,7 @@ export function HydrantEditForm({
             e.stopPropagation();
             onCancel();
           }}
-          className={`${secondaryButtonClass} flex-1 py-[8px] text-[0.8rem]`}
+          className={`${secondaryButtonClass} flex-1 py-2 text-[0.8rem]`}
         >
           Cancel·lar
         </button>

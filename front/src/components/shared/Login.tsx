@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { toast } from 'react-toastify';
-import { inputClass, primaryButtonClass } from '../../styles/uiStyles';
+import React, { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { toast } from "react-toastify";
+import { inputClass, primaryButtonClass } from "../../styles/uiStyles";
 
 export const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -14,9 +14,9 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
@@ -26,27 +26,29 @@ export const Login: React.FC = () => {
         login(data.token, data.user);
         toast.success(`Benvingut, ${data.user.username}`);
       } else {
-        toast.error(data.error || 'Error en el login');
+        toast.error(data.error || "Error en el login");
       }
     } catch {
-      toast.error('No es pot connectar amb el servidor');
+      toast.error("No es pot connectar amb el servidor");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-[10px]">
+    <div className="p-2.5">
       <form
         onSubmit={(e) => {
           void handleSubmit(e);
         }}
-        className="flex flex-col gap-[15px]"
+        className="flex flex-col gap-3.75"
       >
-        <h2 className="text-center m-0 mb-[10px] text-[1.2rem]">Accés Hidrants</h2>
+        <h2 className="text-center m-0 mb-2.5 text-[1.2rem]">Accés Hidrants</h2>
 
-        <div className="flex flex-col gap-[5px]">
-          <label htmlFor="username" className="text-[0.9rem] font-semibold">Usuari</label>
+        <div className="flex flex-col gap-1.25">
+          <label htmlFor="username" className="text-[0.9rem] font-semibold">
+            Usuari
+          </label>
           <input
             id="username"
             type="text"
@@ -57,8 +59,10 @@ export const Login: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-col gap-[5px]">
-          <label htmlFor="password" className="text-[0.9rem] font-semibold">Contrasenya</label>
+        <div className="flex flex-col gap-1.25">
+          <label htmlFor="password" className="text-[0.9rem] font-semibold">
+            Contrasenya
+          </label>
           <input
             id="password"
             type="password"
@@ -69,12 +73,8 @@ export const Login: React.FC = () => {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`${primaryButtonClass} mt-[10px]`}
-        >
-          {loading ? 'Entrant...' : 'Inicia sessió'}
+        <button type="submit" disabled={loading} className={`${primaryButtonClass} mt-2.5`}>
+          {loading ? "Entrant..." : "Inicia sessió"}
         </button>
       </form>
     </div>

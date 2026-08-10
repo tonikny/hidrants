@@ -4,12 +4,12 @@ import {
   hidrant_nop_rev,
   hidrant_nop_nrev,
   hidrant_no_info,
-} from '../../../utils/icons';
+} from "../../../utils/icons";
 
 export function AjudaTab() {
   const currentYear = new Date().getFullYear();
-  const itemClass = 'flex items-center gap-[15px] mb-[10px]';
-  const imgClass = 'w-[25px] h-[41px] object-contain';
+  const itemClass = "flex items-center gap-3.75 mb-2.5";
+  const imgClass = "w-6.25 h-10.25 object-contain";
 
   return (
     <div className="p-4">

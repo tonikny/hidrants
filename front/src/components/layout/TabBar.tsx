@@ -1,5 +1,5 @@
-import type { PanelTab } from './types';
-import { ICONS_H } from './metrics';
+import type { PanelTab } from "./types";
+import { ICONS_H } from "./metrics";
 
 export function TabBar({
   tabs,
@@ -19,8 +19,8 @@ export function TabBar({
           key={t.id}
           data-tab={t.id}
           onClick={() => onSelect(t.id)}
-          className={`flex-1 flex flex-col items-center justify-center gap-[2px] bg-transparent border-0 cursor-pointer ${
-            activeId === t.id ? 'text-primary font-semibold' : 'text-muted'
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-0 cursor-pointer ${
+            activeId === t.id ? "text-primary font-semibold" : "text-muted"
           }`}
         >
           <span className="text-[1.15rem] leading-none">{t.icon}</span>

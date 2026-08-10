@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import {
-  secondaryButtonClass,
-} from '../../styles/uiStyles';
+import React, { useState } from "react";
+import { secondaryButtonClass } from "../../styles/uiStyles";
 
 interface CreationSelectorProps {
   onSelectHydrant: () => void;
@@ -14,19 +12,17 @@ export const CreationSelector: React.FC<CreationSelectorProps> = ({
   onSelectIncidencia,
   onClose,
 }) => {
-  const [hoveredCard, setHoveredCard] = useState<'hydrant' | 'incidencia' | null>(
-    null
-  );
+  const [hoveredCard, setHoveredCard] = useState<"hydrant" | "incidencia" | null>(null);
 
-  const cardClass = (type: 'hydrant' | 'incidencia'): string => {
+  const cardClass = (type: "hydrant" | "incidencia"): string => {
     const isHovered = hoveredCard === type;
-    const isHydrant = type === 'hydrant';
+    const isHydrant = type === "hydrant";
     const hoverClass = isHovered
       ? isHydrant
-        ? 'border-primary bg-[#f0f7ff] shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
-        : 'border-[#dc3545] bg-[#fff5f5] shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
-      : 'border-[#e0e0e0] bg-[#fcfcfc]';
-    return `flex flex-col items-center p-5 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out flex-1 min-w-[100px] text-center ${hoverClass}`;
+        ? "border-primary bg-[#f0f7ff] shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+        : "border-[#dc3545] bg-[#fff5f5] shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+      : "border-[#e0e0e0] bg-[#fcfcfc]";
+    return `flex flex-col items-center p-5 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out flex-1 min-w-25 text-center ${hoverClass}`;
   };
 
   return (
@@ -38,32 +34,28 @@ export const CreationSelector: React.FC<CreationSelectorProps> = ({
       <div className="flex gap-4 w-full">
         {/* Card Hidrant */}
         <div
-          className={cardClass('hydrant')}
-          onMouseEnter={() => setHoveredCard('hydrant')}
+          className={cardClass("hydrant")}
+          onMouseEnter={() => setHoveredCard("hydrant")}
           onMouseLeave={() => setHoveredCard(null)}
           onClick={onSelectHydrant}
         >
           <span className="text-[2.5rem] mb-2">📍</span>
-          <strong className="text-[1rem] text-ink mb-1">
-            Nou Hidrant
-          </strong>
-          <span className="text-[0.75rem] text-[#777] leading-[1.2]">
+          <strong className="text-base text-ink mb-1">Nou Hidrant</strong>
+          <span className="text-xs text-[#777] leading-[1.2]">
             Registra un nou hidrant amb dades tècniques.
           </span>
         </div>
 
         {/* Card Incidència */}
         <div
-          className={cardClass('incidencia')}
-          onMouseEnter={() => setHoveredCard('incidencia')}
+          className={cardClass("incidencia")}
+          onMouseEnter={() => setHoveredCard("incidencia")}
           onMouseLeave={() => setHoveredCard(null)}
           onClick={onSelectIncidencia}
         >
           <span className="text-[2.5rem] mb-2">⚠️</span>
-          <strong className="text-[1rem] text-ink mb-1">
-            Incidència
-          </strong>
-          <span className="text-[0.75rem] text-[#777] leading-[1.2]">
+          <strong className="text-base text-ink mb-1">Incidència</strong>
+          <span className="text-xs text-[#777] leading-[1.2]">
             Reporta un foc, obstacle, o anomalia a la zona.
           </span>
         </div>

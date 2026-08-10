@@ -1,24 +1,26 @@
-import { useMemo, useState } from 'react';
-import type { HidrantFeature } from '../../hooks/useHidrantData';
-import { getHydrantStatus, getHydrantIconUrl } from '../../utils/icons';
-import { inputClass } from '../../styles/uiStyles';
+import { useMemo, useState } from "react";
+import type { HidrantFeature } from "../../hooks/useHidrantData";
+import { getHydrantStatus, getHydrantIconUrl } from "../../utils/icons";
+import { inputClass } from "../../styles/uiStyles";
 
 function centerNode(nodeId: string) {
   const url = new URL(window.location.href);
-  url.searchParams.set('node', nodeId);
-  window.history.replaceState({}, '', url.toString());
-  window.dispatchEvent(new CustomEvent('map-force-url-check'));
+  url.searchParams.set("node", nodeId);
+  window.history.replaceState({}, "", url.toString());
+  window.dispatchEvent(new CustomEvent("map-force-url-check"));
 }
 
 export function HydrantList({ features }: { features: HidrantFeature[] }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
-    if (!search) {return features;}
+    if (!search) {
+      return features;
+    }
     const s = search.toLowerCase();
     return features.filter((f) => {
       const ui = f.properties.ui_fields || {};
-      const address = `${ui.street || ''} ${ui.num || ''} ${ui.barri || ''}`.toLowerCase();
+      const address = `${ui.street || ""} ${ui.num || ""} ${ui.barri || ""}`.toLowerCase();
       return address.includes(s);
     });
   }, [features, search]);
@@ -38,37 +40,37 @@ export function HydrantList({ features }: { features: HidrantFeature[] }) {
         ) : (
           filtered.map((f) => {
             const ui = f.properties.ui_fields || {};
-            const address = `${ui.street || ''} ${ui.num || ''}`.trim();
-            const neighborhood = ui.barri ? `(${ui.barri})` : '';
-            const diameters = ui.diameters ? ui.diameters.split(';').join(', ') + ' mm' : '';
-            const isOutOfService = ui.estat === 'Fora de servei';
+            const address = `${ui.street || ""} ${ui.num || ""}`.trim();
+            const neighborhood = ui.barri ? `(${ui.barri})` : "";
+            const diameters = ui.diameters ? ui.diameters.split(";").join(", ") + " mm" : "";
+            const isOutOfService = ui.estat === "Fora de servei";
             return (
               <div
                 key={f.id}
                 onClick={() => centerNode(f.id)}
-                className="flex items-center gap-3 px-3 py-[10px] border-b border-soft cursor-pointer transition-colors duration-100 hover:bg-[#f5f5f5]"
+                className="flex items-center gap-3 px-3 py-2.5 border-b border-soft cursor-pointer transition-colors duration-100 hover:bg-[#f5f5f5]"
               >
                 <img
                   src={getHydrantIconUrl(getHydrantStatus(ui))}
                   alt="Estat"
-                  className="w-4 h-[26px] object-contain shrink-0"
+                  className="w-4 h-6.5 object-contain shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <div
                     className="font-bold text-[0.95rem] whitespace-nowrap overflow-hidden text-ellipsis text-ink"
                     title={`${address} ${neighborhood}`}
                   >
-                    {address || 'Sense adreça'}{' '}
+                    {address || "Sense adreça"}{" "}
                     <span className="font-normal text-muted text-[0.85rem]">{neighborhood}</span>
                   </div>
-                  <div className="text-[0.75rem] text-muted flex flex-wrap gap-[4px] mt-[2px]">
+                  <div className="text-xs text-muted flex flex-wrap gap-1 mt-0.5">
                     <span
-                      className={`font-medium ${isOutOfService ? 'text-[#d32f2f]' : 'text-[#2e7d32]'}`}
+                      className={`font-medium ${isOutOfService ? "text-[#d32f2f]" : "text-[#2e7d32]"}`}
                     >
-                      {ui.estat || 'Desconegut'}
+                      {ui.estat || "Desconegut"}
                     </span>
                     <span>•</span>
-                    <span>{ui.surveyDate || 'No revisat'}</span>
+                    <span>{ui.surveyDate || "No revisat"}</span>
                     {diameters && (
                       <>
                         <span>•</span>

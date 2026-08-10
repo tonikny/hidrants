@@ -31,10 +31,12 @@ Si utilitzes un servidor Debian 13 net, pots fer servir els scripts preparats:
     ```
 
 2.  Configura les variables d'entorn del backend:
+
     ```bash
     cp back/.env.example back/.env
     nano back/.env
     ```
+
     **IMPORTANT:**
     - Canvia `JWT_SECRET` per una clau realment segura.
     - Revisa els ports (per defecte el backend escolta al 3033 internament).
@@ -84,6 +86,7 @@ L'aplicació estarà disponible a:
 ## 6. MQTT / OwnTracks (Mosquitto)
 
 Ports del broker:
+
 - `1883`: intern/dev, només al host (`127.0.0.1`).
 - `51823`: TLS públic per OwnTracks (cal obrir-lo a firewall/NAT).
 
@@ -117,6 +120,7 @@ El projecte inclou un sistema complet de backups automàtics amb rotació. Els b
 #### Configurar Backups Automàtics
 
 1. **Instal·lar els cron jobs** (només cal fer-ho una vegada):
+
    ```bash
    cd /opt/hidrants
    ./scripts/backup/setup-cron.sh install
@@ -129,6 +133,7 @@ El projecte inclou un sistema complet de backups automàtics amb rotació. Els b
    - Semestral: 1 de gener i 1 de juliol a les 4:30 AM
 
 2. **Verificar l'estat dels backups**:
+
    ```bash
    ./scripts/backup/check-backups.sh
    ```
@@ -175,6 +180,7 @@ Per restaurar un backup existent:
 ```
 
 **IMPORTANT**: El script de restauració:
+
 - Aturarà temporalment el contenidor backend
 - Farà una còpia de seguretat de les dades actuals abans de restaurar
 - Et demanarà confirmació abans de procedir
@@ -191,6 +197,7 @@ Si necessites desactivar els backups automàtics:
 #### Notificacions per Telegram
 
 Si has configurat les variables `TELEGRAM_BOT_TOKEN` i `TELEGRAM_CHAT_ID` al fitxer `back/.env`, rebràs notificacions automàtiques quan:
+
 - Un backup es completa correctament
 - Un backup falla
 - Hi ha problemes amb el sistema de backups
@@ -198,11 +205,13 @@ Si has configurat les variables `TELEGRAM_BOT_TOKEN` i `TELEGRAM_CHAT_ID` al fit
 #### Logs de Backups
 
 Els logs de tots els backups automàtics es guarden a:
+
 ```
 ./backups/backup.log
 ```
 
 Per veure els últims logs:
+
 ```bash
 tail -f ./backups/backup.log
 ```
@@ -229,3 +238,25 @@ Per defecte, l'aplicació està configurada per escoltar a `127.0.0.1` per segur
 
 1.  **Opció A:** Utilitzar un Reverse Proxy (Nginx, Traefik) al host que apunti a `localhost:8080`.
 2.  **Opció B:** Modificar `docker-compose.yml` per obrir el port 80 directament: `0.0.0.0:80:80`.
+
+## 9. Notificacions Telegram per ADF (webhooks)
+
+Cada ADF pot usar el seu bot de Telegram amb un grup propi (configuració des de la UI: **Configuració → Notificacions de Telegram**). El backend necessita rebre actualitzacions de Telegram a `POST /api/telegram/webhook/:secret`.
+
+**En producció no cal configuració addicional:**
+
+- La URL del webhook es deriva del `Host` de la petició de registre → el domini que exposa l'app (Nginx amb cert Let's Encrypt) és l'URL que Telegram cridarà. Assegura que el reverse proxy reenvia `/api/telegram/webhook/*` al backend (el mateix `/api` que ja es proxya).
+- El domini ha de ser **públicament accessible** des d'Internet: Telegram rebutja IPs privades i certificats self-signed.
+- El token del bot es guarda **xifrat** a la DB (`ENCRYPTION_SECRET`) i mai surt del backend; el webhook només es confirma per secret aleatori per bot.
+
+**Si el domini públic difereix del `Host` intern** (per exemple un load balancer), força la URL amb:
+
+```env
+WEBHOOK_PUBLIC_URL=https://el_teu_domini_public
+```
+
+Self-test (host):
+
+```bash
+npm run telegram:selftest
+```

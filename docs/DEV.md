@@ -90,6 +90,47 @@ Prova manual amb credencials DynSec vàlides:
 docker compose exec mosquitto mosquitto_pub -h localhost -u <usuari> -P <password> -t 'owntracks/hidrants/<usuari>/phone' -m '{"_type":"location","lat":41.5,"lon":1.8,"tst":1721667688,"acc":10,"batt":80}'
 ```
 
+## Notificacions Telegram per ADF
+
+Cada ADF pot tenir el seu bot de Telegram i un grup on rep els avisos (incidències, alts i edicions d'hidrants). Es configura des de la pestanya **Configuració → Notificacions de Telegram**: el backend registra el bot (token xifrat a la DB), genera un deep link `startgroup` d'un sol ús (15 min) i el webhook completa la vinculació quan el bot s'afegeix al grup.
+
+El backend rep les actualitzacions de Telegram a:
+
+```
+POST /api/telegram/webhook/:secret
+```
+
+### Dev local: cal un túnel
+
+Telegram exigeix que el webhook sigui **HTTPS amb un certificat de confiança** (rebutja self-signed i IPs privades). Un nip.io amb cert `mkcert` NO serveix. La manera més senzilla és un túnel de Cloudflare (cert vàlid, sense registre):
+
+```bash
+npx -y cloudflared tunnel --url http://localhost:3033
+```
+
+Copia la URL que genera (`https://xxx.trycloudflare.com`) a `back/.env` i reinicia el backend:
+
+```env
+WEBHOOK_PUBLIC_URL=https://xxx.trycloudflare.com
+```
+
+Comprova que Telegram hi arriba:
+
+```bash
+curl https://xxx.trycloudflare.com/api/telegram/webhook/prova
+# {"ok":false}
+```
+
+**Avís:** la URL del túnel _quick_ de Cloudflare canvia a cada execució. Per una URL estable, crea un túnel amb nom (`cloudflared tunnel create`) o fes servir un certificat de veritat al teu host.
+
+**Com es construeix la URL del webhook:** si `WEBHOOK_PUBLIC_URL` està definit, s'usa tal qual. Si no, es deriva del `Host` de la petició de registre (per tant, en producció cal entrar per un domini públic, on ja funciona). Si en dev accedeixes per `localhost:5173` sense la variable, el backend generaria una URL LAN no accessible per Telegram.
+
+Self-test de la lògica de vinculació (sense xarxa):
+
+```bash
+npm run telegram:selftest
+```
+
 ## Qualitat de codi: ESLint, Husky i CI
 
 - **ESLint** (flat config `eslint.config.mjs`, un per `front/` i `back/`): `npm run lint` i `npm run lint:fix` a la arrel o a cada paquet. Objectiu 0 errors, 0 warnings.

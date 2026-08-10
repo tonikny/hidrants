@@ -13,7 +13,7 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
 - **Sincronització amb OSM**: Importació automàtica de dades des d'OpenStreetMap.
 - **Gestió d'incidències**: Registre i seguiment d'incidències associades als hidrants.
 - **Tracking en temps real (MQTT/OwnTracks)**: Recepció d'ubicacions GPS de les unitats per conèixer-ne la posició sobre el mapa.
-- **Notificacions Telegram**: Alertes i avisos automàtics via bot de Telegram.
+- **Notificacions Telegram per ADF**: Cada ADF pot tenir el seu bot i un grup de Telegram on rep automàticament els avisos (incidències, altes i edicions d'hidrants). Configuració guiada des de la pestanya **Configuració → Notificacions de Telegram**: token xifrat, deep link `startgroup` d'un sol ús i avís de prova directament al grup.
 - **Seguretat**: Sessions amb JWT i control d'accés per rols; el backend és resilient i funciona encara que Mosquitto no estigui disponible.
 - **Mapa interactiu**: Basat en Leaflet amb suport per a:
   - Visualització de límits territorials.

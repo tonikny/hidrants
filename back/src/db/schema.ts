@@ -114,3 +114,47 @@ export const incidencia_events = sqliteTable(
     incidenciaIdx: index("idx_events_incidencia").on(t.incidencia_id),
   }),
 );
+
+export const telegramBots = sqliteTable(
+  "telegram_bots",
+  {
+    id: text("id").primaryKey(), // UUID
+    adf_id: integer("adf_id")
+      .notNull()
+      .references(() => adfs.id),
+    bot_id: integer("bot_id").notNull(),
+    bot_username: text("bot_username").notNull(),
+    bot_name: text("bot_name"),
+    token_enc: text("token_enc").notNull(), // xifrat (aes-256-gcm)
+    webhook_secret: text("webhook_secret").notNull(),
+    chat_id: integer("chat_id"),
+    group_name: text("group_name"), // Nom del grup vinculat (nom del bot dins el grup)
+    estat: text("estat", {
+      enum: ["NO_CONFIGURAT", "BOT_CONFIGURAT", "GRUP_PENDENT", "CONFIGURAT", "DESACTIVAT"],
+    }).default("NO_CONFIGURAT"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => ({
+    adfUnq: unique().on(t.adf_id), // una ADF = un bot actiu
+    botUnq: unique().on(t.bot_id), // un bot = una ADF
+    chatUnq: unique().on(t.chat_id), // un grup = una ADF
+  }),
+);
+
+export const telegramLinks = sqliteTable(
+  "telegram_links",
+  {
+    id: text("id").primaryKey(), // UUID
+    telegram_bot_id: text("telegram_bot_id")
+      .notNull()
+      .references(() => telegramBots.id),
+    code_hash: text("code_hash").notNull(), // SHA-256 del codi de vinculació
+    expires_at: text("expires_at").notNull(), // ISO
+    used_at: text("used_at"), // ISO un cop consumit
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => ({
+    codeUnq: unique().on(t.code_hash), // un sol ús
+  }),
+);

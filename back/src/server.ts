@@ -16,6 +16,8 @@ import { login, me, logout } from "./routes/auth.js";
 import users from "./routes/users.js";
 import tracking from "./routes/tracking.js";
 import trackingSharing from "./routes/trackingSharing.js";
+import telegram from "./routes/telegram.js";
+import telegramWebhook from "./routes/telegramWebhook.js";
 import { startMqttService, stopMqttService } from "./services/mqtt.js";
 import sqlite from "./db/index.js";
 
@@ -221,6 +223,11 @@ const routes = [
   { path: "/api/tracking/enable", handler: tracking.enable, protected: true },
   { path: "/api/tracking/config", handler: tracking.config, protected: true },
   { path: "/api/adfs/:id/tracking-sharing", handler: trackingSharing, protected: true },
+  { path: "/api/adfs/:id/telegram", handler: telegram.handle, protected: true },
+  { path: "/api/adfs/:id/telegram/status", handler: telegram.status, protected: true },
+  { path: "/api/adfs/:id/telegram/link", handler: telegram.link, protected: true },
+  { path: "/api/adfs/:id/telegram/test", handler: telegram.test, protected: true },
+  { path: "/api/telegram/webhook/:secret", handler: telegramWebhook },
   { path: "/api/users", handler: users, protected: true },
   { path: "/api/users/:id", handler: users, protected: true },
 ];

@@ -34,6 +34,11 @@ const configSchema = z.object({
     .string()
     .default('true')
     .transform((v) => v === 'true' || v === '1'),
+
+  // URL pública https on Telegram arribi al webhook. Necessari en dev local
+  // (túnel com cloudflared/ngrok) o per forçar un domini concret. En producció
+  // es deriva automàticament del Host de la petició.
+  WEBHOOK_PUBLIC_URL: z.string().optional(),
 });
 
 const parsed = configSchema.safeParse(process.env);

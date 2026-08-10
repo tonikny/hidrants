@@ -27,6 +27,7 @@ const VIEW_PERMS: Record<ViewRole, string[]> = {
     "view_shared_positions",
     "view_all_positions",
     "manage_own_adf_sharing",
+    "manage_telegram",
     "create_incidencia",
   ],
   coordinador: [
@@ -36,6 +37,7 @@ const VIEW_PERMS: Record<ViewRole, string[]> = {
     "view_own_adf_positions",
     "view_shared_positions",
     "manage_own_adf_sharing",
+    "manage_telegram",
     "create_incidencia",
   ],
   voluntari: ["create_hydrant", "edit_hydrant", "view_own_adf_positions", "create_incidencia"],

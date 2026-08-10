@@ -36,6 +36,13 @@
       "when": 1786119738405,
       "tag": "0004_concerned_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786379859786,
+      "tag": "0005_fast_goblin_queen",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,7 @@
   --color-faint: #999;
   --color-border: #ccc;
   --color-soft: #eee;
+  --breakpoint-tb: 56rem;
 }
 
 html,
@@ -36,7 +37,7 @@ body,
 }
 
 /* A mobile el contenidor d'atribució no queda tapat per la barra del bottomsheet */
-@media (max-width: 1023px) {
+@media (max-width: 895px) {
   .leaflet-control-container .leaflet-bottom {
     bottom: 60px;
   }

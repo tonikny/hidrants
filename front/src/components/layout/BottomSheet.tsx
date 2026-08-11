@@ -143,7 +143,7 @@ function BottomSheetView(
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-[1000] lg:hidden bg-white border-t border-border rounded-t-xl shadow-[0_-2px_10px_rgba(0,0,0,0.2)]"
+      className="fixed inset-x-0 bottom-0 z-1000 tb:hidden bg-white border-t border-border rounded-t-xl shadow-[0_-2px_10px_rgba(0,0,0,0.2)]"
       style={{
         height,
         transition: snapping ? "height 0.25s ease" : "none",

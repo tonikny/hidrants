@@ -47,13 +47,13 @@ export function MapUIOverlays({
       </div>
 
       {loadingHidrants && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-white/80 px-4 py-2 rounded-[20px] z-[990] shadow-[0_2px_5px_rgba(0,0,0,0.2)] text-[0.8rem] pointer-events-none">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-white/80 px-4 py-2 rounded-[20px] z-990 shadow-[0_2px_5px_rgba(0,0,0,0.2)] text-[0.8rem] pointer-events-none">
           Actualitzant hidrants...
         </div>
       )}
 
       {hidrantsError && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-red-700/80 text-white px-4 py-2 rounded-lg z-[990] text-[0.8rem]">
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-red-700/80 text-white px-4 py-2 rounded-lg z-990 text-[0.8rem]">
           Error: {hidrantsError}
         </div>
       )}

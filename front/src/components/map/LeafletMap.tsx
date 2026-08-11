@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react';
-import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import type { LatLng } from 'leaflet';
-import L from 'leaflet';
-import { MapClickHandler } from './MapClickHandler';
-import MapRightClickHandler from './MapRightClickHandler';
-import { Layers } from './Layers';
-import MaskedAreaMap from './MaskedAreaMap';
-import { RouteLayer } from './RouteLayer';
-import { useAdf } from '../../contexts/AdfContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { HydrantMarkerList } from './markers/HydrantMarkerList';
-import { MapUrlHandler } from './MapUrlHandler';
-import { MapViewPersist } from './MapViewPersist';
-import { MapUIOverlays } from '../controls/MapUIOverlays';
-import { LocationMarker } from './LocationMarker';
-import { useLocalStorage } from '../../utils/useLocalStorage';
+import { useState, useEffect } from "react";
+import { MapContainer, Marker, useMap, useMapEvents } from "react-leaflet";
+import type { LatLng } from "leaflet";
+import L from "leaflet";
+import { MapClickHandler } from "./MapClickHandler";
+import MapRightClickHandler from "./MapRightClickHandler";
+import { Layers } from "./Layers";
+import MaskedAreaMap from "./MaskedAreaMap";
+import { RouteLayer } from "./RouteLayer";
+import { useAdf } from "../../contexts/AdfContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { HydrantMarkerList } from "./markers/HydrantMarkerList";
+import { MapUrlHandler } from "./MapUrlHandler";
+import { MapViewPersist } from "./MapViewPersist";
+import { MapUIOverlays } from "../controls/MapUIOverlays";
+import { LocationMarker } from "./LocationMarker";
+import { useLocalStorage } from "../../utils/useLocalStorage";
 
-import { IncidenciaMarkerList } from './markers/IncidenciaMarkerList';
-import type { HidrantFeature } from '../../hooks/useHidrantData';
-import type { IncidenciaFeature, CreateType } from '../../types';
+import { IncidenciaMarkerList } from "./markers/IncidenciaMarkerList";
+import type { HidrantFeature } from "../../hooks/useHidrantData";
+import type { IncidenciaFeature, CreateType } from "../../types";
 
 // ✅ Centra el mapa en el node seleccionat amb un sol moviment,
 // tenint en compte el bottomsheet obert (espai visible més petit).
@@ -27,12 +27,16 @@ function MapNodeCenter() {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ geometry: { coordinates: [number, number] }; keepZoom?: boolean }>).detail;
+      const detail = (
+        e as CustomEvent<{ geometry: { coordinates: [number, number] }; keepZoom?: boolean }>
+      ).detail;
       const [lon, lat] = detail.geometry.coordinates;
       const size = map.getSize();
-      if (size.y === 0) {return;}
+      if (size.y === 0) {
+        return;
+      }
 
-      const sheet = document.querySelector('[class*="z-[1000]"]');
+      const sheet = document.querySelector('[class*="z-1000"]');
       let targetY = size.y / 2;
       if (sheet && sheet.getBoundingClientRect().height > 0) {
         targetY = sheet.getBoundingClientRect().top / 2;
@@ -45,8 +49,8 @@ function MapNodeCenter() {
       map.flyTo(center, zoom, { animate: true, duration: 1.2 });
     };
 
-    window.addEventListener('map-center-node', handler);
-    return () => window.removeEventListener('map-center-node', handler);
+    window.addEventListener("map-center-node", handler);
+    return () => window.removeEventListener("map-center-node", handler);
   }, [map]);
 
   return null;
@@ -112,7 +116,17 @@ export function LeafletMap({
   incidenciaFeatures: IncidenciaFeature[];
   loadingIncidencies: boolean;
   selectedIncidenciaId?: string | null;
-  positions: Record<string, { lat: number; lon: number; accuracy: number; timestamp: number; battery: number; receivedAt: number }>;
+  positions: Record<
+    string,
+    {
+      lat: number;
+      lon: number;
+      accuracy: number;
+      timestamp: number;
+      battery: number;
+      receivedAt: number;
+    }
+  >;
   position: L.LatLng | null;
   setPosition: (pos: L.LatLng | null) => void;
   showRoute: boolean;
@@ -125,10 +139,19 @@ export function LeafletMap({
 }) {
   const { activeAdf, isLoading } = useAdf();
   const { user } = useAuth();
-  const [activeTechnicalLayer, setActiveTechnicalLayer] = useLocalStorage<string | null>('hidrants_technical_layer', null);
-  const [hydrantsVisible, setHydrantsVisible] = useLocalStorage<boolean>('hidrants_hydrants_visible', true);
-  const [incidenciesVisible, setIncidenciesVisible] = useLocalStorage<boolean>('hidrants_incidencies_visible', true);
-  const [baseLayer, setBaseLayer] = useLocalStorage<string>('hidrants_base_layer', 'OpenStreetMap');
+  const [activeTechnicalLayer, setActiveTechnicalLayer] = useLocalStorage<string | null>(
+    "hidrants_technical_layer",
+    null,
+  );
+  const [hydrantsVisible, setHydrantsVisible] = useLocalStorage<boolean>(
+    "hidrants_hydrants_visible",
+    true,
+  );
+  const [incidenciesVisible, setIncidenciesVisible] = useLocalStorage<boolean>(
+    "hidrants_incidencies_visible",
+    true,
+  );
+  const [baseLayer, setBaseLayer] = useLocalStorage<string>("hidrants_base_layer", "OpenStreetMap");
 
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [poi, setPoi] = useState<LatLng | null>(null);
@@ -172,47 +195,42 @@ export function LeafletMap({
           setBaseLayer={setBaseLayer}
           positions={positions}
         />
-        <MapRightClickHandler
-          onCreate={onOpenCreate}
-          user={user}
-        />
-        {hydrantsVisible && <HydrantMarkerList
-          features={features}
-          setPoi={setPoi}
-          showRoute={showRoute}
-          setShowRoute={setShowRoute}
-          refreshHidrants={refreshHidrants}
-          hasLocation={!!position}
-          onSelectNode={onSelectNode}
-          selectedNodeId={selectedNodeId}
-        />}
-        {incidenciesVisible && <IncidenciaMarkerList
-          features={incidenciaFeatures}
-          setPoi={setPoi}
-          onSelectIncidencia={onSelectIncidencia}
-          selectedIncidenciaId={selectedIncidenciaId}
-        />}
-        {user && (
-          <MapClickHandler
-            onClick={onOpenCreate}
-            onCancel={onCloseCreate}
-            isActive={!!createPos}
+        <MapRightClickHandler onCreate={onOpenCreate} user={user} />
+        {hydrantsVisible && (
+          <HydrantMarkerList
+            features={features}
+            setPoi={setPoi}
+            showRoute={showRoute}
+            setShowRoute={setShowRoute}
+            refreshHidrants={refreshHidrants}
+            hasLocation={!!position}
+            onSelectNode={onSelectNode}
+            selectedNodeId={selectedNodeId}
           />
+        )}
+        {incidenciesVisible && (
+          <IncidenciaMarkerList
+            features={incidenciaFeatures}
+            setPoi={setPoi}
+            onSelectIncidencia={onSelectIncidencia}
+            selectedIncidenciaId={selectedIncidenciaId}
+          />
+        )}
+        {user && (
+          <MapClickHandler onClick={onOpenCreate} onCancel={onCloseCreate} isActive={!!createPos} />
         )}
         {createPos && createForm && (
           <Marker
             position={createPos}
             icon={L.icon({
-              iconUrl: '/images/icons/marker-icon-gold.png',
+              iconUrl: "/images/icons/marker-icon-gold.png",
               iconSize: [25, 41],
               iconAnchor: [12, 41],
               popupAnchor: [0, -41],
             })}
           />
         )}
-        {poi && position && showRoute && (
-          <RouteLayer from={position} to={poi} />
-        )}
+        {poi && position && showRoute && <RouteLayer from={position} to={poi} />}
         <LocationMarker
           position={position}
           accuracy={accuracy}

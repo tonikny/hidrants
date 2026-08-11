@@ -123,7 +123,7 @@ def cmd_sync() -> None:
                 existing = json.load(f)
         except PermissionError:
             perm_error()
-    admin_user, admin_pass, backend_user, backend_pass, prefix = creds()
+    admin_user, _, backend_user, _, _ = creds()
     run("docker", "compose", "stop", "mosquitto")
     base = base_config()
     if existing:

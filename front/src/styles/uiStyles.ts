@@ -1,7 +1,7 @@
 export const floatingButtonClass =
-  "bg-white text-ink border border-border rounded w-8.5 h-8.5 text-[1.2rem] cursor-pointer z-[990] shadow-[0_1px_5px_rgba(0,0,0,0.4)] flex items-center justify-center p-0";
+  "bg-white text-ink border border-border rounded w-8.5 h-8.5 text-[1.2rem] cursor-pointer z-990 shadow-[0_1px_5px_rgba(0,0,0,0.4)] flex items-center justify-center p-0";
 
-export const controlContainerClass = "absolute flex flex-col gap-2.5 z-[990] pointer-events-none";
+export const controlContainerClass = "absolute flex flex-col gap-2.5 z-990 pointer-events-none";
 
 export const controlItemClass = "pointer-events-auto";
 

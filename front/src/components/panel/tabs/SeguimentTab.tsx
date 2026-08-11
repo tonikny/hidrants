@@ -175,7 +175,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
           </span>
         </div>
         {enabled && (
-          <div className="flex items-center justify-end gap-1.5 leading-none text-[0.8rem] text-muted mt-0.25">
+          <div className="flex items-center justify-end gap-1.5 leading-none text-[0.8rem] text-muted mt-px">
             <span>usuari activat</span>
             <span className="w-2 h-2 rounded-full bg-[#22c55e]" title="usuari activat" />
           </div>

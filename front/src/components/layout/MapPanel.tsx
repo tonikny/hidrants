@@ -77,21 +77,24 @@ export function MapPanel() {
   // Refrescar hidrants des de la llista de sync
   useEffect(() => {
     const handler = () => {
-      // FORÇAR actualització:
-      // - Canvi de key per fer re-render NodeInfo
-      // - Actualitzar selectedNode des del array features
+      // Només forçar re-render i actualitzar dades del backend
       setNodeInfoKey((prev) => prev + 1);
-      // Re-selecteix el node amb les dades actuals del array features
-      // Aquest es elúnic manera assegurar-se que les dades noves són mostrades
-      if (selectedNode) {
-        setSelectedNode(null);
-        setTimeout(() => setSelectedNode(selectedNode), 0);
-      }
       void refreshHidrants();
     };
     window.addEventListener("refresh-hidrants", handler);
     return () => window.removeEventListener("refresh-hidrants", handler);
-  }, [selectedNode, features, refreshHidrants, nodeInfoKey]);
+  }, []);
+
+  // Actualitzar selectedNode quan features canvia (després de refreshHidrants)
+  /* eslint-disable react-hooks/set-state-in-effect -- actualització necessària quan canvien les dades */
+  useEffect(() => {
+    if (selectedNode) {
+      const updatedFeature = features.find((f) => f.id === selectedNode.id);
+      if (updatedFeature && updatedFeature !== selectedNode) {
+        setSelectedNode(updatedFeature);
+      }
+    }
+  }, [features, selectedNode]);
 
   // Re-selecció del node després de guardar/descarregar/pushejar
   // Per actualitzar els valors inicials del formulari d'edició
@@ -231,7 +234,7 @@ export function MapPanel() {
               content: (
                 <NodeInfo
                   key={nodeInfoKey}
-                  nodeId={selectedNode?.id}
+                  feature={selectedNode}
                   canEdit={canEdit}
                   editing={editing}
                   setEditing={setEditing}

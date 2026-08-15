@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import type { HidrantFeature } from "../../hooks/useHidrantData";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAdf } from "../../contexts/AdfContext";
-import { useHydrantData } from "../../hooks/useHidrantData";
 import { useHydrantActions } from "./useHydrantActions";
 import { HydrantInfoView } from "./HydrantInfoView";
 import { HydrantEditForm } from "./HydrantEditForm";
 import { confirmDiscardChanges, setFormDirty } from "../../utils/formDirty";
 
 export const NodeInfo = ({
-  nodeId,
+  feature,
   showRoute,
   setShowRoute,
   refreshHidrants,
@@ -19,7 +18,7 @@ export const NodeInfo = ({
   setEditing,
   className = "",
 }: {
-  nodeId: string;
+  feature: HidrantFeature;
   showRoute?: boolean;
   setShowRoute?: (value: boolean) => void;
   refreshHidrants?: () => Promise<void>;
@@ -31,19 +30,16 @@ export const NodeInfo = ({
 }) => {
   const { user } = useAuth();
   const { activeAdf } = useAdf();
-  const { features } = useHydrantData();
-  const foundFeature = features.find((f) => f.id === nodeId);
-  const feature =
-    foundFeature ||
-    ({
-      type: "Feature",
-      id: nodeId,
-      geometry: { type: "Point", coordinates: [0, 0] },
-      properties: { ui_fields: {} },
-    } as HidrantFeature);
-  const props = feature.properties || {};
-  const [data, setData] = useState(props.ui_fields || "");
+  const props = feature.properties;
+  const [data, setData] = useState(props.ui_fields);
   const [observacions, setObservacions] = useState(props.private_tags?.observacions || "");
+
+  // Sincronitzar l'estat del formulari quan feature canvia (actualització des del backend)
+  /* eslint-disable react-hooks/set-state-in-effect -- actualització necessària quan canvien les dades del backend */
+  useEffect(() => {
+    setData(props.ui_fields);
+    setObservacions(props.private_tags?.observacions || "");
+  }, [props.ui_fields, props.private_tags?.observacions]);
 
   const isAdmin = user?.role === "admin";
   const canDelete = canEdit && (user?.permissions ?? []).includes("delete_hydrant");
@@ -53,23 +49,6 @@ export const NodeInfo = ({
     activeAdf,
     refreshHidrants,
   );
-
-  // Efecte per actualitzar les dades del formulari quan es Desa o canvia l'estat
-  useEffect(() => {
-    // Quan es Desa, es dispatcha l'event refresh-hidrants que arriba al MapPanel
-    // Després, al re-seleccionar el node, les dades es actualitzen
-    // Aquest efecte assegura que les dades del formulari siguin les més recents
-    const handler = () => {
-      const foundFeature = features.find((f) => f.id === nodeId);
-      if (foundFeature) {
-        const props = foundFeature.properties || {};
-        setData(props.ui_fields || "");
-        setObservacions(props.private_tags?.observacions || "");
-      }
-    };
-    window.addEventListener("refresh-hidrants", handler);
-    return () => window.removeEventListener("refresh-hidrants", handler);
-  }, [nodeId, features]);
 
   const handleSave = async () => {
     const ok = await save({

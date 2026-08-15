@@ -8,6 +8,10 @@ import {
 import { isConfigured } from "../services/osmApi.js";
 import { HidrantsRepository } from "../db/repositories/hidrantsRepository.js";
 import { BadRequestError } from "../errors.js";
+import { sql } from "drizzle-orm";
+import { db } from "../db/index.js";
+import { hidrants } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
 /**
  * Rutes OSM:
@@ -81,10 +85,15 @@ const handler: ApiHandler = async (req, res) => {
       for (const hydrantId of toSync) {
         const hydrant = hydrants.find((h) => h.id === hydrantId);
         if (hydrant && hydrant.remote_osm_tags && hydrant.adf_id !== null) {
-          HidrantsRepository.update(hydrant.id, hydrant.adf_id, {
-            osm_tags: hydrant.remote_osm_tags,
-            sync_status: "SYNCED",
-          });
+          db.update(hidrants)
+            .set({
+              osm_tags: hydrant.remote_osm_tags,
+              sync_status: "SYNCED",
+              synced_at: sql`CURRENT_TIMESTAMP`,
+              updated_at: sql`CURRENT_TIMESTAMP`,
+            })
+            .where(eq(hidrants.id, hydrantId))
+            .run();
         }
       }
     }

@@ -8,7 +8,6 @@ import {
 import { isConfigured } from "../services/osmApi.js";
 import { HidrantsRepository } from "../db/repositories/hidrantsRepository.js";
 import { BadRequestError } from "../errors.js";
-import { sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { hidrants } from "../db/schema.js";
 import { eq } from "drizzle-orm";
@@ -82,6 +81,7 @@ const handler: ApiHandler = async (req, res) => {
     }
     if (toSync.length > 0) {
       // Restaurar les etiquetes d'OSM des de remote_osm_tags abans de marcar com a sincronitzat
+      const now = new Date().toISOString();
       for (const hydrantId of toSync) {
         const hydrant = hydrants.find((h) => h.id === hydrantId);
         if (hydrant && hydrant.remote_osm_tags && hydrant.adf_id !== null) {
@@ -89,8 +89,8 @@ const handler: ApiHandler = async (req, res) => {
             .set({
               osm_tags: hydrant.remote_osm_tags,
               sync_status: "SYNCED",
-              synced_at: sql`CURRENT_TIMESTAMP`,
-              updated_at: sql`CURRENT_TIMESTAMP`,
+              synced_at: now,
+              updated_at: now,
             })
             .where(eq(hidrants.id, hydrantId))
             .run();

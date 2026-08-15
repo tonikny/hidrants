@@ -39,7 +39,7 @@ export function useHydrantData() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (): Promise<void> => {
     if (!activeAdf) {
       setFeatures([]);
       return;

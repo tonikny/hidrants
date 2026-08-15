@@ -2,6 +2,10 @@ import { db } from "../index.js";
 import { hidrants } from "../schema.js";
 import { count, eq, and, ne, sql, inArray } from "drizzle-orm";
 
+function nowISO(): string {
+  return new Date().toISOString();
+}
+
 type SyncStatus =
   | "SYNCED"
   | "PENDING_CREATE"
@@ -128,7 +132,7 @@ export const HidrantsRepository = {
         osm_tags: data.osm_tags,
         private_tags: data.private_tags,
         sync_status: data.sync_status as SyncStatus,
-        updated_at: sql`CURRENT_TIMESTAMP`,
+        updated_at: nowISO(),
       })
       .where(and(eq(hidrants.id, id), eq(hidrants.adf_id, adfId)))
       .run();
@@ -142,7 +146,7 @@ export const HidrantsRepository = {
     db.update(hidrants)
       .set({
         sync_status: "PENDING_DELETE",
-        updated_at: sql`CURRENT_TIMESTAMP`,
+        updated_at: nowISO(),
       })
       .where(eq(hidrants.id, id))
       .run();
@@ -154,12 +158,13 @@ export const HidrantsRepository = {
    * ESBORRA sync_error si n'hi havia.
    */
   markSynced(id: string, osmVersion: number, osmId?: number): void {
+    const now = nowISO();
     const updates: Record<string, unknown> = {
       sync_status: "SYNCED",
       osm_version: osmVersion,
-      synced_at: sql`CURRENT_TIMESTAMP`,
+      synced_at: now,
       sync_error: null,
-      updated_at: sql`CURRENT_TIMESTAMP`,
+      updated_at: now,
     };
     if (osmId !== undefined) {
       updates.osm_id = osmId;
@@ -178,7 +183,7 @@ export const HidrantsRepository = {
       .set({
         sync_status: "CONFLICT",
         sync_error: JSON.stringify(errorDetails),
-        updated_at: sql`CURRENT_TIMESTAMP`,
+        updated_at: nowISO(),
       })
       .where(eq(hidrants.id, id))
       .run();
@@ -192,7 +197,7 @@ export const HidrantsRepository = {
       .set({
         sync_status: "ERROR",
         sync_error: errorMessage,
-        updated_at: sql`CURRENT_TIMESTAMP`,
+        updated_at: nowISO(),
       })
       .where(eq(hidrants.id, id))
       .run();
@@ -234,6 +239,7 @@ export const HidrantsRepository = {
     id: string,
     data: { osmVersion: number; lat: number; lon: number; osmTags: string },
   ): void {
+    const now = nowISO();
     db.update(hidrants)
       .set({
         sync_status: "SYNCED",
@@ -242,8 +248,8 @@ export const HidrantsRepository = {
         lon: data.lon,
         osm_tags: data.osmTags,
         sync_error: null,
-        synced_at: sql`CURRENT_TIMESTAMP`,
-        updated_at: sql`CURRENT_TIMESTAMP`,
+        synced_at: now,
+        updated_at: now,
       })
       .where(eq(hidrants.id, id))
       .run();
@@ -289,7 +295,7 @@ export const HidrantsRepository = {
       .set({
         sync_status: "REVIEW",
         sync_error: JSON.stringify(issues),
-        updated_at: sql`CURRENT_TIMESTAMP`,
+        updated_at: nowISO(),
       })
       .where(eq(hidrants.id, id))
       .run();
@@ -335,11 +341,13 @@ export const HidrantsRepository = {
     if (ids.length === 0) {
       return;
     }
+    const now = nowISO();
     db.update(hidrants)
       .set({
         sync_status: "SYNCED",
         sync_error: null,
-        updated_at: sql`CURRENT_TIMESTAMP`,
+        synced_at: now,
+        updated_at: now,
       })
       .where(inArray(hidrants.id, ids))
       .run();

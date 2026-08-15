@@ -305,6 +305,7 @@ export function OsmSyncPanel() {
       const data = await res.json();
       if (data.success) {
         toast.success(data.message);
+        refreshHydrants();
         void reload();
       } else {
         toast.error(data.message || "Error desconegut");

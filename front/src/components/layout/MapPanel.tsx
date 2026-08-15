@@ -77,13 +77,15 @@ export function MapPanel() {
   // Refrescar hidrants des de la llista de sync
   useEffect(() => {
     const handler = () => {
-      // Només forçar re-render i actualitzar dades del backend
-      setNodeInfoKey((prev) => prev + 1);
-      void refreshHidrants();
+      // Actualitzar dades del backend i esperar a que completi
+      void refreshHidrants().then(() => {
+        // Forçar re-render del panell d'informació per mostrar dades actualitzades
+        setNodeInfoKey((prev) => prev + 1);
+      });
     };
     window.addEventListener("refresh-hidrants", handler);
     return () => window.removeEventListener("refresh-hidrants", handler);
-  }, []);
+  }, [refreshHidrants]);
 
   // Actualitzar selectedNode quan features canvia (després de refreshHidrants)
   /* eslint-disable react-hooks/set-state-in-effect -- actualització necessària quan canvien les dades */

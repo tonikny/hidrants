@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { toast } from 'react-toastify';
-import type { HidrantFeature } from '../../hooks/useHidrantData';
-import type { HydrantUiFields } from '../../utils/osmConversion';
-import type { AdfData } from '../../contexts/AdfContext';
-import { sendToTelegram } from '../../utils/sendToTelegram';
-import { logError } from '../../utils/log';
+import { useState } from "react";
+import { toast } from "react-toastify";
+import type { HidrantFeature } from "../../hooks/useHidrantData";
+import type { HydrantUiFields } from "../../utils/osmConversion";
+import type { AdfData } from "../../contexts/AdfContext";
+import { sendToTelegram } from "../../utils/sendToTelegram";
+import { logError } from "../../utils/log";
 
 type FieldPatch = Partial<HydrantUiFields & { observacions: string }>;
 
@@ -12,7 +12,7 @@ function calculateChanges(
   original: HydrantUiFields,
   modified: HydrantUiFields,
   originalObservacions: string,
-  modifiedObservacions: string
+  modifiedObservacions: string,
 ) {
   const changes: FieldPatch = {};
   const originalValues: FieldPatch = {};
@@ -28,6 +28,9 @@ function calculateChanges(
   if (originalObservacions !== modifiedObservacions) {
     changes.observacions = modifiedObservacions;
     originalValues.observacions = originalObservacions;
+  } else {
+    // Netejar observacions si no ha canviat (per netejar el valor buit)
+    delete changes.observacions;
   }
 
   return { changes, originalValues };
@@ -36,7 +39,7 @@ function calculateChanges(
 export function useHydrantActions(
   feature: HidrantFeature,
   adf: AdfData | null,
-  refreshHidrants?: () => Promise<void> | void
+  refreshHidrants?: () => Promise<void> | void,
 ) {
   const [busy, setBusy] = useState(false);
   const poi = {
@@ -45,8 +48,16 @@ export function useHydrantActions(
   };
 
   const afterChange = async () => {
-    if (refreshHidrants) {await refreshHidrants();}
-    else {setTimeout(() => window.location.reload(), 1000);}
+    // Dispatcha l'event per tal que MapPanel i useHidrantData reaccionin
+    window.dispatchEvent(new CustomEvent("refresh-hidrants"));
+    // També cridem refreshHidrants si està disponible
+    if (refreshHidrants) {
+      await refreshHidrants();
+    }
+    // Solament si no hi ha refreshHidrants, recarregam (per retrocompatió)
+    else {
+      setTimeout(() => window.location.reload(), 1000);
+    }
   };
 
   const save = async (opts: {
@@ -55,26 +66,32 @@ export function useHydrantActions(
     originalUiFields: HydrantUiFields;
     originalObservacions: string;
   }): Promise<boolean> => {
-    if (!adf) {return false;}
+    if (!adf) {
+      return false;
+    }
     setBusy(true);
     try {
       const privateTags = {
         ...feature.properties.private_tags,
         observacions: opts.observacions.trim() || undefined,
       };
-      const response = await fetch(`/api/hidrants/${feature.id}?adf=${adf.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ui_fields: opts.uiFields, private_tags: privateTags }),
-      });
-      if (!response.ok) {throw new Error('Error actualitzant dades');}
-
       const { changes, originalValues } = calculateChanges(
         opts.originalUiFields,
         opts.uiFields,
         opts.originalObservacions,
-        opts.observacions.trim()
+        opts.observacions.trim(),
       );
+      const response = await fetch(`/api/hidrants/${feature.id}?adf=${adf.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ui_fields: opts.uiFields,
+          private_tags: privateTags,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Error actualitzant dades");
+      }
 
       await sendToTelegram({
         lat: poi.lat,
@@ -86,7 +103,9 @@ export function useHydrantActions(
         isEdit: true,
       });
 
-      toast.success('Hidrant actualitzat');
+      toast.success("Hidrant actualitzat");
+      // FORÇAR re-selecció del node per actualitzar els valors del formular
+      window.dispatchEvent(new CustomEvent("re-select-node", { detail: feature.id }));
       await afterChange();
       return true;
     } catch (err) {
@@ -99,24 +118,30 @@ export function useHydrantActions(
   };
 
   const quickStatus = async (isOperative: boolean, data: HydrantUiFields) => {
-    if (!adf) {return;}
-    const statusText = isOperative ? 'OPERATIU' : 'FORA DE SERVEI';
-    if (!window.confirm(`Vols marcar aquest hidrant com a ${statusText} amb data d'avui?`)) {return;}
+    if (!adf) {
+      return;
+    }
+    const statusText = isOperative ? "OPERATIU" : "FORA DE SERVEI";
+    if (!window.confirm(`Vols marcar aquest hidrant com a ${statusText} amb data d'avui?`)) {
+      return;
+    }
 
     setBusy(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       const newData: HydrantUiFields = {
         ...data,
         surveyDate: today,
-        estat: isOperative ? 'Operatiu' : 'Fora de servei',
+        estat: isOperative ? "Operatiu" : "Fora de servei",
       };
       const response = await fetch(`/api/hidrants/${feature.id}?adf=${adf.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ui_fields: newData }),
       });
-      if (!response.ok) {throw new Error('Error actualitzant');}
+      if (!response.ok) {
+        throw new Error("Error actualitzant");
+      }
       toast.success(`Hidrant actualitzat a ${statusText}`);
 
       await sendToTelegram({
@@ -135,29 +160,35 @@ export function useHydrantActions(
       await afterChange();
       return newData;
     } catch (err) {
-      logError('Error en l\'actualització ràpida', err);
-      toast.error('Error en l’actualització ràpida');
+      logError("Error en l'actualització ràpida", err);
+      toast.error("Error en l’actualització ràpida");
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async () => {
-    if (!adf) {return;}
-    if (!window.confirm('Estàs segur que vols esborrar aquest hidrant?')) {return;}
+    if (!adf) {
+      return;
+    }
+    if (!window.confirm("Estàs segur que vols esborrar aquest hidrant?")) {
+      return;
+    }
 
     setBusy(true);
     try {
       const response = await fetch(`/api/hidrants/${feature.id}?adf=${adf.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
-      if (!response.ok) {throw new Error("Error esborrant l'hidrant");}
-      toast.success('Hidrant esborrat');
+      if (!response.ok) {
+        throw new Error("Error esborrant l'hidrant");
+      }
+      toast.success("Hidrant esborrat");
 
       const url = new URL(window.location.href);
-      if (url.searchParams.get('node') === feature.id) {
-        url.searchParams.delete('node');
-        window.history.replaceState({}, '', url.toString());
+      if (url.searchParams.get("node") === feature.id) {
+        url.searchParams.delete("node");
+        window.history.replaceState({}, "", url.toString());
       }
       await afterChange();
     } catch (err) {

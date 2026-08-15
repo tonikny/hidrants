@@ -1,6 +1,6 @@
-import { toast } from 'react-toastify';
-import { openInNativeMaps } from '../../utils/geoMaps';
-import { ShareIcon, OsmIcon } from './Icons';
+import { toast } from "react-toastify";
+import { openInNativeMaps } from "../../utils/geoMaps";
+import { ShareIcon } from "./Icons";
 
 interface NodeActionsProps {
   nodeId: string;
@@ -9,8 +9,6 @@ interface NodeActionsProps {
   showRoute?: boolean;
   setShowRoute?: (v: boolean) => void;
   hasLocation?: boolean;
-  osmId?: string | number | null;
-  showOsmLink?: boolean;
 }
 
 export function NodeActions({
@@ -20,15 +18,13 @@ export function NodeActions({
   showRoute,
   setShowRoute,
   hasLocation,
-  osmId,
-  showOsmLink,
 }: NodeActionsProps) {
   const handleShare = async () => {
     const url = new URL(window.location.href);
-    url.searchParams.set('node', nodeId);
+    url.searchParams.set("node", nodeId);
     try {
       await navigator.clipboard.writeText(url.toString());
-      toast.success('Enllaç copiat al porta-retalls');
+      toast.success("Enllaç copiat al porta-retalls");
     } catch {
       toast.error("Error al copiar l'enllaç");
     }
@@ -39,7 +35,7 @@ export function NodeActions({
       return;
     }
     if (!showRoute && !hasLocation) {
-      toast.info('Cal activar el seguiment GPS per veure la ruta');
+      toast.info("Cal activar el seguiment GPS per veure la ruta");
       return;
     }
     setShowRoute(!showRoute);
@@ -66,8 +62,8 @@ export function NodeActions({
             e.stopPropagation();
             handleShowRoute();
           }}
-          title={showRoute ? 'Tanca ruta' : 'Mostra ruta'}
-          className={`bg-transparent border-0 cursor-pointer text-[1.4rem] p-0 ${showRoute ? '' : 'grayscale opacity-50'}`}
+          title={showRoute ? "Tanca ruta" : "Mostra ruta"}
+          className={`bg-transparent border-0 cursor-pointer text-[1.4rem] p-0 ${showRoute ? "" : "grayscale opacity-50"}`}
         >
           🛣️
         </button>
@@ -84,20 +80,6 @@ export function NodeActions({
       >
         🚕
       </button>
-
-      {showOsmLink && osmId && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(`https://www.openstreetmap.org/node/${osmId}`, '_blank');
-          }}
-          title="Veure a OpenStreetMap"
-          className="bg-transparent border-0 cursor-pointer p-0 flex items-center"
-        >
-          <OsmIcon />
-        </button>
-      )}
     </div>
   );
 }

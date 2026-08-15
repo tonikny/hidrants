@@ -18,6 +18,7 @@ import tracking from "./routes/tracking.js";
 import trackingSharing from "./routes/trackingSharing.js";
 import telegram from "./routes/telegram.js";
 import telegramWebhook from "./routes/telegramWebhook.js";
+import osm from "./routes/osm.js";
 import { startMqttService, stopMqttService } from "./services/mqtt.js";
 import sqlite from "./db/index.js";
 
@@ -152,21 +153,22 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
       const url = request.url.split("?")[0];
 
       // Permís requerit per operació (GET sense mutació no requereix cap)
-      const required: Permission | null = url.endsWith("/sync")
-        ? "sync_osm"
-        : url.includes("/incidencies")
-          ? isMutation
-            ? "create_incidencia"
-            : null
-          : url.includes("/hidrants")
-            ? request.method === "DELETE"
-              ? "delete_hydrant"
-              : request.method === "POST"
-                ? "create_hydrant"
-                : request.method === "PUT"
-                  ? "edit_hydrant"
-                  : null
-            : null;
+      const required: Permission | null =
+        url.endsWith("/sync") || url.includes("/api/osm")
+          ? "sync_osm"
+          : url.includes("/incidencies")
+            ? isMutation
+              ? "create_incidencia"
+              : null
+            : url.includes("/hidrants")
+              ? request.method === "DELETE"
+                ? "delete_hydrant"
+                : request.method === "POST"
+                  ? "create_hydrant"
+                  : request.method === "PUT"
+                    ? "edit_hydrant"
+                    : null
+              : null;
 
       if (required && !perms.has(required)) {
         return reply.status(403).send({ error: "No tens permisos per realitzar aquesta acció" });
@@ -230,6 +232,17 @@ const routes = [
   { path: "/api/telegram/webhook/:secret", handler: telegramWebhook },
   { path: "/api/users", handler: users, protected: true },
   { path: "/api/users/:id", handler: users, protected: true },
+  { path: "/api/osm/status", handler: osm, protected: true },
+  { path: "/api/osm/pending", handler: osm, protected: true },
+  { path: "/api/osm/push-sync", handler: osm, protected: true },
+  { path: "/api/osm/push-selected", handler: osm, protected: true },
+  { path: "/api/osm/discard-selected", handler: osm, protected: true },
+  { path: "/api/osm/conflicts", handler: osm, protected: true },
+  { path: "/api/osm/conflicts/osc", handler: osm, protected: true },
+  { path: "/api/osm/conflicts/resolve", handler: osm, protected: true },
+  { path: "/api/osm/pull-hydrant", handler: osm, protected: true },
+  { path: "/api/osm/diff/:id", handler: osm, protected: true },
+  { path: "/api/osm/reviews", handler: osm, protected: true },
 ];
 
 routes.forEach((r) => {

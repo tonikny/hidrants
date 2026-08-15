@@ -25,8 +25,21 @@ export const hidrants = sqliteTable(
     osm_tags: text("osm_tags").default("{}"),
     private_tags: text("private_tags").default("{}"),
     sync_status: text("sync_status", {
-      enum: ["SYNCED", "PENDING_CREATE", "PENDING_UPDATE", "PENDING_DELETE"],
+      enum: [
+        "SYNCED",
+        "PENDING_CREATE",
+        "PENDING_UPDATE",
+        "PENDING_DELETE",
+        "CONFLICT",
+        "ERROR",
+        "REVIEW",
+      ],
     }).default("SYNCED"),
+    sync_error: text("sync_error"), // JSON: detalls de l'error o del conflicte
+    synced_at: text("synced_at"), // ISO: timestamp de l'última pujada exitosa a OSM
+    remote_lat: real("remote_lat"), // Latitud de la versió remota d'OSM (per al diff)
+    remote_lon: real("remote_lon"), // Longitud de la versió remota d'OSM (per al diff)
+    remote_osm_tags: text("remote_osm_tags"), // Tags de la versió remota d'OSM (JSON)
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
     updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
   },

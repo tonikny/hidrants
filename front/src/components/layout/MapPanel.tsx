@@ -39,6 +39,7 @@ export function MapPanel() {
   const [createForm, setCreateForm] = useState<CreateType>(null);
   const [position, setPosition] = useState<L.LatLng | null>(null);
   const [showRoute, setShowRoute] = useState(false);
+  const [nodeInfoKey, setNodeInfoKey] = useState(0); // Nova clau per forzar re-render
   const sheetRef = useRef<BottomSheetHandle>(null);
 
   const {
@@ -55,6 +56,57 @@ export function MapPanel() {
   } = useIncidencies();
 
   const positions = usePositionPolling(15000);
+
+  // Seleccionar hidrant per ID des de la llista de sync (cercle + info)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent).detail as string;
+      const feature = features.find((f) => f.id === id);
+      if (feature) {
+        setUrlNodeParam(feature.id);
+        setSelectedNode(feature);
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("map-center-node", { detail: feature }));
+        }, 400);
+      }
+    };
+    window.addEventListener("select-hydrant-by-id", handler);
+    return () => window.removeEventListener("select-hydrant-by-id", handler);
+  }, [features]);
+
+  // Refrescar hidrants des de la llista de sync
+  useEffect(() => {
+    const handler = () => {
+      // FORÇAR actualització:
+      // - Canvi de key per fer re-render NodeInfo
+      // - Actualitzar selectedNode des del array features
+      setNodeInfoKey((prev) => prev + 1);
+      // Re-selecteix el node amb les dades actuals del array features
+      // Aquest es elúnic manera assegurar-se que les dades noves són mostrades
+      if (selectedNode) {
+        setSelectedNode(null);
+        setTimeout(() => setSelectedNode(selectedNode), 0);
+      }
+      void refreshHidrants();
+    };
+    window.addEventListener("refresh-hidrants", handler);
+    return () => window.removeEventListener("refresh-hidrants", handler);
+  }, [selectedNode, features, refreshHidrants, nodeInfoKey]);
+
+  // Re-selecció del node després de guardar/descarregar/pushejar
+  // Per actualitzar els valors inicials del formulari d'edició
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const nodeId = (e as CustomEvent).detail as string;
+      const feature = features.find((f) => f.id === nodeId);
+      if (feature) {
+        setSelectedNode(feature);
+        setUrlNodeParam(feature.id);
+      }
+    };
+    window.addEventListener("re-select-node", handler);
+    return () => window.removeEventListener("re-select-node", handler);
+  }, [features]);
 
   useEffect(() => {
     if (!createPos) {
@@ -77,7 +129,9 @@ export function MapPanel() {
   const canEdit = !!user && (user.role === "admin" || user.adf_id === activeAdf?.id);
 
   const handleSelectNode = (feature: HidrantFeature) => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(feature.id);
     setSelectedNode(feature);
     setSelectedIncidencia(null);
@@ -90,14 +144,18 @@ export function MapPanel() {
   };
 
   const handleDeselectNode = () => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(null);
     setSelectedNode(null);
     setEditing(false);
   };
 
   const handleSelectIncidencia = (feature: IncidenciaFeature) => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(feature.id);
     setSelectedIncidencia(feature);
     setSelectedNode(null);
@@ -110,7 +168,9 @@ export function MapPanel() {
   };
 
   const handleDeselectIncidencia = () => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(null);
     setSelectedIncidencia(null);
     setEditing(false);
@@ -170,11 +230,15 @@ export function MapPanel() {
               id: selectedNode.id,
               content: (
                 <NodeInfo
-                  key={selectedNode.id}
-                  feature={selectedNode}
+                  key={nodeInfoKey}
+                  nodeId={selectedNode?.id}
                   canEdit={canEdit}
                   editing={editing}
                   setEditing={setEditing}
+                  refreshHidrants={() => refreshHidrants()}
+                  showRoute={showRoute}
+                  setShowRoute={setShowRoute}
+                  hasLocation={!!position}
                 />
               ),
               onClose: handleDeselectNode,

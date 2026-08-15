@@ -1,25 +1,39 @@
-import { db } from '../index.js';
-import { hidrants } from '../schema.js';
-import { count, eq, and, ne, sql } from 'drizzle-orm';
+import { db } from "../index.js";
+import { hidrants } from "../schema.js";
+import { count, eq, and, ne, sql, inArray } from "drizzle-orm";
 
-type SyncStatus = 'SYNCED' | 'PENDING_CREATE' | 'PENDING_UPDATE' | 'PENDING_DELETE';
+type SyncStatus =
+  | "SYNCED"
+  | "PENDING_CREATE"
+  | "PENDING_UPDATE"
+  | "PENDING_DELETE"
+  | "CONFLICT"
+  | "ERROR"
+  | "REVIEW";
 
 export interface HidrantData {
   id: string;
   osm_id?: number | null;
+  osm_version?: number | null;
   adf_id: number | null;
   lat: number;
   lon: number;
   osm_tags?: string | null;
   private_tags?: string | null;
   sync_status: string | null;
+  sync_error?: string | null;
+  synced_at?: string | null;
+  remote_lat?: number | null;
+  remote_lon?: number | null;
+  remote_osm_tags?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
 
 export const HidrantsRepository = {
   countByAdf(adfId: number): number {
-    const res = db.select({ count: count() })
+    const res = db
+      .select({ count: count() })
       .from(hidrants)
       .where(eq(hidrants.adf_id, adfId))
       .get();
@@ -27,75 +41,97 @@ export const HidrantsRepository = {
   },
 
   findActiveByAdf(adfId: number): HidrantData[] {
-    return db.select()
+    return db
+      .select()
       .from(hidrants)
-      .where(
-        and(
-          eq(hidrants.adf_id, adfId),
-          ne(hidrants.sync_status, 'PENDING_DELETE')
-        )
-      ).all() as HidrantData[];
+      .where(and(eq(hidrants.adf_id, adfId), ne(hidrants.sync_status, "PENDING_DELETE")))
+      .all() as HidrantData[];
   },
 
   findByIdAndAdf(id: string, adfId: number): HidrantData | undefined {
-    return db.select()
+    return db
+      .select()
       .from(hidrants)
-      .where(
-        and(
-          eq(hidrants.id, id),
-          eq(hidrants.adf_id, adfId)
-        )
-      ).get() as HidrantData | undefined;
-  },
-
-  findByOsmId(osmId: number): HidrantData | undefined {
-    return db.select()
-      .from(hidrants)
-      .where(eq(hidrants.osm_id, osmId))
+      .where(and(eq(hidrants.id, id), eq(hidrants.adf_id, adfId)))
       .get() as HidrantData | undefined;
   },
 
-  findNearbyPending(lat: number, lon: number, adfId: number, threshold = 0.00003): HidrantData | undefined {
-    // Busquem hidrants PENDING_CREATE propers (aprox 3m de marge: 0.00003 ~ 3.3m)
-    return db.select()
+  findByOsmId(osmId: number): HidrantData | undefined {
+    return db.select().from(hidrants).where(eq(hidrants.osm_id, osmId)).get() as
+      HidrantData | undefined;
+  },
+
+  findNearbyPending(
+    lat: number,
+    lon: number,
+    adfId: number,
+    threshold = 0.00003,
+  ): HidrantData | undefined {
+    return db
+      .select()
       .from(hidrants)
       .where(
         and(
           eq(hidrants.adf_id, adfId),
-          eq(hidrants.sync_status, 'PENDING_CREATE'),
+          eq(hidrants.sync_status, "PENDING_CREATE"),
           sql`abs(${hidrants.lat} - ${lat}) < ${threshold}`,
-          sql`abs(${hidrants.lon} - ${lon}) < ${threshold}`
-        )
-      ).get() as HidrantData | undefined;
+          sql`abs(${hidrants.lon} - ${lon}) < ${threshold}`,
+        ),
+      )
+      .get() as HidrantData | undefined;
   },
 
-  create(data: Omit<HidrantData, 'created_at' | 'updated_at'>): void {
-    db.insert(hidrants).values({
-      id: data.id,
-      osm_id: data.osm_id,
-      adf_id: data.adf_id,
-      lat: data.lat,
-      lon: data.lon,
-      osm_tags: data.osm_tags || '{}',
-      private_tags: data.private_tags || '{}',
-      sync_status: data.sync_status as SyncStatus,
-    }).run();
+  /**
+   * Obtenir tots els hidrants amb un sync_status determinat.
+   * Utilitzat per al push sync: trobar PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE.
+   */
+  findBySyncStatus(statuses: SyncStatus[]): HidrantData[] {
+    return db
+      .select()
+      .from(hidrants)
+      .where(inArray(hidrants.sync_status, statuses))
+      .all() as HidrantData[];
+  },
+
+  /**
+   * Obtenir tots els hidrants en estat CONFLICT.
+   */
+  findConflicts(): HidrantData[] {
+    return db
+      .select()
+      .from(hidrants)
+      .where(eq(hidrants.sync_status, "CONFLICT"))
+      .all() as HidrantData[];
+  },
+
+  create(data: Omit<HidrantData, "created_at" | "updated_at">): void {
+    db.insert(hidrants)
+      .values({
+        id: data.id,
+        osm_id: data.osm_id,
+        osm_version: data.osm_version,
+        adf_id: data.adf_id,
+        lat: data.lat,
+        lon: data.lon,
+        osm_tags: data.osm_tags || "{}",
+        private_tags: data.private_tags || "{}",
+        sync_status: data.sync_status as SyncStatus,
+      })
+      .run();
   },
 
   update(id: string, adfId: number, data: Partial<HidrantData>): void {
-    db.update(hidrants).set({
-      lat: data.lat,
-      lon: data.lon,
-      osm_tags: data.osm_tags,
-      private_tags: data.private_tags,
-      sync_status: data.sync_status as SyncStatus,
-      updated_at: sql`CURRENT_TIMESTAMP`,
-    }).where(
-      and(
-        eq(hidrants.id, id),
-        eq(hidrants.adf_id, adfId)
-      )
-    ).run();
+    db.update(hidrants)
+      .set({
+        lat: data.lat,
+        lon: data.lon,
+        osm_tags: data.osm_tags,
+        private_tags: data.private_tags,
+        sync_status: data.sync_status as SyncStatus,
+        updated_at: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(and(eq(hidrants.id, id), eq(hidrants.adf_id, adfId)))
+      .run();
   },
 
   delete(id: string): void {
@@ -103,17 +139,122 @@ export const HidrantsRepository = {
   },
 
   markForDeletion(id: string): void {
-    db.update(hidrants).set({
-      sync_status: 'PENDING_DELETE',
+    db.update(hidrants)
+      .set({
+        sync_status: "PENDING_DELETE",
+        updated_at: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(eq(hidrants.id, id))
+      .run();
+  },
+
+  /**
+   * Marcar un hidrant com a sincronitzat amb èxit després d'una pujada a OSM.
+   * Actualitza osm_id (si és creació), osm_version i synced_at.
+   * ESBORRA sync_error si n'hi havia.
+   */
+  markSynced(id: string, osmVersion: number, osmId?: number): void {
+    const updates: Record<string, unknown> = {
+      sync_status: "SYNCED",
+      osm_version: osmVersion,
+      synced_at: sql`CURRENT_TIMESTAMP`,
+      sync_error: null,
       updated_at: sql`CURRENT_TIMESTAMP`,
-    }).where(eq(hidrants.id, id)).run();
+    };
+    if (osmId !== undefined) {
+      updates.osm_id = osmId;
+    }
+    db.update(hidrants).set(updates).where(eq(hidrants.id, id)).run();
+  },
+
+  /**
+   * Marcar un hidrant com a CONFLICT després d'un 409 d'OSM.
+   * Emmagatzema els detalls del conflicte a sync_error (JSON):
+   * { localVersion, osmVersion, osmLat, osmLon, osmTags, diffFields }
+   * NO canvia osm_version perquè la necessitem pel .osc.
+   */
+  markConflict(id: string, errorDetails: Record<string, unknown>): void {
+    db.update(hidrants)
+      .set({
+        sync_status: "CONFLICT",
+        sync_error: JSON.stringify(errorDetails),
+        updated_at: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(eq(hidrants.id, id))
+      .run();
+  },
+
+  /**
+   * Marcar un hidrant com a ERROR després d'un error inesperat.
+   */
+  markError(id: string, errorMessage: string): void {
+    db.update(hidrants)
+      .set({
+        sync_status: "ERROR",
+        sync_error: errorMessage,
+        updated_at: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(eq(hidrants.id, id))
+      .run();
+  },
+
+  /**
+   * Guardar les dades remotes d'OSM per al diff.
+   * No toca les dades locals (lat, lon, osm_tags).
+   */
+  saveRemoteData(id: string, lat: number, lon: number, osmTags: Record<string, string>): void {
+    db.update(hidrants)
+      .set({
+        remote_lat: lat,
+        remote_lon: lon,
+        remote_osm_tags: JSON.stringify(osmTags),
+      })
+      .where(eq(hidrants.id, id))
+      .run();
+  },
+
+  /**
+   * Netejar les dades remotes guardades.
+   */
+  clearRemoteData(id: string): void {
+    db.update(hidrants)
+      .set({
+        remote_lat: null,
+        remote_lon: null,
+        remote_osm_tags: null,
+      })
+      .where(eq(hidrants.id, id))
+      .run();
+  },
+
+  /**
+   * Resoldre un conflicte: actualitzar amb les dades d'OSM (merge manual o automàtic).
+   */
+  resolveConflict(
+    id: string,
+    data: { osmVersion: number; lat: number; lon: number; osmTags: string },
+  ): void {
+    db.update(hidrants)
+      .set({
+        sync_status: "SYNCED",
+        osm_version: data.osmVersion,
+        lat: data.lat,
+        lon: data.lon,
+        osm_tags: data.osmTags,
+        sync_error: null,
+        synced_at: sql`CURRENT_TIMESTAMP`,
+        updated_at: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(eq(hidrants.id, id))
+      .run();
   },
 
   getSyncStats(adfId: number) {
-    const results = db.select({
-      status: hidrants.sync_status,
-      count: count(),
-    })
+    const results = db
+      .select({
+        status: hidrants.sync_status,
+        count: count(),
+      })
       .from(hidrants)
       .where(eq(hidrants.adf_id, adfId))
       .groupBy(hidrants.sync_status)
@@ -124,19 +265,111 @@ export const HidrantsRepository = {
       PENDING_CREATE: 0,
       PENDING_UPDATE: 0,
       PENDING_DELETE: 0,
-      total_pending: 0
+      CONFLICT: 0,
+      ERROR: 0,
+      REVIEW: 0,
+      total_pending: 0,
     };
 
     for (const res of results) {
       const status = res.status as keyof typeof stats;
       if (status in stats) {
         stats[status] = res.count;
-        if (status !== 'SYNCED') {
+        if (status !== "SYNCED" && status !== "CONFLICT" && status !== "ERROR") {
           stats.total_pending += res.count;
         }
       }
     }
 
     return stats;
-  }
+  },
+
+  markReview(id: string, issues: Array<{ tag: string; level: string; message: string }>) {
+    db.update(hidrants)
+      .set({
+        sync_status: "REVIEW",
+        sync_error: JSON.stringify(issues),
+        updated_at: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(eq(hidrants.id, id))
+      .run();
+  },
+
+  findByReview(adfId?: number) {
+    const conditions = [eq(hidrants.sync_status, "REVIEW")];
+    if (adfId) {
+      conditions.push(eq(hidrants.adf_id, adfId));
+    }
+    return db
+      .select()
+      .from(hidrants)
+      .where(and(...conditions))
+      .all();
+  },
+
+  /**
+   * Obtenir tots els hidrants no-SYNCED d'una ADF amb detalls per a la UI.
+   * Retorna tags parsejats i camps extrets (street, num).
+   */
+  findByAdfWithDetails(adfId: number): Array<HidrantData & { street: string; num: string }> {
+    const rows = db
+      .select()
+      .from(hidrants)
+      .where(and(eq(hidrants.adf_id, adfId), ne(hidrants.sync_status, "SYNCED")))
+      .all() as HidrantData[];
+
+    return rows.map((h) => {
+      const tags = parseTags(h.osm_tags);
+      return {
+        ...h,
+        street: tags["addr:street"] || "",
+        num: tags["addr:housenumber"] || "",
+      };
+    });
+  },
+
+  /**
+   * Marcar múltiples hidrants com a SYNCED (descartar canvis).
+   */
+  markManySynced(ids: string[]) {
+    if (ids.length === 0) {
+      return;
+    }
+    db.update(hidrants)
+      .set({
+        sync_status: "SYNCED",
+        sync_error: null,
+        updated_at: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(inArray(hidrants.id, ids))
+      .run();
+  },
+
+  /**
+   * Obtenir hidrants per IDs.
+   */
+  findByIds(ids: string[]): HidrantData[] {
+    if (ids.length === 0) {
+      return [];
+    }
+    return db.select().from(hidrants).where(inArray(hidrants.id, ids)).all() as HidrantData[];
+  },
+
+  /**
+   * Esborrar múltiples hidrants per IDs.
+   */
+  deleteMany(ids: string[]) {
+    if (ids.length === 0) {
+      return;
+    }
+    db.delete(hidrants).where(inArray(hidrants.id, ids)).run();
+  },
 };
+
+function parseTags(osmTags: string | null | undefined): Record<string, string> {
+  try {
+    return JSON.parse(osmTags || "{}");
+  } catch {
+    return {};
+  }
+}

@@ -5,7 +5,7 @@ import { useAdf } from "../../contexts/AdfContext";
 import { useHydrantActions } from "./useHydrantActions";
 import { HydrantInfoView } from "./HydrantInfoView";
 import { HydrantEditForm } from "./HydrantEditForm";
-import { confirmDiscardChanges, setFormDirty } from "../../utils/formDirty";
+import { usePreventLeave } from "../../hooks/usePreventLeave";
 
 export const NodeInfo = ({
   feature,
@@ -70,29 +70,17 @@ export const NodeInfo = ({
   };
 
   const handleCancelEdit = () => {
-    if (confirmDiscardChanges()) {
+    if (!hasChanges || window.confirm("Hi ha canvis sense desar. Si tanques ara, es perdran. Vols continuar?")) {
       setEditing(false);
     }
   };
 
-  useEffect(() => {
-    if (!editing) {
-      setFormDirty(false);
-      return;
-    }
-    const hasChanges =
-      JSON.stringify(data) !== JSON.stringify(props.ui_fields) ||
-      observacions !== (props.private_tags?.observacions || "");
-    setFormDirty(hasChanges);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, data, observacions]);
+  const hasChanges =
+    editing &&
+    (JSON.stringify(data) !== JSON.stringify(props.ui_fields) ||
+      observacions !== (props.private_tags?.observacions || ""));
 
-  useEffect(
-    () => () => {
-      setFormDirty(false);
-    },
-    [],
-  );
+  usePreventLeave(hasChanges);
 
   return (
     <div className={`${className} p-3 flex flex-col gap-3`}>

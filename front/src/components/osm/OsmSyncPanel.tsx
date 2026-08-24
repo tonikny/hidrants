@@ -60,14 +60,6 @@ const SECTION_CONFIG: Record<SectionKey, { label: string; color: string; hint: s
   },
 };
 
-function selectHydrant(id: string) {
-  window.dispatchEvent(new CustomEvent("select-hydrant-by-id", { detail: id }));
-}
-
-function refreshHydrants() {
-  window.dispatchEvent(new CustomEvent("refresh-hidrants"));
-}
-
 function hydrantLabel(h: PendingHydrant) {
   if (h.street) {
     return `${h.street}${h.num ? `, ${h.num}` : ""}`;
@@ -90,7 +82,13 @@ function parseSyncError(syncError: string | null): string[] {
   }
 }
 
-export function OsmSyncPanel() {
+export function OsmSyncPanel({
+  onSelectHydrant,
+  onRefresh,
+}: {
+  onSelectHydrant?: (id: string) => void;
+  onRefresh?: () => void;
+}) {
   const { activeAdf } = useAdf();
   const [pending, setPending] = useState<PendingHydrant[]>([]);
   const [stats, setStats] = useState<SyncStats | null>(null);
@@ -98,6 +96,14 @@ export function OsmSyncPanel() {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState(false);
+
+  const selectHydrant = (id: string) => {
+    onSelectHydrant?.(id);
+  };
+
+  const refreshHydrants = () => {
+    onRefresh?.();
+  };
 
   useEffect(() => {
     if (!activeAdf) {

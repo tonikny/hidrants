@@ -48,15 +48,8 @@ export function useHydrantActions(
   };
 
   const afterChange = async () => {
-    // Dispatcha l'event per tal que MapPanel i useHidrantData reaccionin
-    window.dispatchEvent(new CustomEvent("refresh-hidrants"));
-    // També cridem refreshHidrants si està disponible
     if (refreshHidrants) {
       await refreshHidrants();
-    }
-    // Solament si no hi ha refreshHidrants, recarregam (per retrocompatió)
-    else {
-      setTimeout(() => window.location.reload(), 1000);
     }
   };
 
@@ -104,8 +97,6 @@ export function useHydrantActions(
       });
 
       toast.success("Hidrant actualitzat");
-      // FORÇAR re-selecció del node per actualitzar els valors del formular
-      window.dispatchEvent(new CustomEvent("re-select-node", { detail: feature.id }));
       await afterChange();
       return true;
     } catch (err) {
@@ -184,12 +175,6 @@ export function useHydrantActions(
         throw new Error("Error esborrant l'hidrant");
       }
       toast.success("Hidrant esborrat");
-
-      const url = new URL(window.location.href);
-      if (url.searchParams.get("node") === feature.id) {
-        url.searchParams.delete("node");
-        window.history.replaceState({}, "", url.toString());
-      }
       await afterChange();
     } catch (err) {
       logError("Error en esborrar l'hidrant", err);

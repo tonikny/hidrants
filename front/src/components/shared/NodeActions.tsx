@@ -2,6 +2,8 @@ import { toast } from "react-toastify";
 import { openInNativeMaps } from "../../utils/geoMaps";
 import { ShareIcon } from "./Icons";
 
+import { getNodeShareUrl } from "../../utils/urlParams";
+
 interface NodeActionsProps {
   nodeId: string;
   lat: number;
@@ -20,10 +22,9 @@ export function NodeActions({
   hasLocation,
 }: NodeActionsProps) {
   const handleShare = async () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("node", nodeId);
+    const url = getNodeShareUrl(nodeId);
     try {
-      await navigator.clipboard.writeText(url.toString());
+      await navigator.clipboard.writeText(url);
       toast.success("Enllaç copiat al porta-retalls");
     } catch {
       toast.error("Error al copiar l'enllaç");

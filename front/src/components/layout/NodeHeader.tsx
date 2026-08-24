@@ -1,5 +1,4 @@
 import { ICONS_H } from './metrics';
-import { confirmDiscardChanges } from '../../utils/formDirty';
 
 export function NodeHeader({
   onEdit,
@@ -12,7 +11,6 @@ export function NodeHeader({
 }) {
   const handleEditClick = () => {
     if (!onEdit) {return;}
-    if (editing && !confirmDiscardChanges()) {return;}
     onEdit();
   };
 

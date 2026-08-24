@@ -60,20 +60,11 @@ export function useHydrantData() {
     } finally {
       setLoading(false);
     }
-  }, [activeAdf?.id]);
+  }, [activeAdf]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- càrrega asíncrona legítima
     void fetchData();
-  }, [fetchData]);
-
-  // Escolta l'event refresh-hidrants per actualitzar immediatament la vista
-  useEffect(() => {
-    const handler = () => {
-      void fetchData();
-    };
-    window.addEventListener("refresh-hidrants", handler);
-    return () => window.removeEventListener("refresh-hidrants", handler);
   }, [fetchData]);
 
   return { features, loading, error, mutate: fetchData };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { floatingButtonClass } from "../../styles/uiStyles";
 
 export function FullscreenButton({
@@ -10,6 +10,16 @@ export function FullscreenButton({
 }>) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const target = document.getElementById(targetId);
+      setIsFullscreen(document.fullscreenElement === target);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, [targetId]);
+
   const toggleFullscreen = () => {
     const target = document.getElementById(targetId);
     if (!target) {
@@ -17,9 +27,9 @@ export function FullscreenButton({
     }
 
     if (!document.fullscreenElement) {
-      void target.requestFullscreen().then(() => setIsFullscreen(true));
+      void target.requestFullscreen();
     } else {
-      void document.exitFullscreen().then(() => setIsFullscreen(false));
+      void document.exitFullscreen();
     }
   };
 

@@ -16,18 +16,8 @@ import { createTitle } from "../panel/createTitle";
 import { IncidenciaInfo } from "../incidencies/IncidenciaInfo";
 import { isPointInBoundary } from "../../utils/geo";
 import { emojiPrioritatIncidencia } from "../../utils/incidenciaConstants";
-import { confirmDiscardChanges } from "../../utils/formDirty";
+import { setNodeUrlParam } from "../../utils/urlParams";
 import type { CreateType, IncidenciaFeature } from "../../types";
-
-function setUrlNodeParam(nodeId: string | null) {
-  const url = new URL(window.location.href);
-  if (nodeId) {
-    url.searchParams.set("node", nodeId);
-  } else {
-    url.searchParams.delete("node");
-  }
-  window.history.replaceState({}, "", url.toString());
-}
 
 export function MapPanel() {
   const { isLoading, activeAdf, boundaryGeojson } = useAdf();
@@ -57,35 +47,20 @@ export function MapPanel() {
 
   const positions = usePositionPolling(15000);
 
-  // Seleccionar hidrant per ID des de la llista de sync (cercle + info)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const id = (e as CustomEvent).detail as string;
-      const feature = features.find((f) => f.id === id);
-      if (feature) {
-        setUrlNodeParam(feature.id);
-        setSelectedNode(feature);
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("map-center-node", { detail: feature }));
-        }, 400);
-      }
-    };
-    window.addEventListener("select-hydrant-by-id", handler);
-    return () => window.removeEventListener("select-hydrant-by-id", handler);
-  }, [features]);
+  const handleSelectHydrantById = (id: string) => {
+    const feature = features.find((f) => f.id === id);
+    if (feature) {
+      handleSelectNode(feature);
+    }
+  };
 
-  // Refrescar hidrants des de la llista de sync
-  useEffect(() => {
-    const handler = () => {
-      // Actualitzar dades del backend i esperar a que completi
-      void refreshHidrants().then(() => {
-        // Forçar re-render del panell d'informació per mostrar dades actualitzades
-        setNodeInfoKey((prev) => prev + 1);
-      });
-    };
-    window.addEventListener("refresh-hidrants", handler);
-    return () => window.removeEventListener("refresh-hidrants", handler);
-  }, [refreshHidrants]);
+  const handleCenterCoordinates = (coords: [number, number]) => {
+    window.dispatchEvent(
+      new CustomEvent("map-center-node", {
+        detail: { geometry: { coordinates: coords } },
+      }),
+    );
+  };
 
   // Actualitzar selectedNode quan features canvia (després de refreshHidrants)
   /* eslint-disable react-hooks/set-state-in-effect -- actualització necessària quan canvien les dades */
@@ -97,21 +72,6 @@ export function MapPanel() {
       }
     }
   }, [features, selectedNode]);
-
-  // Re-selecció del node després de guardar/descarregar/pushejar
-  // Per actualitzar els valors inicials del formulari d'edició
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const nodeId = (e as CustomEvent).detail as string;
-      const feature = features.find((f) => f.id === nodeId);
-      if (feature) {
-        setSelectedNode(feature);
-        setUrlNodeParam(feature.id);
-      }
-    };
-    window.addEventListener("re-select-node", handler);
-    return () => window.removeEventListener("re-select-node", handler);
-  }, [features]);
 
   useEffect(() => {
     if (!createPos) {
@@ -134,10 +94,7 @@ export function MapPanel() {
   const canEdit = !!user && (user.role === "admin" || user.adf_id === activeAdf?.id);
 
   const handleSelectNode = (feature: HidrantFeature) => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setUrlNodeParam(feature.id);
+    setNodeUrlParam(feature.id);
     setSelectedNode(feature);
     setSelectedIncidencia(null);
     setEditing(false);
@@ -149,19 +106,13 @@ export function MapPanel() {
   };
 
   const handleDeselectNode = () => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setUrlNodeParam(null);
+    setNodeUrlParam(null);
     setSelectedNode(null);
     setEditing(false);
   };
 
   const handleSelectIncidencia = (feature: IncidenciaFeature) => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setUrlNodeParam(feature.id);
+    setNodeUrlParam(feature.id);
     setSelectedIncidencia(feature);
     setSelectedNode(null);
     setEditing(false);
@@ -173,10 +124,7 @@ export function MapPanel() {
   };
 
   const handleDeselectIncidencia = () => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setUrlNodeParam(null);
+    setNodeUrlParam(null);
     setSelectedIncidencia(null);
     setEditing(false);
   };
@@ -228,7 +176,18 @@ export function MapPanel() {
           onSelectIncidencia={handleSelectIncidencia}
         />
       }
-      tabs={buildTabs({ features, incidenciaFeatures, positions })}
+      tabs={buildTabs({
+        features,
+        incidenciaFeatures,
+        positions,
+        onSelectNode: handleSelectNode,
+        onSelectIncidencia: handleSelectIncidencia,
+        onSelectHydrantById: handleSelectHydrantById,
+        onRefreshHidrants: () => {
+          void refreshHidrants().then(() => setNodeInfoKey((prev) => prev + 1));
+        },
+        onCenterCoordinates: handleCenterCoordinates,
+      })}
       node={
         selectedNode
           ? {

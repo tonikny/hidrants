@@ -73,10 +73,11 @@ function FixMapSize() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
-      if (map?._loaded && map.getContainer()) {
-        map.invalidateSize();
-      }
+      map.whenReady(() => {
+        if (map.getContainer()) {
+          map.invalidateSize();
+        }
+      });
     }, 200);
 
     return () => clearTimeout(timer);
@@ -106,7 +107,7 @@ export function LeafletMap({
   onCloseCreate,
   onSelectIncidencia,
 }: {
-  onSelectNode?: (f: HidrantFeature) => void;
+  onSelectNode: (f: HidrantFeature) => void;
   onMapClick?: () => void;
   selectedNodeId?: string | null;
   features: HidrantFeature[];
@@ -179,6 +180,7 @@ export function LeafletMap({
           incidenciaFeatures={incidenciaFeatures}
           loadingHidrants={loadingHidrants}
           loadingIncidencies={loadingIncidencies}
+          onSelectNode={onSelectNode}
           onSelectIncidencia={onSelectIncidencia}
         />
         <MapStateListener onMapClick={onMapClick} />

@@ -172,7 +172,6 @@ export function HydrantSyncActions({
   const diff = conflictDiff ?? diffState;
 
   const refresh = () => {
-    window.dispatchEvent(new CustomEvent("refresh-hidrants"));
     void refreshHidrants?.();
   };
 

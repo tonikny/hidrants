@@ -66,13 +66,14 @@ export function RouteLayer({ from, to, color = '#0077ff' }: RouteLayerProps) {
           // 2. Decidir si cal ajustar el zoom del mapa
           // Només ho fem la primera vegada que es carrega la ruta cap a aquest destí
           if (hasFittedBounds.current !== destId) {
-            // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
-            if (map?._loaded && map.getContainer()) {
-              map.fitBounds(points as L.LatLngBoundsExpression, {
-                padding: [50, 50],
-              });
-              hasFittedBounds.current = destId;
-            }
+            map.whenReady(() => {
+              if (map.getContainer()) {
+                map.fitBounds(points as L.LatLngBoundsExpression, {
+                  padding: [50, 50],
+                });
+                hasFittedBounds.current = destId;
+              }
+            });
           }
         } else if (data.error) {
           throw new Error(data.error);

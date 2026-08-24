@@ -3,7 +3,13 @@ import { useAdf } from "../../../contexts/AdfContext";
 import { OsmSyncPanel } from "../../osm/OsmSyncPanel";
 import { adfLabel } from "../../../utils/adfLabel";
 
-export function MapaTab() {
+export function MapaTab({
+  onSelectHydrant,
+  onRefresh,
+}: {
+  onSelectHydrant?: (id: string) => void;
+  onRefresh?: () => void;
+}) {
   const { adfs, isLoading, activeAdf, setActiveAdf } = useAdf();
   const { user } = useAuth();
 
@@ -36,7 +42,7 @@ export function MapaTab() {
 
       {(user?.permissions ?? []).includes("sync_osm") && (
         <div className="mt-4">
-          <OsmSyncPanel />
+          <OsmSyncPanel onSelectHydrant={onSelectHydrant} onRefresh={onRefresh} />
         </div>
       )}
     </div>

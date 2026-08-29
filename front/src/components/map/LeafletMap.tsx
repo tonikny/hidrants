@@ -105,6 +105,9 @@ export function LeafletMap({
   onOpenCreate,
   onCloseCreate,
   onSelectIncidencia,
+  editingNodeId,
+  draftPosition,
+  onNodeDrag,
 }: {
   onSelectNode?: (f: HidrantFeature) => void;
   onMapClick?: () => void;
@@ -136,6 +139,9 @@ export function LeafletMap({
   onOpenCreate: (latlng: L.LatLng) => void;
   onCloseCreate: () => void;
   onSelectIncidencia: (f: IncidenciaFeature) => void;
+  editingNodeId?: string | null;
+  draftPosition?: L.LatLng | null;
+  onNodeDrag?: (latlng: L.LatLng) => void;
 }) {
   const { activeAdf, isLoading } = useAdf();
   const { user } = useAuth();
@@ -206,6 +212,9 @@ export function LeafletMap({
             hasLocation={!!position}
             onSelectNode={onSelectNode}
             selectedNodeId={selectedNodeId}
+            editingNodeId={editingNodeId}
+            draftPosition={draftPosition}
+            onNodeDrag={onNodeDrag}
           />
         )}
         {incidenciesVisible && (

@@ -6,7 +6,7 @@ import { osm2Ui, ui2Osm, type HydrantUiFields } from '../utils/osmConversion.js'
 import { db } from '../db/index.js';
 import { adfs } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
-import { isPointInBoundary } from '../utils/geo.js';
+import { isPointInBoundary, clampToMaxDistance, MAX_HYDRANT_MOVE_METERS } from '../utils/geo.js';
 
 export const HidrantsService = {
   async forceSync(adfId: number) {
@@ -87,6 +87,20 @@ export const HidrantsService = {
 
     const current = HidrantsRepository.findByIdAndAdf(id, adfId);
     if (!current) {throw new NotFoundError('Hydrant not found');}
+
+    // Limitem el desplaçament respecte a la posició original (defensa en profunditat,
+    // el frontend ja fa el mateix clamp visualment durant el drag).
+    if (lat !== undefined || lon !== undefined) {
+      const clamped = clampToMaxDistance(
+        current.lat,
+        current.lon,
+        lat ?? current.lat,
+        lon ?? current.lon,
+        MAX_HYDRANT_MOVE_METERS
+      );
+      lat = clamped.lat;
+      lon = clamped.lon;
+    }
 
     // Determinem si hi ha canvis que afecten OSM (lat, lon, osm_tags)
     let hasOsmChanges = false;

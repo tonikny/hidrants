@@ -35,6 +35,7 @@ export function MapPanel() {
   const [selectedNode, setSelectedNode] = useState<HidrantFeature | null>(null);
   const [selectedIncidencia, setSelectedIncidencia] = useState<IncidenciaFeature | null>(null);
   const [editing, setEditing] = useState(false);
+  const [draftPosition, setDraftPosition] = useState<L.LatLng | null>(null);
   const [createPos, setCreatePos] = useState<L.LatLng | null>(null);
   const [createForm, setCreateForm] = useState<CreateType>(null);
   const [position, setPosition] = useState<L.LatLng | null>(null);
@@ -55,6 +56,12 @@ export function MapPanel() {
   } = useIncidencies();
 
   const positions = usePositionPolling(15000);
+
+  useEffect(() => {
+    if (!editing) {
+      setDraftPosition(null);
+    }
+  }, [editing]);
 
   useEffect(() => {
     if (!createPos) {
@@ -161,6 +168,9 @@ export function MapPanel() {
           onOpenCreate={openCreate}
           onCloseCreate={closeCreate}
           onSelectIncidencia={handleSelectIncidencia}
+          editingNodeId={editing ? selectedNode?.id : null}
+          draftPosition={draftPosition}
+          onNodeDrag={setDraftPosition}
         />
       }
       tabs={buildTabs({ features, incidenciaFeatures, positions })}
@@ -175,6 +185,9 @@ export function MapPanel() {
                   canEdit={canEdit}
                   editing={editing}
                   setEditing={setEditing}
+                  draftPosition={draftPosition}
+                  setDraftPosition={setDraftPosition}
+                  refreshHidrants={() => refreshHidrants()}
                 />
               ),
               onClose: handleDeselectNode,

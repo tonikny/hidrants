@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { Marker } from 'react-leaflet';
+import { useEffect, useRef } from 'react';
+import { Marker, Circle } from 'react-leaflet';
 import L, { latLng } from 'leaflet';
 import getHydrantIcon from '../../../utils/icons';
 import type { HidrantFeature } from '../../../hooks/useHidrantData';
+import { clampToMaxDistance, MAX_HYDRANT_MOVE_METERS } from '../../../utils/geo';
 
 const ringIcon = L.divIcon({
   className: '',
@@ -20,6 +21,9 @@ export interface HydrantMarkerProps {
   hasLocation?: boolean;
   onSelectNode?: (feature: HidrantFeature) => void;
   selected?: boolean;
+  draggable?: boolean;
+  overridePosition?: L.LatLng | null;
+  onDragEnd?: (latlng: L.LatLng) => void;
 }
 
 /**
@@ -27,8 +31,21 @@ export interface HydrantMarkerProps {
  * es mostra al panell lateral / bottomsheet) i respon al centratge
  * via URL (?node=ID). Quan està seleccionat es marca subtilment.
  */
-export function HydrantMarker({ feature, setPoi, onSelectNode, selected }: HydrantMarkerProps) {
+export function HydrantMarker({
+  feature,
+  setPoi,
+  onSelectNode,
+  selected,
+  draggable,
+  overridePosition,
+  onDragEnd,
+}: HydrantMarkerProps) {
   const coords = feature.geometry.coordinates;
+  const originalLatLng = latLng(coords[1], coords[0]);
+  const markerPosition = overridePosition ?? originalLatLng;
+  // Leaflet dispara un 'click' fantasma just després del 'dragend' sobre el mateix
+  // marcador; l'ignorem perquè no reobri/reseleccioni el node en soltar l'arrossegament.
+  const justDraggedRef = useRef(false);
 
   useEffect(() => {
     const handleCentered = (e: Event) => {
@@ -45,14 +62,35 @@ export function HydrantMarker({ feature, setPoi, onSelectNode, selected }: Hydra
 
   return (
     <>
-      {selected && <Marker position={[coords[1], coords[0]]} icon={ringIcon} interactive={false} />}
+      {selected && <Marker position={markerPosition} icon={ringIcon} interactive={false} />}
+      {draggable && (
+        <Circle
+          center={originalLatLng}
+          radius={MAX_HYDRANT_MOVE_METERS}
+          pathOptions={{ color: '#3388ff', weight: 1, fillOpacity: 0.08 }}
+          interactive={false}
+        />
+      )}
       <Marker
-        position={[coords[1], coords[0]]}
+        position={markerPosition}
         icon={getHydrantIcon(feature.properties)}
+        draggable={!!draggable}
         eventHandlers={{
           click: () => {
-            setPoi(latLng(coords[1], coords[0]));
+            if (justDraggedRef.current) {
+              justDraggedRef.current = false;
+              return;
+            }
+            setPoi(markerPosition);
             if (onSelectNode) {onSelectNode(feature);}
+          },
+          dragend: (e) => {
+            justDraggedRef.current = true;
+            setTimeout(() => { justDraggedRef.current = false; }, 300);
+            const dragged = (e.target as L.Marker).getLatLng();
+            const clamped = clampToMaxDistance(originalLatLng, dragged, MAX_HYDRANT_MOVE_METERS);
+            (e.target as L.Marker).setLatLng(clamped);
+            if (onDragEnd) {onDragEnd(clamped);}
           },
         }}
       />

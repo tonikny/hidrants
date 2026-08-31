@@ -58,12 +58,6 @@ export function MapPanel() {
   const positions = usePositionPolling(15000);
 
   useEffect(() => {
-    if (!editing) {
-      setDraftPosition(null);
-    }
-  }, [editing]);
-
-  useEffect(() => {
     if (!createPos) {
       return;
     }
@@ -84,11 +78,14 @@ export function MapPanel() {
   const canEdit = !!user && (user.role === "admin" || user.adf_id === activeAdf?.id);
 
   const handleSelectNode = (feature: HidrantFeature) => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(feature.id);
     setSelectedNode(feature);
     setSelectedIncidencia(null);
     setEditing(false);
+    setDraftPosition(null);
     setCreatePos(null);
     setCreateForm(null);
     setTimeout(() => {
@@ -97,18 +94,24 @@ export function MapPanel() {
   };
 
   const handleDeselectNode = () => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(null);
     setSelectedNode(null);
     setEditing(false);
+    setDraftPosition(null);
   };
 
   const handleSelectIncidencia = (feature: IncidenciaFeature) => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(feature.id);
     setSelectedIncidencia(feature);
     setSelectedNode(null);
     setEditing(false);
+    setDraftPosition(null);
     setCreatePos(null);
     setCreateForm(null);
     setTimeout(() => {
@@ -117,10 +120,13 @@ export function MapPanel() {
   };
 
   const handleDeselectIncidencia = () => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(null);
     setSelectedIncidencia(null);
     setEditing(false);
+    setDraftPosition(null);
   };
 
   const closeCreate = () => {
@@ -214,7 +220,16 @@ export function MapPanel() {
                   />
                 ),
                 onClose: handleDeselectIncidencia,
-                onEdit: canEdit ? () => setEditing((prev) => !prev) : undefined,
+                onEdit: canEdit
+                  ? () => {
+                      setEditing((prev) => {
+                        if (prev) {
+                          setDraftPosition(null);
+                        }
+                        return !prev;
+                      });
+                    }
+                  : undefined,
                 editing,
               }
             : createPos && createForm && user

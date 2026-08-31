@@ -35,6 +35,7 @@ export function MapPanel() {
   const [selectedNode, setSelectedNode] = useState<HidrantFeature | null>(null);
   const [selectedIncidencia, setSelectedIncidencia] = useState<IncidenciaFeature | null>(null);
   const [editing, setEditing] = useState(false);
+  const [draftPosition, setDraftPosition] = useState<L.LatLng | null>(null);
   const [createPos, setCreatePos] = useState<L.LatLng | null>(null);
   const [createForm, setCreateForm] = useState<CreateType>(null);
   const [position, setPosition] = useState<L.LatLng | null>(null);
@@ -77,11 +78,14 @@ export function MapPanel() {
   const canEdit = !!user && (user.role === "admin" || user.adf_id === activeAdf?.id);
 
   const handleSelectNode = (feature: HidrantFeature) => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(feature.id);
     setSelectedNode(feature);
     setSelectedIncidencia(null);
     setEditing(false);
+    setDraftPosition(null);
     setCreatePos(null);
     setCreateForm(null);
     setTimeout(() => {
@@ -90,18 +94,24 @@ export function MapPanel() {
   };
 
   const handleDeselectNode = () => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(null);
     setSelectedNode(null);
     setEditing(false);
+    setDraftPosition(null);
   };
 
   const handleSelectIncidencia = (feature: IncidenciaFeature) => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(feature.id);
     setSelectedIncidencia(feature);
     setSelectedNode(null);
     setEditing(false);
+    setDraftPosition(null);
     setCreatePos(null);
     setCreateForm(null);
     setTimeout(() => {
@@ -110,10 +120,13 @@ export function MapPanel() {
   };
 
   const handleDeselectIncidencia = () => {
-    if (!confirmDiscardChanges()) {return;}
+    if (!confirmDiscardChanges()) {
+      return;
+    }
     setUrlNodeParam(null);
     setSelectedIncidencia(null);
     setEditing(false);
+    setDraftPosition(null);
   };
 
   const closeCreate = () => {
@@ -161,6 +174,9 @@ export function MapPanel() {
           onOpenCreate={openCreate}
           onCloseCreate={closeCreate}
           onSelectIncidencia={handleSelectIncidencia}
+          editingNodeId={editing ? selectedNode?.id : null}
+          draftPosition={draftPosition}
+          onNodeDrag={setDraftPosition}
         />
       }
       tabs={buildTabs({ features, incidenciaFeatures, positions })}
@@ -175,6 +191,9 @@ export function MapPanel() {
                   canEdit={canEdit}
                   editing={editing}
                   setEditing={setEditing}
+                  draftPosition={draftPosition}
+                  setDraftPosition={setDraftPosition}
+                  refreshHidrants={() => refreshHidrants()}
                 />
               ),
               onClose: handleDeselectNode,
@@ -201,7 +220,16 @@ export function MapPanel() {
                   />
                 ),
                 onClose: handleDeselectIncidencia,
-                onEdit: canEdit ? () => setEditing((prev) => !prev) : undefined,
+                onEdit: canEdit
+                  ? () => {
+                      setEditing((prev) => {
+                        if (prev) {
+                          setDraftPosition(null);
+                        }
+                        return !prev;
+                      });
+                    }
+                  : undefined,
                 editing,
               }
             : createPos && createForm && user

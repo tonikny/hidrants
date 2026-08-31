@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type L from 'leaflet';
 import type { HidrantFeature } from '../../hooks/useHidrantData';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdf } from '../../contexts/AdfContext';
@@ -16,6 +17,8 @@ export const NodeInfo = ({
   canEdit,
   editing,
   setEditing,
+  draftPosition,
+  setDraftPosition,
   className = '',
 }: {
   feature: HidrantFeature;
@@ -26,6 +29,8 @@ export const NodeInfo = ({
   canEdit: boolean;
   editing: boolean;
   setEditing: (v: boolean) => void;
+  draftPosition?: L.LatLng | null;
+  setDraftPosition?: (v: L.LatLng | null) => void;
   className?: string;
 }) => {
   const { user } = useAuth();
@@ -44,6 +49,8 @@ export const NodeInfo = ({
       observacions,
       originalUiFields: props.ui_fields,
       originalObservacions: props.private_tags?.observacions || '',
+      newLat: draftPosition?.lat,
+      newLon: draftPosition?.lng,
     });
     if (ok) {setEditing(false);}
   };
@@ -54,7 +61,10 @@ export const NodeInfo = ({
   };
 
   const handleCancelEdit = () => {
-    if (confirmDiscardChanges()) {setEditing(false);}
+    if (confirmDiscardChanges()) {
+      setEditing(false);
+      setDraftPosition?.(null);
+    }
   };
 
   useEffect(() => {
@@ -64,10 +74,11 @@ export const NodeInfo = ({
     }
     const hasChanges =
       JSON.stringify(data) !== JSON.stringify(props.ui_fields) ||
-      observacions !== (props.private_tags?.observacions || '');
+      observacions !== (props.private_tags?.observacions || '') ||
+      !!draftPosition;
     setFormDirty(hasChanges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, data, observacions]);
+  }, [editing, data, observacions, draftPosition]);
 
   useEffect(() => () => { setFormDirty(false); }, []);
 

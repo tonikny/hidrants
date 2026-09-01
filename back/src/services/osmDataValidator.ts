@@ -22,6 +22,8 @@ export type ValidationResult = {
   issues: ValidationIssue[];
 };
 
+import { logInfo, logWarn, logError } from "../utils/logger.js";
+
 // --- Valors permesos per als camps select ---
 
 const VALID_TYPES = ["", "pillar", "underground"];
@@ -187,6 +189,18 @@ export function validateHydrantTags(tags: Record<string, string>): ValidationRes
   }
 
   const hasErrors = issues.some((i) => i.level === "error");
+
+  // Logging per a depuració
+  const errorCount = issues.filter((i) => i.level === "error").length;
+  const warningCount = issues.filter((i) => i.level === "warning").length;
+
+  if (errorCount > 0) {
+    logError("OSM_VALIDATOR", `Validació fallida: ${errorCount} errors, ${warningCount} warnings`);
+  } else if (warningCount > 0) {
+    logWarn("OSM_VALIDATOR", `Validació amb warnings: ${warningCount} warnings`);
+  } else {
+    logInfo("OSM_VALIDATOR", "Validació correcta");
+  }
 
   return {
     valid: !hasErrors,

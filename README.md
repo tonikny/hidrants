@@ -34,6 +34,47 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
 - **Messaging**: Eclipse Mosquitto 2 (MQTT) + OwnTracks.
 - **Infraestructura**: Docker, Docker Compose, Nginx, GraphHopper.
 
+## 🗺️ Sincronització amb OpenStreetMap
+
+La sincronització OSM és una funcionalitat accessible únicament per **administradors**, permetent mantenir les dades locals sincronitzades amb OpenStreetMap de forma bidireccional.
+
+### Estats de Sincronització 📊
+
+| Estat                 | Emoji | Descripció                  | Accions                       |
+| --------------------- | ----- | --------------------------- | ----------------------------- |
+| ✅ **SYNCED**         | ✅    | Sincronitzat amb OSM        | Edició normal, pujar canvis   |
+| 🟡 **PENDING_CREATE** | 🟡    | Nou hidrant per crear a OSM | Push sync, pujar manual       |
+| 🔶 **PENDING_UPDATE** | 🔶    | Canvi local per pujar a OSM | Push sync, pujar manual       |
+| 🔴 **PENDING_DELETE** | 🔴    | Marcat per esborrar de OSM  | Push sync, esborrar manual    |
+| ⚠️ **CONFLICT**       | ⚠️    | Conflicte de versió amb OSM | Resoldre, descartar, pujar    |
+| ❌ **ERROR**          | ❌    | Error en la sincronització  | Repetir, netejar errors       |
+| 🔍 **REVIEW**         | 🔍    | Revisió manual necessària   | Acceptar, corregir, descartar |
+
+### Fluxos d'Operacions
+
+#### 🔄 Pull Sync (Importar dades d'OSM)
+
+Importa hidrants des d'OpenStreetMap cap a la base de dades local:
+
+- Respecta els estats locals (`PENDING_CREATE`, `PENDING_UPDATE/DELETE` no es sobreescriuen)
+- Detecta conflictes si OSM té versions més noves
+- Netega hidrants eliminats a OSM (només si `SYNCED`)
+
+#### 📤 Push Sync (Exportar canvis a OSM)
+
+Exporta els canvis pendents cap a OpenStreetMap:
+
+- Crea actualitza i esborra nodes a OSM
+- Gestiona conflictes de versió (409)
+- Valida dades abans de pujar
+- Notifica conflictes via Telegram
+
+### Documentació Detallada
+
+Per a configuració completa, gestió d'errors, resolució de conflictes i casos d'ús detallats, consulta:
+
+📖 **[docs/OSM_SYNC.md](docs/OSM_SYNC.md)** - Documentació completa de sincronització OSM
+
 ## Instal·lació i Ús
 
 ### Entorn de Desenvolupament

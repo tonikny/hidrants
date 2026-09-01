@@ -4,6 +4,7 @@ import { eq, notInArray, and } from "drizzle-orm";
 import { queryOverpass, type OsmElement } from "./overpass.js";
 import { v4 as uuidv4 } from "uuid";
 import { HidrantsRepository } from "../db/repositories/hidrantsRepository.js";
+import { logInfo, logSuccess, logWarn, logError } from "../utils/logger.js";
 
 /**
  * Sincronitza els hidrants d'una ADF des d'OpenStreetMap (Overpass).
@@ -17,11 +18,22 @@ import { HidrantsRepository } from "../db/repositories/hidrantsRepository.js";
  *              - CONFLICT/ERROR/REVIEW → no toca
  */
 export async function syncAdfFromOSM(adfId: number, force = false) {
+  const startTime = Date.now();
+  logInfo("OSM", "Iniciant pull sync per ADF", { adfId, force });
+
   const adf = db.select().from(adfs).where(eq(adfs.id, adfId)).get();
 
   if (!adf) {
+    logError("OSM", "ADF no trobat", adfId.toString());
     throw new Error(`ADF ${adfId} not found in database.`);
   }
+
+  logInfo("OSM", "Relacions OSM per ADF", {
+    adfId,
+    nom: adf.nom,
+    osmRelations: JSON.parse(adf.osm_relations).length,
+    relations: JSON.parse(adf.osm_relations),
+  });
 
   const relations: string[] = JSON.parse(adf.osm_relations);
   let allElements: OsmElement[] = [];
@@ -101,6 +113,14 @@ export async function syncAdfFromOSM(adfId: number, force = false) {
               console.log(
                 `[OSM Sync] Hidrant OSM ${node.id}: OSM més nou (${node.timestamp}) que local (${existing.updated_at}). Marcant CONFLICT.`,
               );
+              logWarn("OSM", "Conflicte detectat (OSM més nou)", {
+                hydrantId: existing.id,
+                osmId: node.id,
+                osmVersion: node.version,
+                localVersion: existing.osm_version,
+                osmTimestamp: node.timestamp,
+                localTimestamp: existing.updated_at,
+              });
               HidrantsRepository.markConflict(existing.id, {
                 localVersion: existing.osm_version,
                 osmVersion: node.version,
@@ -116,6 +136,12 @@ export async function syncAdfFromOSM(adfId: number, force = false) {
             } else {
               // Local és més nou o igual → saltar, mantenir estat local
               console.log(`[OSM Sync] Hidrant OSM ${node.id}: Local més nou o igual. Saltant.`);
+              logInfo("OSM", "Saltant hidrant (local més nou)", {
+                hydrantId: existing.id,
+                osmId: node.id,
+                osmVersion: node.version,
+                localVersion: existing.osm_version,
+              });
               skippedCount++;
             }
           } else {
@@ -176,15 +202,29 @@ export async function syncAdfFromOSM(adfId: number, force = false) {
             ),
           )
           .run();
+
+        logInfo("OSM", "Neteja d'hidrants esborrats a OSM", {
+          adfId,
+          syncedRelations: successCount,
+          totalRelations: relations.length,
+          currentOsmIds: currentOsmIds.length,
+          cleanedIds: currentOsmIds,
+        });
       } else {
         tx.delete(hidrants)
           .where(and(eq(hidrants.adf_id, adfId), eq(hidrants.sync_status, "SYNCED")))
           .run();
+        logWarn("OSM", "Netejant tots els hidrants SYNCED (no hi ha IDs OSM)", { adfId });
       }
     } else {
       console.warn(
         `[OSM Sync] Atenció: S'han saltat algunes relacions per errors. No s'esborrarà cap hidrant de la BD per evitar pèrdues accidentals.`,
       );
+      logWarn("OSM", "Saltant neteja per errors en relacions", {
+        adfId,
+        successCount,
+        totalRelations: relations.length,
+      });
     }
   });
 
@@ -193,6 +233,14 @@ export async function syncAdfFromOSM(adfId: number, force = false) {
       `[OSM Sync] Resum: ${skippedCount} saltsats (locals mantinguts), ${conflictCount} conflictes nous`,
     );
   }
+
+  logSuccess("OSM", "Pull completat", {
+    adfId,
+    totalElements: allElements.length,
+    skipped: skippedCount,
+    conflicts: conflictCount,
+    duration: Date.now() - startTime,
+  });
 
   return { total: allElements.length, skipped: skippedCount, conflicts: conflictCount };
 }

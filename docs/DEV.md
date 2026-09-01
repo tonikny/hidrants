@@ -131,6 +131,188 @@ Self-test de la lògica de vinculació (sense xarxa):
 npm run telegram:selftest
 ```
 
+## Sincronització amb OSM
+
+El projecte suporta sincronització bidireccional amb OpenStreetMap: descarregar hidrants existents (pull) i publicar canvislocals (push).
+
+### Configuració
+
+Per al push sync, cal afegir a `back/.env`:
+
+```env
+OSM_ACCESS_TOKEN=el_teu_token_oauth2_aqui
+#OSM_API_URL=https://api.openstreetmap.org/api/0.6
+```
+
+El token OAuth 2.0 d'OSM no expira. Registrar l'aplicació a: https://www.openstreetmap.org/oauth2/applications (scope: `write_api`). Sense aquesta variable, el push sync retornarà error. La pull sync funciona sense token (usa Overpass API pública).
+
+### Pull sync (importació)
+
+```bash
+npm run db:import-osm
+# o via API: POST /api/hidrants/sync?adf=<ID>
+```
+
+Descarrega hidrants des d'OpenStreetMap via Overpass API per a les relacions de l'ADF activa.
+
+**Comportament segons l'estat local:**
+
+| Estat local      | Pull sync normal                             | Pull sync amb `force=true` |
+| ---------------- | -------------------------------------------- | -------------------------- |
+| `SYNCED`         | Actualitza des d'OSM                         | Actualitza des d'OSM       |
+| `PENDING_CREATE` | No toca (es manté)                           | Sobreescriu → SYNCED       |
+| `PENDING_UPDATE` | No toca si local és més nou; sinó → CONFLICT | Sobreescriu → SYNCED       |
+| `PENDING_DELETE` | No toca                                      | Torna d'OSM → SYNCED       |
+| `CONFLICT`       | No toca                                      | Sobreescriu → SYNCED       |
+| `ERROR`          | No toca                                      | Sobreescriu → SYNCED       |
+| `REVIEW`         | No toca                                      | Sobreescriu → SYNCED       |
+
+**Paràmetre force:**
+
+```bash
+# Pull sync normal (respecta canvis locals)
+POST /api/hidrants/sync?adf=<ID>
+Body: {}
+
+# Pull sync amb force (sobreescriu tot)
+POST /api/hidrants/sync?adf=<ID>
+Body: { "force": true }
+```
+
+### Push sync (publicació)
+
+```bash
+npm run db:export-osm
+# o via API: POST /api/osm/push-sync
+```
+
+Publica els canvis pendents (`PENDING_CREATE`, `PENDING_UPDATE`, `PENDING_DELETE`) cap a OSM. Gestiona:
+
+- **Conflictes de versió (409)**: intenta resolució automàtica, sinó marca `CONFLICT`.
+- **Errors**: marca `ERROR` amb detalls.
+
+**Push selectiu:**
+
+```bash
+# Pujar només hidrants seleccionats
+POST /api/osm/push-selected
+Body: { "ids": ["abc123", "def456"] }
+```
+
+**Descartar canvis:**
+
+```bash
+# Descartar canvis seleccionats
+POST /api/osm/discard-selected
+Body: { "ids": ["abc123", "def456"] }
+```
+
+Els `PENDING_CREATE` s'esborren de la BD; la resta es marca com a `SYNCED`.
+
+**Baixar un node individual d'OSM:**
+
+```bash
+# Aplicar versió d'OSM a un hidrant (sobreescriu locals)
+POST /api/osm/pull-hydrant
+Body: { "id": "abc123" }
+```
+
+### UI del panell de sincronització
+
+`OsmSyncPanel.tsx` mostra un panell unificat amb:
+
+- **Capçalera**: botó "Baixar d'OSM" (pull sync normal, respecta locals)
+- **Seccions col·lapsables** per estat (tancades per defecte, amb comptador)
+- **Checkboxes** individuals + "Sel·leccionar tot" per secció
+- **Accions per lot**: "Pujar seleccionats" / "Descartar seleccionats"
+- **Accions individuals** amb confirmació:
+  - ↑ Pujar a OSM / Confirmar esborrat / Reintentar
+  - ↓ Baixar d'OSM (CONFIRMAT: sobreescriu locals)
+  - ✕ Descartar (CONFIRMAT: esborra o reverteix)
+- **Selecció al mapa**: clic al nom del node → cercle + info panell
+- **Refresc automàtic**: després de qualsevolacció, la capa d'hidrants es refresca
+
+Events utilitzats:
+
+- `select-hydrant-by-id` → selecciona hidrant al mapa (cercle + panell info)
+- `refresh-hidrants` → refresca la capa d'hidrants
+
+### Exportació .osc
+
+```bash
+GET /api/osm/conflicts/osc
+```
+
+Genera un fitxer de canvi (OSM XML) compatible amb JOSM per importar manualment a OSM.
+
+### Validació de dades
+
+Abans de pujar a OSM, el backend valida els tags de cada hidrant mitjançant `back/src/services/osmDataValidator.ts`.
+
+**Regles de validació:**
+
+| Camp        | Tag OSM                 | Valors permesos             |
+| ----------- | ----------------------- | --------------------------- |
+| Tipus       | `fire_hydrant:type`     | `pillar`, `underground`     |
+| Posició     | `fire_hydrant:position` | `lane`, `sidewalk`, `green` |
+| Acoblaments | `couplings`             | `1`, `2`, `3`, `4`          |
+| Diàmetres   | `couplings:diameters`   | `45`, `70`, `100`           |
+| Pressió     | `fire_hydrant:pressure` | Número vàlid                |
+| Data        | `survey:date`           | Format `YYYY-MM-DD`         |
+
+**Detecció addicional:**
+
+- Text tot en majuscules (≥3 caràcters) → warning.
+- Tags > 255 caràcters → error.
+- Tags buits → s'eliminen automàticament.
+
+**Resultats:**
+
+- **Error** → hidrant marcada com a `ERROR`, no es puja a OSM.
+- **Warning** → hidrant marcada com a `REVIEW`, es mostra a la UI perquè l'admin revisi.
+
+### Estats de sincronització
+
+| Estat            | Significat                                 |
+| ---------------- | ------------------------------------------ |
+| `SYNCED`         | Sincronitzat amb OSM                       |
+| `PENDING_CREATE` | Nou local, pendent de crear a OSM          |
+| `PENDING_UPDATE` | Modificat localment, pendent d'actualitzar |
+| `PENDING_DELETE` | Marcat per esborrar                        |
+| `CONFLICT`       | Conflicte de versió amb OSM                |
+| `ERROR`          | Error durant la sincronització             |
+| `REVIEW`         | Dades amb warnings, pendent de revisió     |
+
+### Endpoints API
+
+| Endpoint                     | Method | Descripció                                |
+| ---------------------------- | ------ | ----------------------------------------- |
+| `/api/osm/status`            | GET    | Estat del token i comptador de conflictes |
+| `/api/osm/pending?adf=ID`    | GET    | Llista canvis pendents amb detalls        |
+| `/api/osm/push-sync`         | POST   | Push sync global                          |
+| `/api/osm/push-selected`     | POST   | Push selectiu per IDs                     |
+| `/api/osm/discard-selected`  | POST   | Descarta/esborra seleccionats             |
+| `/api/osm/conflicts`         | GET    | Llistat de conflictes amb detalls         |
+| `/api/osm/conflicts/osc`     | GET    | Fitxer .osc per JOSM                      |
+| `/api/osm/conflicts/resolve` | POST   | Resoldre conflicte                        |
+| `/api/osm/reviews`           | GET    | Hidrants amb warnings                     |
+| `/api/osm/pull-hydrant`      | POST   | Baixar node individual d'OSM              |
+| `/api/hidrants/sync?adf=ID`  | POST   | Pull sync (accepta `{ force }`)           |
+| `/api/hidrants/stats`        | GET    | Stats per ADF                             |
+| `/api/osm/conflicts/osc`     | GET    | Descarregar .osc amb conflictes           |
+| `/api/osm/conflicts/resolve` | POST   | Resoldre un conflicte després de JOSM     |
+| `/api/osm/reviews`           | GET    | Hidrants amb warnings per revisar         |
+
+### Fitxers clau
+
+- `back/src/services/osmSync.ts` — Pull sync (Overpass API).
+- `back/src/services/osmPushSync.ts` — Push sync (API OSM).
+- `back/src/services/osmDataValidator.ts` — Validació de tags.
+- `back/src/services/osmConflictResolver.ts` — Resolució automàtica de conflictes.
+- `back/src/routes/osm.ts` — Endpoints API.
+- `front/src/components/osm/OsmConflictList.tsx` — UI conflictes.
+- `front/src/components/osm/OsmReviewList.tsx` — UI revisions pendents.
+
 ## Qualitat de codi: ESLint, Husky i CI
 
 - **ESLint** (flat config `eslint.config.mjs`, un per `front/` i `back/`): `npm run lint` i `npm run lint:fix` a la arrel o a cada paquet. Objectiu 0 errors, 0 warnings.

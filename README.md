@@ -10,7 +10,8 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
 
 - **Arquitectura SPA**: Aplicació de pàgina única, amb suport per a múltiples ADFs, cadascuna amb un o diversos municipis assignats.
 - **Dades geogràfiques per ADF**: Les fronteres (GeoJSON), l'BBOX i el center es desen directament a la taula `adfs`, sense dependre de municipis individuals.
-- **Sincronització amb OSM**: Importació automàtica de dades des d'OpenStreetMap.
+- **Sincronització amb OSM**: Importació i exportació bidireccional de dades amb OpenStreetMap (pull sync, push sync, exportació .osc).
+- **Validació de dades**: Abans de pujar a OSM, el backend valida els tags contra valors permesos (tipus, posició, acoblaments, diàmetres, pressió, dates). Dades invàlides → error; warnings (majuscules, valors no estàndard) → revisió pendent.
 - **Gestió d'incidències**: Registre i seguiment d'incidències associades als hidrants.
 - **Tracking en temps real (MQTT/OwnTracks)**: Recepció d'ubicacions GPS de les unitats per conèixer-ne la posició sobre el mapa.
 - **Notificacions Telegram per ADF**: Cada ADF pot tenir el seu bot i un grup de Telegram on rep automàticament els avisos (incidències, altes i edicions d'hidrants). Configuració guiada des de la pestanya **Configuració → Notificacions de Telegram**: token xifrat, deep link `startgroup` d'un sol ús i avís de prova directament al grup.
@@ -22,7 +23,7 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
   - Llista detallada d'hidrants i cerca ràpida.
   - Càlcul de rutes a hidrants mitjançant GraphHopper.
   - URLs compartibles per a la localització exacta de cada hidrant.
-- **Exportació OSM**: Possibilitat d'exportar els canvis realitzats en format OSM per actualitzar la cartografia pública.
+- **Exportació OSM**: Exportació de canvis en format .osc (OSM XML) compatible amb JOSM per importar manualment a OpenStreetMap.
 - **Backups automàtics**: Sistema complet de còpies de seguretat de la base de dades amb rotació (diària, setmanal, mensual i semestral).
 
 ## Stack Tecnològic
@@ -32,6 +33,47 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
 - **Base de dades**: SQLite (Better-SQLite3).
 - **Messaging**: Eclipse Mosquitto 2 (MQTT) + OwnTracks.
 - **Infraestructura**: Docker, Docker Compose, Nginx, GraphHopper.
+
+## 🗺️ Sincronització amb OpenStreetMap
+
+La sincronització OSM és una funcionalitat accessible únicament per **administradors**, permetent mantenir les dades locals sincronitzades amb OpenStreetMap de forma bidireccional.
+
+### Estats de Sincronització 📊
+
+| Estat                 | Emoji | Descripció                  | Accions                       |
+| --------------------- | ----- | --------------------------- | ----------------------------- |
+| ✅ **SYNCED**         | ✅    | Sincronitzat amb OSM        | Edició normal, pujar canvis   |
+| 🟡 **PENDING_CREATE** | 🟡    | Nou hidrant per crear a OSM | Push sync, pujar manual       |
+| 🔶 **PENDING_UPDATE** | 🔶    | Canvi local per pujar a OSM | Push sync, pujar manual       |
+| 🔴 **PENDING_DELETE** | 🔴    | Marcat per esborrar de OSM  | Push sync, esborrar manual    |
+| ⚠️ **CONFLICT**       | ⚠️    | Conflicte de versió amb OSM | Resoldre, descartar, pujar    |
+| ❌ **ERROR**          | ❌    | Error en la sincronització  | Repetir, netejar errors       |
+| 🔍 **REVIEW**         | 🔍    | Revisió manual necessària   | Acceptar, corregir, descartar |
+
+### Fluxos d'Operacions
+
+#### 🔄 Pull Sync (Importar dades d'OSM)
+
+Importa hidrants des d'OpenStreetMap cap a la base de dades local:
+
+- Respecta els estats locals (`PENDING_CREATE`, `PENDING_UPDATE/DELETE` no es sobreescriuen)
+- Detecta conflictes si OSM té versions més noves
+- Netega hidrants eliminats a OSM (només si `SYNCED`)
+
+#### 📤 Push Sync (Exportar canvis a OSM)
+
+Exporta els canvis pendents cap a OpenStreetMap:
+
+- Crea actualitza i esborra nodes a OSM
+- Gestiona conflictes de versió (409)
+- Valida dades abans de pujar
+- Notifica conflictes via Telegram
+
+### Documentació Detallada
+
+Per a configuració completa, gestió d'errors, resolució de conflictes i casos d'ús detallats, consulta:
+
+📖 **[docs/OSM_SYNC.md](docs/OSM_SYNC.md)** - Documentació completa de sincronització OSM
 
 ## Instal·lació i Ús
 

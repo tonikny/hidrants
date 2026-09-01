@@ -49,6 +49,7 @@ interface AuthContextType {
   actualRole: string | null;
   viewRole: ViewRole | null;
   setViewRole: (role: ViewRole | null) => void;
+  setActiveAdfId: (id: number | null) => void;
   login: (token: string, user: User) => void;
   logout: () => void;
   loading: boolean;
@@ -62,7 +63,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem(VIEW_ROLE_KEY);
     return saved === "admin" || saved === "coordinador" || saved === "voluntari" ? saved : null;
   });
-  const [activeAdfId, setActiveAdfId] = useState<number | null>(null);
+  const [activeAdfId, setActiveAdfId] = useState<number | null>(() => {
+    const saved = localStorage.getItem("active_adf_id");
+    return saved ? Number(saved) : null;
+  });
   const [loading, setLoading] = useState(true);
   const [prevRawUser, setPrevRawUser] = useState<User | null>(null);
 
@@ -75,13 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   // Segueix l'ADF activa (emesa per AdfContext) per assignar-la quan un admin "veu com" un rol d'ADF.
-  useEffect(() => {
-    const handler = (e: Event) =>
-      setActiveAdfId((e as CustomEvent<{ id: number | null }>).detail?.id ?? null);
-    window.addEventListener("hidrant-adf-active", handler as EventListener);
-    return () => window.removeEventListener("hidrant-adf-active", handler as EventListener);
-  }, []);
-
   // Verifica la sessió al mount (la cookie auth_token la gestiona el servidor).
   useEffect(() => {
     const verifyToken = async () => {
@@ -149,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         actualRole: rawUser?.role ?? null,
         viewRole,
         setViewRole,
+        setActiveAdfId,
         login,
         logout: () => {
           void logout();

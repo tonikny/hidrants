@@ -1,0 +1,614 @@
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "react-toastify";
+import { useAdf } from "../../contexts/AdfContext";
+import { logError } from "../../utils/log";
+
+interface PendingHydrant {
+  id: string;
+  osm_id: number | null;
+  lat: number;
+  lon: number;
+  sync_status: string;
+  sync_error: string | null;
+  street: string;
+  num: string;
+}
+
+interface SyncStats {
+  PENDING_CREATE: number;
+  PENDING_UPDATE: number;
+  PENDING_DELETE: number;
+  CONFLICT: number;
+  ERROR: number;
+  REVIEW: number;
+  total_pending: number;
+}
+
+type SectionKey =
+  "PENDING_CREATE" | "PENDING_UPDATE" | "PENDING_DELETE" | "CONFLICT" | "ERROR" | "REVIEW";
+
+const SECTION_CONFIG: Record<SectionKey, { label: string; color: string; hint: string }> = {
+  PENDING_CREATE: {
+    label: "Nous locals",
+    color: "text-blue-600",
+    hint: "Hidrants creats localment, encara no pujats a OSM.",
+  },
+  PENDING_UPDATE: {
+    label: "Edicions pendents",
+    color: "text-blue-600",
+    hint: "Hidrants modificats localment, pendent de pujar a OSM.",
+  },
+  PENDING_DELETE: {
+    label: "Esborraments pendents",
+    color: "text-red-600",
+    hint: "Hidrants marcats per esborrar, pendent d'eliminar a OSM.",
+  },
+  CONFLICT: {
+    label: "Conflictes",
+    color: "text-orange-600",
+    hint: "OSM té dades diferents. Tria si vols mantenir la versió local o la d'OSM.",
+  },
+  ERROR: {
+    label: "Errors",
+    color: "text-red-600",
+    hint: "Error durant l'última sincronització. Pots reintentar o descartar.",
+  },
+  REVIEW: {
+    label: "Per revisar",
+    color: "text-yellow-600",
+    hint: "Dades amb warnings de validació. Revisa-les abans de pujar.",
+  },
+};
+
+function hydrantLabel(h: PendingHydrant) {
+  if (h.street) {
+    return `${h.street}${h.num ? `, ${h.num}` : ""}`;
+  }
+  return h.osm_id ? `OSM ${h.osm_id}` : h.id.slice(0, 8);
+}
+
+function parseSyncError(syncError: string | null): string[] {
+  if (!syncError) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(syncError);
+    if (Array.isArray(parsed)) {
+      return parsed.map((e: { message?: string }) => e.message || JSON.stringify(e));
+    }
+    return [syncError];
+  } catch {
+    return [syncError];
+  }
+}
+
+export function OsmSyncPanel({
+  onSelectHydrant,
+  onRefresh,
+}: {
+  onSelectHydrant?: (id: string) => void;
+  onRefresh?: () => void;
+}) {
+  const { activeAdf } = useAdf();
+  const [pending, setPending] = useState<PendingHydrant[]>([]);
+  const [stats, setStats] = useState<SyncStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const selectHydrant = (id: string) => {
+    onSelectHydrant?.(id);
+  };
+
+  const refreshHydrants = () => {
+    onRefresh?.();
+  };
+
+  useEffect(() => {
+    if (!activeAdf) {
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/osm/pending?adf=${activeAdf.id}`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          const items = data.pending || [];
+          setPending(items);
+          setStats(data.stats || null);
+          // Obrir automàticament les seccions que tenen items
+          const open: Record<string, boolean> = {};
+          for (const h of items) {
+            const key = (h.sync_status || "PENDING_UPDATE") as SectionKey;
+            open[key] = true;
+          }
+          setOpenSections(open);
+        }
+      } catch (err) {
+        logError("Error carregant canvis pendents", err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeAdf]);
+
+  const reload = useCallback(async () => {
+    if (!activeAdf) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/osm/pending?adf=${activeAdf.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPending(data.pending || []);
+        setStats(data.stats || null);
+      }
+    } catch (err) {
+      logError("Error carregant canvis pendents", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeAdf]);
+
+  const grouped = pending.reduce<Record<SectionKey, PendingHydrant[]>>(
+    (acc, h) => {
+      const key = (h.sync_status || "PENDING_UPDATE") as SectionKey;
+      if (key in acc) {
+        acc[key].push(h);
+      }
+      return acc;
+    },
+    {
+      PENDING_CREATE: [],
+      PENDING_UPDATE: [],
+      PENDING_DELETE: [],
+      CONFLICT: [],
+      ERROR: [],
+      REVIEW: [],
+    },
+  );
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectSection = (ids: string[]) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const allSelected = ids.every((id) => next.has(id));
+      if (allSelected) {
+        ids.forEach((id) => next.delete(id));
+      } else {
+        ids.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  // --- Accions per lots ---
+
+  const handlePushSelected = async () => {
+    if (selected.size === 0) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/osm/push-selected", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      const data = await res.json();
+      if (data.synced > 0) {
+        toast.success(`${data.synced} hidrants pujats`);
+      }
+      if (data.conflicts > 0) {
+        toast.warning(`${data.conflicts} conflictes`);
+      }
+      if (data.errors > 0) {
+        toast.error(`${data.errors} errors`);
+      }
+      if (data.reviewed > 0) {
+        toast.info(`${data.reviewed} per revisar`);
+      }
+      setSelected(new Set());
+      refreshHydrants();
+      void reload();
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDiscardSelected = async () => {
+    if (selected.size === 0) {
+      return;
+    }
+    if (!window.confirm(`Descartar ${selected.size} canvis seleccionats?`)) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/osm/discard-selected", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      const data = await res.json();
+      const parts: string[] = [];
+      if (data.discarded > 0) {
+        parts.push(`${data.discarded} descartats`);
+      }
+      if (data.deleted > 0) {
+        parts.push(`${data.deleted} esborrats`);
+      }
+      toast.success(parts.join(", ") || "Fet");
+      setSelected(new Set());
+      refreshHydrants();
+      void reload();
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // --- Pull sync ---
+
+  const handlePullSync = async () => {
+    if (!activeAdf) {
+      return;
+    }
+    if (stats && (stats.total_pending > 0 || stats.CONFLICT > 0)) {
+      const parts: string[] = [];
+      if (stats.PENDING_CREATE > 0) {
+        parts.push(`${stats.PENDING_CREATE} nous locals (es mantindran)`);
+      }
+      if (stats.PENDING_UPDATE > 0) {
+        parts.push(`${stats.PENDING_UPDATE} edicions pendents (es mantindran)`);
+      }
+      if (stats.PENDING_DELETE > 0) {
+        parts.push(`${stats.PENDING_DELETE} esborraments pendents (es mantindran)`);
+      }
+      if (stats.CONFLICT > 0) {
+        parts.push(`${stats.CONFLICT} conflictes (es mantindran)`);
+      }
+      const msg = `Hi ha canvis locals sense pujar:\n• ${parts.join("\n• ")}\n\nBaixar d'OSM actualitzarà els hidrants sincronitzats.\nEls canvis locals NO es perdran.\n\nContinuar?`;
+      if (!window.confirm(msg)) {
+        return;
+      }
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/hidrants/sync?adf=${activeAdf.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+        refreshHydrants();
+        void reload();
+      } else {
+        toast.error(data.message || "Error desconegut");
+      }
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Accions individuals ---
+
+  const handlePushOne = async (id: string) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/osm/push-selected", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
+      });
+      const data = await res.json();
+      if (data.synced > 0) {
+        toast.success("Pujat a OSM");
+      }
+      if (data.conflicts > 0) {
+        toast.warning("Conflicte de versió");
+      }
+      if (data.errors > 0) {
+        toast.error("Error en pujar");
+      }
+      if (data.reviewed > 0) {
+        toast.info("Per revisar abans de pujar");
+      }
+      refreshHydrants();
+      void reload();
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDiscardOne = async (id: string, key: SectionKey, label: string) => {
+    const msg =
+      key === "PENDING_CREATE"
+        ? `Esborrar "${label}" de la base de dades?`
+        : `Revertir "${label}" al valor d'OSM? Es perdràn els canvis locals.`;
+    if (!window.confirm(msg)) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await fetch("/api/osm/discard-selected", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
+      });
+      toast.success("Descartat");
+      refreshHydrants();
+      void reload();
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePullFromOsm = async (id: string, label: string) => {
+    if (
+      !window.confirm(`Aplicar versió d'OSM a "${label}"?\nLes dades locals es sobreescriuran.`)
+    ) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/osm/pull-hydrant`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Dades d'OSM aplicades");
+        refreshHydrants();
+      } else {
+        toast.error(data.error || "Error");
+      }
+      void reload();
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (!activeAdf) {
+    return null;
+  }
+
+  const hasItems = pending.length > 0;
+  const hasSelected = selected.size > 0;
+
+  return (
+    <div className="border border-border rounded overflow-hidden">
+      {/* Capçalera */}
+      <div className="p-3 bg-bg">
+        <div className="flex items-center justify-between">
+          <h4 className="m-0 text-[0.85rem] font-semibold">Canvis pendents</h4>
+          <button
+            onClick={() => void handlePullSync()}
+            disabled={loading}
+            className="text-[0.75rem] px-2 py-1 bg-white border border-border rounded cursor-pointer disabled:opacity-50"
+            title="Actualitza els hidrants sincronitzats des d'OSM. Els canvis locals es mantenen."
+          >
+            {loading ? "Baixant..." : "Baixar d'OSM"}
+          </button>
+        </div>
+        <p className="m-0 mt-1 text-[0.7rem] text-muted">
+          Actualitza els hidrants SYNCED des d'OSM. Els canvis locals no es perden.
+        </p>
+      </div>
+
+      {/* Contingut */}
+      {loading && !hasItems ? (
+        <div className="p-4 text-center text-muted text-[0.8rem]">Carregant...</div>
+      ) : !hasItems ? (
+        <div className="p-4 text-center text-muted text-[0.8rem]">No hi ha canvis pendents</div>
+      ) : (
+        <>
+          {/* Accions per lots */}
+          {hasSelected && (
+            <div className="flex gap-2 px-3 py-2 border-t border-border bg-bg">
+              <button
+                onClick={() => void handlePushSelected()}
+                disabled={actionLoading}
+                className="flex-1 text-[0.8rem] px-2 py-1.5 bg-blue-600 text-white border border-blue-700 rounded cursor-pointer disabled:opacity-50"
+              >
+                Pujar ({selected.size})
+              </button>
+              <button
+                onClick={() => void handleDiscardSelected()}
+                disabled={actionLoading}
+                className="flex-1 text-[0.8rem] px-2 py-1.5 bg-white text-ink border border-border rounded cursor-pointer disabled:opacity-50"
+              >
+                Descartar ({selected.size})
+              </button>
+            </div>
+          )}
+
+          {/* Seccions */}
+          <div className="divide-y divide-border">
+            {(Object.keys(grouped) as SectionKey[]).map((key) => {
+              const items = grouped[key];
+              if (items.length === 0) {
+                return null;
+              }
+              const config = SECTION_CONFIG[key];
+              const isOpen = openSections[key];
+
+              return (
+                <div key={key}>
+                  {/* Capçalera de secció */}
+                  <button
+                    onClick={() => toggleSection(key)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-left bg-white hover:bg-bg cursor-pointer border-0"
+                  >
+                    <span className={`text-[0.8rem] font-semibold ${config.color}`}>
+                      {isOpen ? "▾" : "▸"} {config.label} ({items.length})
+                    </span>
+                    {isOpen && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelectSection(items.map((h) => h.id));
+                        }}
+                        className="text-[0.7rem] text-muted hover:text-ink cursor-pointer"
+                      >
+                        {items.every((h) => selected.has(h.id))
+                          ? "Desseleccionar tot"
+                          : "Sel·leccionar tot"}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Hint de secció */}
+                  {isOpen && (
+                    <div className="px-3 py-1 text-[0.7rem] text-muted bg-bg/50 border-t border-border">
+                      {config.hint}
+                    </div>
+                  )}
+
+                  {/* Llista d'items */}
+                  {isOpen && (
+                    <div className="bg-bg">
+                      {items.map((h) => {
+                        const errors = parseSyncError(h.sync_error);
+                        return (
+                          <div
+                            key={h.id}
+                            className="flex items-start gap-2 px-3 py-2 border-t border-border"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selected.has(h.id)}
+                              onChange={() => toggleSelect(h.id)}
+                              className="mt-0.5"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => selectHydrant(h.id)}
+                                  className="text-[0.8rem] font-semibold text-ink hover:text-blue-600 cursor-pointer bg-transparent border-0 p-0 truncate"
+                                  title="Seleccionar al mapa"
+                                >
+                                  {hydrantLabel(h)}
+                                </button>
+                                {h.osm_id && (
+                                  <span className="text-[0.7rem] text-muted">OSM {h.osm_id}</span>
+                                )}
+                              </div>
+                              {errors.length > 0 && (
+                                <div className="text-[0.7rem] text-muted mt-0.5">
+                                  {errors.map((e, i) => (
+                                    <div key={i}>• {e}</div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              {/* Pujar: PENDING_CREATE, PENDING_UPDATE, CONFLICT (keep local), ERROR (retry), REVIEW */}
+                              {(key === "PENDING_CREATE" ||
+                                key === "PENDING_UPDATE" ||
+                                key === "ERROR" ||
+                                key === "REVIEW") && (
+                                <button
+                                  onClick={() => void handlePushOne(h.id)}
+                                  disabled={actionLoading}
+                                  className="text-[0.7rem] px-1.5 py-0.5 bg-white border border-border rounded cursor-pointer disabled:opacity-50"
+                                  title={
+                                    key === "ERROR"
+                                      ? "Reintentar pujada"
+                                      : key === "REVIEW"
+                                        ? "Pujar (ignorar warnings)"
+                                        : "Pujar a OSM"
+                                  }
+                                >
+                                  ↑
+                                </button>
+                              )}
+                              {/* Baixar: CONFLICT (keep OSM) */}
+                              {key === "CONFLICT" && (
+                                <button
+                                  onClick={() => void handlePullFromOsm(h.id, hydrantLabel(h))}
+                                  disabled={actionLoading}
+                                  className="text-[0.7rem] px-1.5 py-0.5 bg-white border border-border rounded cursor-pointer disabled:opacity-50"
+                                  title="Aplicar versió d'OSM"
+                                >
+                                  ↓
+                                </button>
+                              )}
+                              {/* Esborrar d'OSM: PENDING_DELETE */}
+                              {key === "PENDING_DELETE" && (
+                                <button
+                                  onClick={() => void handlePushOne(h.id)}
+                                  disabled={actionLoading}
+                                  className="text-[0.7rem] px-1.5 py-0.5 bg-white border border-border rounded cursor-pointer disabled:opacity-50"
+                                  title="Confirmar esborrat a OSM"
+                                >
+                                  ↑
+                                </button>
+                              )}
+                              {/* Descartar: tots */}
+                              <button
+                                onClick={() => void handleDiscardOne(h.id, key, hydrantLabel(h))}
+                                disabled={actionLoading}
+                                className="text-[0.7rem] px-1.5 py-0.5 bg-white border border-border rounded cursor-pointer disabled:opacity-50"
+                                title={
+                                  key === "PENDING_CREATE"
+                                    ? "Esborrar de la BD"
+                                    : "Revertir als valors d'OSM? Es perdràn els canvis locals."
+                                }
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

@@ -27,7 +27,7 @@ export function useIncidencies() {
     } finally {
       setLoading(false);
     }
-  }, [activeAdf?.id]);
+  }, [activeAdf]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- càrrega asíncrona legítima

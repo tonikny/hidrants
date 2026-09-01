@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Marker } from 'react-leaflet';
 import L, { latLng } from 'leaflet';
 import getHydrantIcon from '../../../utils/icons';
@@ -24,24 +23,10 @@ export interface HydrantMarkerProps {
 
 /**
  * Marcador d'hidrant. En clicar selecciona el node (la informació
- * es mostra al panell lateral / bottomsheet) i respon al centratge
- * via URL (?node=ID). Quan està seleccionat es marca subtilment.
+ * es mostra al panell lateral / bottomsheet). Quan està seleccionat es marca subtilment.
  */
 export function HydrantMarker({ feature, setPoi, onSelectNode, selected }: HydrantMarkerProps) {
   const coords = feature.geometry.coordinates;
-
-  useEffect(() => {
-    const handleCentered = (e: Event) => {
-      const { nodeId } = (e as CustomEvent<{ nodeId: string }>).detail;
-      if (nodeId === feature.id && onSelectNode) {
-        onSelectNode(feature);
-      }
-    };
-
-    window.addEventListener('map-node-centered', handleCentered);
-
-    return () => window.removeEventListener('map-node-centered', handleCentered);
-  }, [feature.id, feature, onSelectNode]);
 
   return (
     <>

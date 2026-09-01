@@ -1,6 +1,5 @@
 // Control de capes del mapa: base layers, overlays tècnics, hidrants i OwnTracks.
-import { LayersControl, TileLayer, useMapEvents, Marker } from 'react-leaflet';
-import L from 'leaflet';
+import { LayersControl, TileLayer, useMapEvents, LayerGroup } from 'react-leaflet';
 import {
   EffisFwiLayer, EffisMark5FdiLayer, EffisNfdrsIcLayer, IcgxBiomassLayer,
 } from './layers/MeteoLayers';
@@ -23,7 +22,6 @@ interface LayersProps {
 }
 
 const TRACKING_STORAGE_KEY = 'hidrants_tracking_visible';
-const hiddenIcon = L.divIcon({ className: '', iconSize: [0, 0], html: '<div style="width:1px;height:1px;opacity:0"></div>' });
 
 export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrantsVisible, setHydrantsVisible, incidenciesVisible, setIncidenciesVisible, baseLayer, setBaseLayer, positions }: LayersProps) => {
   const { user } = useAuth();
@@ -74,9 +72,9 @@ export const Layers = ({ activeTechnicalLayer, setActiveTechnicalLayer, hydrants
       <LayersControl.Overlay checked={activeTechnicalLayer === "Índex Perill (MARK-5 FDI)"} name="Índex Perill (MARK-5 FDI)"><EffisMark5FdiLayer /></LayersControl.Overlay>
       <LayersControl.Overlay checked={activeTechnicalLayer === "Probabilitat Ignició (NFDRS IC)"} name="Probabilitat Ignició (NFDRS IC)"><EffisNfdrsIcLayer /></LayersControl.Overlay>
       <LayersControl.Overlay checked={activeTechnicalLayer === "Biomassa Arbrat (ICGC)"} name="Biomassa Arbrat (ICGC)"><IcgxBiomassLayer /></LayersControl.Overlay>
-      <LayersControl.Overlay checked name=""><Marker position={[0, 0]} icon={hiddenIcon} /></LayersControl.Overlay>
-      <LayersControl.Overlay checked={incidenciesVisible} name="Incidències"><Marker position={[0, 0]} icon={hiddenIcon} /></LayersControl.Overlay>
-      <LayersControl.Overlay checked={hydrantsVisible} name="Hidrants"><Marker position={[0, 0]} icon={hiddenIcon} /></LayersControl.Overlay>
+      <LayersControl.Overlay checked name=""><LayerGroup /></LayersControl.Overlay>
+      <LayersControl.Overlay checked={incidenciesVisible} name="Incidències"><LayerGroup /></LayersControl.Overlay>
+      <LayersControl.Overlay checked={hydrantsVisible} name="Hidrants"><LayerGroup /></LayersControl.Overlay>
       {user && (
         <LayersControl.Overlay checked={trackingChecked} name="Posicions OwnTracks"><TrackingLayer positions={positions} /></LayersControl.Overlay>
       )}

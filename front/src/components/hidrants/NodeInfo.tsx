@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import type { HidrantFeature } from '../../hooks/useHidrantData';
-import { useAuth } from '../../contexts/AuthContext';
-import { useAdf } from '../../contexts/AdfContext';
-import { useHydrantActions } from './useHydrantActions';
-import { HydrantInfoView } from './HydrantInfoView';
-import { HydrantEditForm } from './HydrantEditForm';
-import { confirmDiscardChanges, setFormDirty } from '../../utils/formDirty';
+import { useState, useEffect } from "react";
+import type { HidrantFeature } from "../../hooks/useHidrantData";
+import { useAuth } from "../../contexts/AuthContext";
+import { useAdf } from "../../contexts/AdfContext";
+import { useHydrantActions } from "./useHydrantActions";
+import { HydrantInfoView } from "./HydrantInfoView";
+import { HydrantEditForm } from "./HydrantEditForm";
+import { usePreventLeave } from "../../hooks/usePreventLeave";
 
 export const NodeInfo = ({
   feature,
@@ -16,7 +16,7 @@ export const NodeInfo = ({
   canEdit,
   editing,
   setEditing,
-  className = '',
+  className = "",
 }: {
   feature: HidrantFeature;
   showRoute?: boolean;
@@ -32,56 +32,70 @@ export const NodeInfo = ({
   const { activeAdf } = useAdf();
   const props = feature.properties;
   const [data, setData] = useState(props.ui_fields);
-  const [observacions, setObservacions] = useState(props.private_tags?.observacions || '');
+  const [observacions, setObservacions] = useState(props.private_tags?.observacions || "");
 
-  const canDelete = canEdit && (user?.permissions ?? []).includes('delete_hydrant');
+  // Sincronitzar l'estat del formulari quan feature canvia (actualització des del backend)
+  /* eslint-disable react-hooks/set-state-in-effect -- actualització necessària quan canvien les dades del backend */
+  useEffect(() => {
+    setData(props.ui_fields);
+    setObservacions(props.private_tags?.observacions || "");
+  }, [props.ui_fields, props.private_tags?.observacions]);
 
-  const { busy, save, quickStatus, remove } = useHydrantActions(feature, activeAdf, refreshHidrants);
+  const isAdmin = user?.role === "admin";
+  const canDelete = canEdit && (user?.permissions ?? []).includes("delete_hydrant");
+
+  const { busy, save, quickStatus, remove } = useHydrantActions(
+    feature,
+    activeAdf,
+    refreshHidrants,
+  );
 
   const handleSave = async () => {
     const ok = await save({
       uiFields: data,
       observacions,
       originalUiFields: props.ui_fields,
-      originalObservacions: props.private_tags?.observacions || '',
+      originalObservacions: props.private_tags?.observacions || "",
     });
-    if (ok) {setEditing(false);}
+    if (ok) {
+      setEditing(false);
+    }
   };
 
   const handleQuickStatus = async (isOperative: boolean) => {
     const newData = await quickStatus(isOperative, data);
-    if (newData) {setData(newData);}
+    if (newData) {
+      setData(newData);
+    }
   };
 
   const handleCancelEdit = () => {
-    if (confirmDiscardChanges()) {setEditing(false);}
+    if (!hasChanges || window.confirm("Hi ha canvis sense desar. Si tanques ara, es perdran. Vols continuar?")) {
+      setEditing(false);
+    }
   };
 
-  useEffect(() => {
-    if (!editing) {
-      setFormDirty(false);
-      return;
-    }
-    const hasChanges =
-      JSON.stringify(data) !== JSON.stringify(props.ui_fields) ||
-      observacions !== (props.private_tags?.observacions || '');
-    setFormDirty(hasChanges);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, data, observacions]);
+  const hasChanges =
+    editing &&
+    (JSON.stringify(data) !== JSON.stringify(props.ui_fields) ||
+      observacions !== (props.private_tags?.observacions || ""));
 
-  useEffect(() => () => { setFormDirty(false); }, []);
+  usePreventLeave(hasChanges);
 
   return (
     <div className={`${className} p-3 flex flex-col gap-3`}>
       {!editing ? (
         <HydrantInfoView
           feature={feature}
-          user={user}
           canEdit={canEdit}
+          isAdmin={isAdmin}
           showRoute={showRoute ?? false}
           setShowRoute={setShowRoute}
           hasLocation={hasLocation}
-          onQuickStatus={(v) => { void handleQuickStatus(v); }}
+          onQuickStatus={(v) => {
+            void handleQuickStatus(v);
+          }}
+          refreshHidrants={refreshHidrants}
         />
       ) : (
         <HydrantEditForm
@@ -90,9 +104,17 @@ export const NodeInfo = ({
           observacions={observacions}
           setObservacions={setObservacions}
           busy={busy}
-          onSave={() => { void handleSave(); }}
+          onSave={() => {
+            void handleSave();
+          }}
           onCancel={handleCancelEdit}
-          onDelete={canDelete ? () => { void remove(); } : undefined}
+          onDelete={
+            canDelete
+              ? () => {
+                  void remove();
+                }
+              : undefined
+          }
         />
       )}
     </div>

@@ -3,6 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/index.js';
 import { users, adfs } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { logger } from '../utils/logger.js';
+
+const log = logger.child({ module: 'auth', operation: 'create_user' });
 
 const username = process.argv[2];
 const password = process.argv[3];
@@ -13,14 +16,14 @@ const ROLES = ['admin', 'coordinador', 'voluntari'];
 const USERNAME_RE = /^(\d{3})\/(GI\/)?(\d{3})$/;
 
 if (!username || !password) {
-  console.log('Ús: npm run create:user <usuari> <contrasenya> [rol] [adf_id]');
-  console.log('Roles: admin, coordinador, voluntari (default admin)');
-  console.log('Usuari no-admin: format XXX/YYY o XXX/GI/YYY (3 dígits, XXX = id ADF)');
+  log.error('Ús: npm run create:user <usuari> <contrasenya> [rol] [adf_id]');
+  log.error('Roles: admin, coordinador, voluntari (default admin)');
+  log.error('Usuari no-admin: format XXX/YYY o XXX/GI/YYY (3 dígits, XXX = id ADF)');
   process.exit(1);
 }
 
 if (!ROLES.includes(role)) {
-  console.error(`❌ Rol invàlid: ${role} (vàlids: ${ROLES.join(', ')})`);
+  log.error({ role, validRoles: ROLES }, '❌ Rol invàlid');
   process.exit(1);
 }
 
@@ -29,7 +32,7 @@ let adf_id: number | null = null;
 const m = USERNAME_RE.exec(username);
 if (role !== 'admin') {
   if (!m) {
-    console.error('❌ El nom d\'usuari no-admin ha de tenir format XXX/YYY o XXX/GI/YYY');
+    log.error('❌ El nom d\'usuari no-admin ha de tenir format XXX/YYY o XXX/GI/YYY');
     process.exit(1);
   }
   adf_id = Number(m[1]);
@@ -43,7 +46,7 @@ if (m) {
 if (adf_id !== null) {
   const adf = db.select({ id: adfs.id }).from(adfs).where(eq(adfs.id, adf_id)).get();
   if (!adf) {
-    console.error(`❌ ADF ${adf_id} no existeix a la base de dades`);
+    log.error({ adf_id }, '❌ ADF no existeix a la base de dades');
     process.exit(1);
   }
 }
@@ -53,7 +56,7 @@ const hash = bcrypt.hashSync(password, 10);
 
 try {
   db.insert(users).values({ id, username, password_hash: hash, adf_id, role }).run();
-  console.log(`✅ Usuari creat: ${username} (rol: ${role}, ADF: ${adf_id ?? 'Global'})`);
+  log.info({ username, role, adf_id }, '✅ Usuari creat');
 } catch (err) {
-  console.error('❌ Error creant usuari:', (err as Error).message);
+  log.error({ err: (err as Error).message }, '❌ Error creant usuari');
 }

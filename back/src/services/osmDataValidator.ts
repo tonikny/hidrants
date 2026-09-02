@@ -22,7 +22,9 @@ export type ValidationResult = {
   issues: ValidationIssue[];
 };
 
-import { logInfo, logWarn, logError } from "../utils/logger.js";
+import { logger } from "../utils/logger.js";
+
+const log = logger.child({ module: "osm", operation: "validator" });
 
 // --- Valors permesos per als camps select ---
 
@@ -195,11 +197,14 @@ export function validateHydrantTags(tags: Record<string, string>): ValidationRes
   const warningCount = issues.filter((i) => i.level === "warning").length;
 
   if (errorCount > 0) {
-    logError("OSM_VALIDATOR", `Validació fallida: ${errorCount} errors, ${warningCount} warnings`);
+    log.error(
+      { errorCount, warningCount },
+      `Validació fallida: ${errorCount} errors, ${warningCount} warnings`,
+    );
   } else if (warningCount > 0) {
-    logWarn("OSM_VALIDATOR", `Validació amb warnings: ${warningCount} warnings`);
+    log.warn({ warningCount }, `Validació amb warnings: ${warningCount} warnings`);
   } else {
-    logInfo("OSM_VALIDATOR", "Validació correcta");
+    log.info("Validació correcta");
   }
 
   return {

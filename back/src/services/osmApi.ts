@@ -1,4 +1,7 @@
-import { config } from "../config.js";
+import { config } from "../utils/config.js";
+import { logger } from "../utils/logger.js";
+
+const log = logger.child({ module: "osm", operation: "api" });
 import {
   buildChangesetXml,
   buildNodeCreateXml,
@@ -63,7 +66,7 @@ export async function closeChangeset(changesetId: number): Promise<void> {
 
   if (!res.ok) {
     const text = await res.text();
-    console.error(`[OSM API] Error tancant changeset ${changesetId}: ${res.status} — ${text}`);
+    log.error({ changesetId, status: res.status, text }, "Error tancant changeset OSM");
   }
 }
 

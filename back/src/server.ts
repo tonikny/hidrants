@@ -23,12 +23,13 @@ import { startMqttService, stopMqttService } from "./services/mqtt.js";
 import sqlite from "./db/index.js";
 
 import type { ApiHandler, ApiRequest } from "./types.js";
-import { config } from "./config.js";
+import { config } from "./utils/config.js";
 import { AppError } from "./errors.js";
 import { permissionsFor, type Permission } from "./permissions.js";
+import { logger } from "./utils/logger.js";
 
 const app = Fastify({
-  logger: { level: config.FASTIFY_LOGLEVEL },
+  loggerInstance: logger.child({ module: "server", operation: "api" }),
 });
 
 app.register(fastifyCookie);
@@ -39,6 +40,11 @@ app.register(fastifyJwt, {
     cookieName: "auth_token",
     signed: false,
   },
+});
+
+app.addHook("onRequest", (request, _reply, done) => {
+  request.log = request.log.child({ module: "http", operation: request.url.split("?")[0] });
+  done();
 });
 
 app.setErrorHandler((error: any, request, reply) => {
@@ -133,12 +139,8 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
     let user: any = undefined;
 
     try {
-      // DEBUG: Log cookies
-      // console.log('Cookies:', request.cookies);
-
       await request.jwtVerify();
       user = (request as any).user;
-      // console.log('User verified:', user.username);
     } catch {
       if (options.protected) {
         return reply.status(401).send({ error: "Sessió caducada o no vàlida" });
@@ -192,6 +194,7 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
       headers: request.headers,
       params: request.params,
       url: request.url,
+      log: request.log,
       user,
     };
 
@@ -266,13 +269,15 @@ const start = async () => {
       host: "0.0.0.0",
       port: config.PORT,
     });
-    console.log("🚀 API running on port", config.PORT);
+    app.log.child({ operation: "startup" }).info({ port: config.PORT }, "API running");
 
     startMqttService().catch((err: Error) => {
-      console.log(`[MQTT] ⚠️ Servei no disponible: ${err.message}`);
+      app.log
+        .child({ operation: "startup" })
+        .warn({ err: err.message }, "Servei MQTT no disponible");
     });
   } catch (err) {
-    app.log.error(err);
+    app.log.child({ operation: "startup" }).fatal({ err }, "Error arrencant servidor");
     process.exit(1);
   }
 };
@@ -286,7 +291,7 @@ const shutdown = () => {
     return;
   }
   shuttingDown = true;
-  console.log("🛑 Aturant servei...");
+  app.log.child({ operation: "shutdown" }).info("Aturant servei...");
   try {
     void app.close();
   } catch {

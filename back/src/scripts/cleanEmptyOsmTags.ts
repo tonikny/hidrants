@@ -17,15 +17,18 @@
 import { db } from '../db/index.js';
 import { hidrants } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { logger } from '../utils/logger.js';
+
+const log = logger.child({ module: 'osm', operation: 'clean_tags' });
 
 async function cleanEmptyOsmTags() {
-  console.log('🧹 Iniciant neteja de tags OSM buits...\n');
+  log.info('🧹 Iniciant neteja de tags OSM buits...\n');
 
   try {
     // Obtenir tots els hidrants
     const allHidrants = db.select().from(hidrants).all();
 
-    console.log(`📊 Total d'hidrants a la BD: ${allHidrants.length}\n`);
+    log.info({ count: allHidrants.length }, '📊 Total d\'hidrants a la BD');
 
     let updatedCount = 0;
     let emptyTagsFound = 0;
@@ -42,7 +45,7 @@ async function cleanEmptyOsmTags() {
         if (value === '' || value === null || value === undefined) {
           hasEmptyTags = true;
           emptyTagsFound++;
-          console.log(
+          log.warn(
             `  ⚠️  Hidrant ${hidrant.id}: Tag buit detectat: "${key}": "${value}"`
           );
         } else {
@@ -53,11 +56,11 @@ async function cleanEmptyOsmTags() {
       // Si hi havia tags buits, actualitzar la BD
       if (hasEmptyTags) {
         const cleanedKeys = Object.keys(cleanedTags);
-        console.log(`  ✏️  Actualitzant hidrant ${hidrant.id}`);
-        console.log(
+        log.info({ hidrant_id: hidrant.id }, '  ✏️  Actualitzant hidrant');
+        log.info(
           `     Abans: ${originalKeys.length} tags -> Després: ${cleanedKeys.length} tags`
         );
-        console.log(
+        log.info(
           `     Tags eliminats: ${originalKeys
             .filter((k) => !cleanedKeys.includes(k))
             .join(', ')}\n`
@@ -72,19 +75,16 @@ async function cleanEmptyOsmTags() {
       }
     }
 
-    console.log('\n✅ Neteja completada!');
-    console.log(`📈 Resum:`);
-    console.log(`   - Hidrants processats: ${allHidrants.length}`);
-    console.log(`   - Hidrants actualitzats: ${updatedCount}`);
-    console.log(`   - Tags buits eliminats: ${emptyTagsFound}`);
+    log.info('\n✅ Neteja completada!');
+    log.info({ allHidrants: allHidrants.length, updated: updatedCount, emptyTags: emptyTagsFound }, '📈 Resum de neteja');
 
     if (updatedCount === 0) {
-      console.log(
+      log.info(
         "\n🎉 No s'han trobat tags buits. La base de dades ja estava neta!"
       );
     }
   } catch (error) {
-    console.error('❌ Error durant la neteja:', error);
+    log.error({ error }, '❌ Error durant la neteja');
     process.exit(1);
   }
 }

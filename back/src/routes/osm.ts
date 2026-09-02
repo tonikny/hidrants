@@ -11,7 +11,6 @@ import { BadRequestError } from "../errors.js";
 import { db } from "../db/index.js";
 import { hidrants } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { logInfo, logError, logSuccess } from "../utils/logger.js";
 
 /**
  * Rutes OSM:
@@ -30,11 +29,14 @@ const handler: ApiHandler = async (req, res) => {
   const { method, url, body } = req;
   const path = url?.split("?")[0] || "";
 
-  // Logging per a tots els requests OSM
-  logInfo("OSM_API", `${method} ${path}`, {
-    query: req.query,
-    body: body ? { ...body, ids: body.ids ? body.ids.slice(0, 2) : undefined } : undefined, // Limitar IDs per no saturar logs
-  });
+  // module/operation via child (hook ja posa http/path, override a osm per domini)
+  req.log.child({ module: "osm", operation: `${method} ${path}` }).info(
+    {
+      query: req.query,
+      body: body ? { ...body, ids: body.ids ? body.ids.slice(0, 2) : undefined } : undefined,
+    },
+    `${method} ${path}`,
+  );
 
   // GET /api/osm/status
   if (method === "GET" && path === "/api/osm/status") {
@@ -47,9 +49,11 @@ const handler: ApiHandler = async (req, res) => {
   // POST /api/osm/push-sync
   if (method === "POST" && path === "/api/osm/push-sync") {
     const adfId = body?.adf_id ? Number(body.adf_id) : undefined;
-    logInfo("OSM_API", "Iniciant push sync global", { adfId });
+    req.log
+      .child({ module: "osm", operation: "pushSync" })
+      .info({ adfId }, "Iniciant push sync global");
     const result = await pushSyncToOSM(adfId ? { adfId } : undefined);
-    logSuccess("OSM_API", "Push sync completat", result);
+    req.log.child({ module: "osm", operation: "pushSync" }).info({ result }, "Push sync completat");
     return res.json(result);
   }
 
@@ -70,12 +74,13 @@ const handler: ApiHandler = async (req, res) => {
     if (!Array.isArray(ids) || ids.length === 0) {
       throw new BadRequestError("Cal especificar els IDs a pujar");
     }
-    logInfo("OSM_API", "Iniciant push sync seleccionat", {
-      count: ids.length,
-      firstIds: ids.slice(0, 3),
-    });
+    req.log
+      .child({ module: "osm", operation: "pushSelected" })
+      .info({ count: ids.length, firstIds: ids.slice(0, 3) }, "Iniciant push sync seleccionat");
     const result = await pushSyncToOSM({ ids });
-    logSuccess("OSM_API", "Push sync seleccionat completat", result);
+    req.log
+      .child({ module: "osm", operation: "pushSelected" })
+      .info({ result }, "Push sync seleccionat completat");
     return res.json(result);
   }
 
@@ -85,10 +90,9 @@ const handler: ApiHandler = async (req, res) => {
     if (!Array.isArray(ids) || ids.length === 0) {
       throw new BadRequestError("Cal especificar els IDs a descartar");
     }
-    logInfo("OSM_API", "Descartant canvis seleccionats", {
-      count: ids.length,
-      firstIds: ids.slice(0, 3),
-    });
+    req.log
+      .child({ module: "osm", operation: "discardSelected" })
+      .info({ count: ids.length, firstIds: ids.slice(0, 3) }, "Descartant canvis seleccionats");
 
     // Els PENDING_CREATE mai han existit a OSM → esborrar-los de la BD
     // La resta → marcar SYNCED (els canvis locals es descarten, OSM és la referència)
@@ -96,14 +100,15 @@ const handler: ApiHandler = async (req, res) => {
     const toDelete = hydrants.filter((h) => h.sync_status === "PENDING_CREATE").map((h) => h.id);
     const toSync = hydrants.filter((h) => h.sync_status !== "PENDING_CREATE").map((h) => h.id);
 
-    logInfo("OSM_API", "Estadístiques descartament", {
-      toDelete: toDelete.length,
-      toSync: toSync.length,
-    });
+    req.log
+      .child({ module: "osm", operation: "discardSelected" })
+      .info({ toDelete: toDelete.length, toSync: toSync.length }, "Estadístiques descartament");
 
     if (toDelete.length > 0) {
       HidrantsRepository.deleteMany(toDelete);
-      logInfo("OSM_API", `Hidrants esborrats de BD (mai publicats)`, { count: toDelete.length });
+      req.log
+        .child({ module: "osm", operation: "discardSelected" })
+        .info({ count: toDelete.length }, "Hidrants esborrats de BD (mai publicats)");
     }
     if (toSync.length > 0) {
       // Restaurar les etiquetes d'OSM des de remote_osm_tags abans de marcar com a sincronitzat
@@ -124,10 +129,12 @@ const handler: ApiHandler = async (req, res) => {
           restoredCount++;
         }
       }
-      logInfo("OSM_API", "Canvis locals descartats", {
-        restored: restoredCount,
-        reverted: toSync.length - restoredCount,
-      });
+      req.log
+        .child({ module: "osm", operation: "discardSelected" })
+        .info(
+          { restored: restoredCount, reverted: toSync.length - restoredCount },
+          "Canvis locals descartats",
+        );
     }
 
     return res.json({ discarded: toSync.length, deleted: toDelete.length });
@@ -136,7 +143,9 @@ const handler: ApiHandler = async (req, res) => {
   // GET /api/osm/conflicts
   if (method === "GET" && path === "/api/osm/conflicts") {
     const conflicts = getConflicts();
-    logInfo("OSM_API", "Llistant conflictes", { count: conflicts.length });
+    req.log
+      .child({ module: "osm", operation: "listConflicts" })
+      .info({ count: conflicts.length }, "Llistant conflictes");
     return res.json(conflicts);
   }
 
@@ -180,15 +189,19 @@ const handler: ApiHandler = async (req, res) => {
     if (!id) {
       throw new BadRequestError("Cal especificar l'id del hidrant");
     }
-    logInfo("OSM_API", "Baixant hidrant individual d'OSM", { id });
+    req.log
+      .child({ module: "osm", operation: "pullHydrant" })
+      .info({ id }, "Baixant hidrant individual d'OSM");
 
     const hydrant = HidrantsRepository.findByIds([id])[0];
     if (!hydrant) {
-      logError("OSM_API", "Hidrant no trobat");
+      req.log.child({ module: "osm", operation: "pullHydrant" }).error({ id }, "Hidrant no trobat");
       throw new BadRequestError("Hidrant no trobat");
     }
     if (!hydrant.osm_id) {
-      logError("OSM_API", "Hidrant sense osm_id");
+      req.log
+        .child({ module: "osm", operation: "pullHydrant" })
+        .error({ id }, "Hidrant sense osm_id");
       throw new BadRequestError("L'hidrant no té osm_id associat");
     }
 
@@ -196,15 +209,19 @@ const handler: ApiHandler = async (req, res) => {
     const { queryOverpass } = await import("../services/overpass.js");
     const result = await queryOverpass(`[out:json];node(${hydrant.osm_id});out body;`);
     if (!result.ok || !result.data.elements || result.data.elements.length === 0) {
-      logError("OSM_API", "Error baixant node d'OSM");
+      req.log
+        .child({ module: "osm", operation: "pullHydrant" })
+        .error({ osm_id: hydrant.osm_id }, "Error baixant node d'OSM");
       throw new BadRequestError(`No s'ha pogut obtenir el node ${hydrant.osm_id} d'OSM`);
     }
 
     const osmNode = result.data.elements[0];
-    logInfo("OSM_API", "Hidrant descarregat d'OSM", {
-      osmVersion: osmNode.version,
-      localVersion: hydrant.osm_version,
-    });
+    req.log
+      .child({ module: "osm", operation: "pullHydrant" })
+      .info(
+        { osmVersion: osmNode.version, localVersion: hydrant.osm_version },
+        "Hidrant descarregat d'OSM",
+      );
 
     HidrantsRepository.resolveConflict(hydrant.id, {
       osmVersion: osmNode.version,
@@ -213,7 +230,9 @@ const handler: ApiHandler = async (req, res) => {
       osmTags: JSON.stringify(osmNode.tags || {}),
     });
 
-    logSuccess("OSM_API", "Conflicte resolt (baixat OSM)", { id, osmVersion: osmNode.version });
+    req.log
+      .child({ module: "osm", operation: "pullHydrant" })
+      .info({ id, osmVersion: osmNode.version }, "Conflicte resolt (baixat OSM)");
     return res.json({ success: true });
   }
 

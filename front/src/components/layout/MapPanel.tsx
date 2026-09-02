@@ -9,7 +9,13 @@ import { buildTabs } from "../panel/PanelTabs";
 import { useHydrantData } from "../../hooks/useHidrantData";
 import type { HidrantFeature } from "../../hooks/useHidrantData";
 import { useIncidencies } from "../../hooks/useIncidencies";
-import { usePositionPolling } from "../../hooks/usePositionPolling";
+import {
+  POSITIONS_POLL_ACTIVE_MS,
+  POSITIONS_POLL_IDLE_MS,
+  TRACKING_STORAGE_KEY,
+  usePositionPolling,
+} from "../../hooks/usePositionPolling";
+import { useLocalStorage } from "../../utils/useLocalStorage";
 import { NodeInfo } from "../hidrants/NodeInfo";
 import { CreateNodePanel } from "../panel/CreateNodePanel";
 import { createTitle } from "../panel/createTitle";
@@ -45,7 +51,14 @@ export function MapPanel() {
     refresh: refreshIncidencies,
   } = useIncidencies();
 
-  const positions = usePositionPolling(15000);
+  const [trackingChecked, setTrackingChecked] = useLocalStorage<boolean>(
+    TRACKING_STORAGE_KEY,
+    false,
+  );
+  const positions = usePositionPolling({
+    enabled: !!user,
+    intervalMs: trackingChecked ? POSITIONS_POLL_ACTIVE_MS : POSITIONS_POLL_IDLE_MS,
+  });
 
   const handleSelectHydrantById = (id: string) => {
     const feature = features.find((f) => f.id === id);
@@ -174,6 +187,8 @@ export function MapPanel() {
           onOpenCreate={openCreate}
           onCloseCreate={closeCreate}
           onSelectIncidencia={handleSelectIncidencia}
+          trackingChecked={trackingChecked}
+          setTrackingChecked={setTrackingChecked}
         />
       }
       tabs={buildTabs({

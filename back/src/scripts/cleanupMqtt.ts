@@ -3,13 +3,16 @@
 // - Esborra clients DynSec orfes (rol owntracks-device) sense usuari corresponent.
 // Ús: tsx src/scripts/cleanupMqtt.ts [--apply]   (sense --apply només informa)
 import type { MqttClient } from 'mqtt';
-import { config } from '../config.js';
+import { config } from '../utils/config.js';
 import { db } from '../db/index.js';
 import { users, mqttUsers } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { decrypt } from '../utils/crypto.js';
 import { dynsecConnect, dynsecCommand } from '../services/dynsec.js';
 import { mqttNameFor } from '../services/mqtt.js';
+import { logger } from '../utils/logger.js';
+
+const log = logger.child({ module: 'mqtt', operation: 'cleanup' });
 
 const APPLY = process.argv.includes('--apply');
 const SISTEMA = new Set(['admin', config.MQTT_BACKEND_USERNAME]);
@@ -22,8 +25,8 @@ async function withAdmin<T>(fn: (client: MqttClient) => Promise<T>): Promise<T |
     const client = await dynsecConnect(config.MQTT_ADMIN_USERNAME, config.MQTT_ADMIN_PASSWORD);
     try { return await fn(client); } finally { client.end(true); }
   } catch (err) {
-    console.log(`Missatge del broker MQTT no accessible (${err instanceof Error ? err.message : String(err)}):`);
-    console.log('  només es normalitzarà la base de dades; els canvis DynSec caldrà fer-los amb el broker actiu.');
+     log.info({ error: err instanceof Error ? err.message : String(err) }, 'Missatge del broker MQTT no accessible:');
+     log.info('  només es normalitzarà la base de dades; els canvis DynSec caldrà fer-los amb el broker actiu.');
     return null;
   }
 }
@@ -44,8 +47,8 @@ async function listClients(client: MqttClient): Promise<string[]> {
 }
 
 async function run() {
-  console.log(`🧹 Neteja d'identitats MQTT (mode: ${APPLY ? 'APLICAR' : 'DRY-RUN'})`);
-  console.log('----------------------------------------');
+  log.info({ mode: APPLY ? 'APLICAR' : 'DRY-RUN' }, '🧹 Neteja d\'identitats MQTT');
+  log.info('----------------------------------------');
 
   // 1) Alinear mqtt_users.mqtt_username amb la identitat MQTT aplanada (sers).
   const rows = db
@@ -64,7 +67,7 @@ async function run() {
   for (const r of rows) {
     const mqName = mqttNameFor(r.current);
     if (r.username === mqName) {continue;}
-    console.log(`  Usuari ${r.current}: mqtt_username "${r.username}" → "${mqName}"`);
+    log.info({ current_user: r.current, old_mqtt_username: r.username, new_mqtt_username: mqName }, '  Usuari amb mqtt_username deslinearitzat');
     fixedDb++;
 
     // Operació DynSec (best-effort, només amb broker disponible)
@@ -96,7 +99,7 @@ async function run() {
       db.update(mqttUsers).set({ mqtt_username: mqName }).where(eq(mqttUsers.id, r.rowId)).run();
     }
   }
-  console.log(`  ${fixedDb} registres desalineats (${APPLY ? "aplicat" : "pendent d'aplicar"}), ${dynOps} operacions DynSec.`);
+  log.info({ fixedDb, dynOps, applied: APPLY }, 'Registres desalineats i operacions DynSec');
 
   // 2. Elimina clients DynSec obsolets que no corresponguin a cap usuari actual
   if (APPLY) {
@@ -108,26 +111,26 @@ async function run() {
 
     const clients = await withAdmin((client) => listClients(client));
     if (clients === null) {
-      console.log("  ⚠️ No s'ha pogut inspeccionar DynSec (broker no accessible).");
+       log.warn("  ⚠️ No s'ha pogut inspeccionar DynSec (broker no accessible).");
     } else {
       const orphans = clients.filter(
         (u) => !kept.has(u) && !SISTEMA.has(u),
       );
       for (const o of orphans) {
-        console.log(`  Client orfe DynSec a eliminar: ${o}`);
+        log.info({ client_username: o }, '  Client orfe DynSec a eliminar');
         await withAdmin(async (client) => {
           await dynsecCommand(client, { command: 'deleteClient', username: o });
         });
       }
       if (orphans.length === 0) {
-        console.log('  Cap client orfe detectat.');
+        log.info('  Cap client orfe detectat.');
       }
     }
   } else {
-    console.log('  (executa amb --apply per eliminar clients orfés i aplicar els canvis)');
+    log.info('  (executa amb --apply per eliminar clients orfés i aplicar els canvis)');
   }
 
-  console.log('✅ Neteja finalitzada.');
+  log.info('✅ Neteja finalitzada.');
 }
 
 await run();

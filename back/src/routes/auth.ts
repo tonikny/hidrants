@@ -40,7 +40,7 @@ export const login: ApiHandler = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("[Auth] Login error details:", err);
+    req.log.child({ module: "auth", operation: "login" }).error({ err, username }, "Login error");
     res.status(500).json({ error: `Error intern: ${(err as Error).message}` });
   }
 };

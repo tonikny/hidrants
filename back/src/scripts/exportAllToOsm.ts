@@ -4,11 +4,15 @@ import { syncAdfFromOSM } from '../services/osmSync.js';
 import fs from 'fs';
 import path from 'path';
 import { eq } from 'drizzle-orm';
+import { logger } from '../utils/logger.js';
 
-async function log(message: string, fileStream?: fs.WriteStream) {
+
+const log = logger.child({ module: 'osm', operation: 'export' });
+
+async function logToFile(message: string, fileStream?: fs.WriteStream) {
   const timestamp = new Date().toISOString();
   const formattedMessage = `[${timestamp}] ${message}`;
-  console.log(formattedMessage);
+  log.info(formattedMessage);
   if (fileStream) {
     fileStream.write(formattedMessage + '\n');
   }
@@ -62,7 +66,7 @@ async function run() {
 
   const logStream = fs.createWriteStream(logFile, { flags: 'w' });
 
-  await log('--- INICIANT PROCÉS D\'EXPORTACIÓ COMPLETA ---', logStream);
+  await logToFile('--- INICIANT PROCÉS D\'EXPORTACIÓ COMPLETA ---', logStream);
 
   // 1. Sincronització de baixada (Downstream)
   let allAdfs;
@@ -70,27 +74,27 @@ async function run() {
     const adfId = parseInt(adfIdArg);
     allAdfs = db.select().from(adfs).where(eq(adfs.id, adfId)).all();
     if (allAdfs.length === 0) {
-      await log(`❌ ADF amb ID ${adfId} no trobada.`, logStream);
+      await logToFile(`❌ ADF amb ID ${adfId} no trobada.`, logStream);
       process.exit(1);
     }
-    await log(`Pas 1: Sincronitzant dades des d'OSM NOMÉS per a l'ADF ${allAdfs[0].nom}...`, logStream);
+    await logToFile(`Pas 1: Sincronitzant dades des d'OSM NOMÉS per a l'ADF ${allAdfs[0].nom}...`, logStream);
   } else {
     allAdfs = db.select().from(adfs).all();
-    await log(`Pas 1: Sincronitzant dades des d'OSM per a ${allAdfs.length} ADFs...`, logStream);
+    await logToFile(`Pas 1: Sincronitzant dades des d'OSM per a ${allAdfs.length} ADFs...`, logStream);
   }
 
   for (const adf of allAdfs) {
     try {
       const count = await syncAdfFromOSM(adf.id);
-      await log(`  [BAIXADA] ADF ${adf.id} (${adf.nom}): ${count} hidrants sincronitzats.`, logStream);
+      await logToFile(`  [BAIXADA] ADF ${adf.id} (${adf.nom}): ${count} hidrants sincronitzats.`, logStream);
     } catch (error) {
-      await log(`  [ERROR BAIXADA] ADF ${adf.id} (${adf.nom}): ${error instanceof Error ? error.message : error}`, logStream);
+      await logToFile(`  [ERROR BAIXADA] ADF ${adf.id} (${adf.nom}): ${error instanceof Error ? error.message : error}`, logStream);
     }
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
   // 2. Generació del fitxer OSM (Upstream)
-  await log('Pas 2: Generant fitxer XML amb NOMÉS els canvis pendents...', logStream);
+  await logToFile('Pas 2: Generant fitxer XML amb NOMÉS els canvis pendents...', logStream);
   
   let allHidrants;
   if (adfIdArg) {
@@ -134,15 +138,15 @@ async function run() {
     // --- SEGURETAT I NETEJA DE TAGS MUTUAMENT EXCLUSIUS ---
     // Un hidrant no pot ser operatiu (emergency) i estar en desús (disused:emergency) alhora.
     if (finalTags['emergency'] && finalTags['disused:emergency']) {
-      await log(`    [CORRECCIÓ] Hidrant ${id}: Tenia tags 'emergency' i 'disused:emergency' simultàniament.`, logStream);
+      await logToFile(`    [CORRECCIÓ] Hidrant ${id}: Tenia tags 'emergency' i 'disused:emergency' simultàniament.`, logStream);
       
       // Lògica de decisió: si hi ha dades de la descripció privada (parsed), ens en fiem.
       // Si no, prioritzem el que sembli més coherent.
       if (parsed.pressure || parsed.couplings) {
-        await log(`      Solució: Detectades dades operatives a la descripció. Es manté 'emergency' i s'elimina 'disused'.`, logStream);
+        await logToFile(`      Solució: Detectades dades operatives a la descripció. Es manté 'emergency' i s'elimina 'disused'.`, logStream);
         delete finalTags['disused:emergency'];
       } else {
-        await log(`      Solució: No s'han detectat dades operatives clares. Es prioritza 'disused' per seguretat.`, logStream);
+        await logToFile(`      Solució: No s'han detectat dades operatives clares. Es prioritza 'disused' per seguretat.`, logStream);
         delete finalTags['emergency'];
       }
     }
@@ -152,32 +156,32 @@ async function run() {
       finalTags['emergency'] = 'fire_hydrant';
     }
 
-    await log(`  [HIDRANT] ID: ${id} (OSM: ${osm_id}) - Estat: ${h.sync_status}`, logStream);
+    await logToFile(`  [HIDRANT] ID: ${id} (OSM: ${osm_id}) - Estat: ${h.sync_status}`, logStream);
 
     if (parsed.type && finalTags['fire_hydrant:type'] !== parsed.type) {
       const old = finalTags['fire_hydrant:type'] || 'buit';
-      await log(`    [CANVI] Tipus: ${old} -> ${parsed.type}`, logStream);
+      await logToFile(`    [CANVI] Tipus: ${old} -> ${parsed.type}`, logStream);
       finalTags['fire_hydrant:type'] = parsed.type;
     }
     if (parsed.couplings && finalTags['fire_hydrant:couplings'] !== parsed.couplings) {
       const old = finalTags['fire_hydrant:couplings'] || 'buit';
-      await log(`    [CANVI] Ràcords: ${old} -> ${parsed.couplings}`, logStream);
+      await logToFile(`    [CANVI] Ràcords: ${old} -> ${parsed.couplings}`, logStream);
       finalTags['fire_hydrant:couplings'] = parsed.couplings;
     }
     if (parsed.diameters && finalTags['fire_hydrant:couplings:diameters'] !== parsed.diameters) {
       const old = finalTags['fire_hydrant:couplings:diameters'] || 'buit';
-      await log(`    [CANVI] Diàmetres: ${old} -> ${parsed.diameters}`, logStream);
+      await logToFile(`    [CANVI] Diàmetres: ${old} -> ${parsed.diameters}`, logStream);
       finalTags['fire_hydrant:couplings:diameters'] = parsed.diameters;
     }
     if (parsed.pressure && finalTags['fire_hydrant:pressure'] !== parsed.pressure) {
       const old = finalTags['fire_hydrant:pressure'] || 'buit';
-      await log(`    [CANVI] Pressió: ${old} -> ${parsed.pressure}`, logStream);
+      await logToFile(`    [CANVI] Pressió: ${old} -> ${parsed.pressure}`, logStream);
       finalTags['fire_hydrant:pressure'] = parsed.pressure;
     }
 
     // Si detectem que era un hidrant en desús però tenim dades noves
     if (finalTags['disused:emergency'] === 'fire_hydrant' && !finalTags['emergency']) {
-      await log(`    [ALERTA] Està marcat com a 'disused' a OSM.`, logStream);
+      await logToFile(`    [ALERTA] Està marcat com a 'disused' a OSM.`, logStream);
     }
 
     const xmlNodeId = h.osm_id || newNodeId--;
@@ -195,12 +199,12 @@ async function run() {
   osmContent += `</osm>`;
   
   if (changesCount === 0) {
-    await log('ℹ️ No s\'ha detectat cap canvi pendent (tots els hidrants estan SYNCED).', logStream);
+    await logToFile('ℹ️ No s\'ha detectat cap canvi pendent (tots els hidrants estan SYNCED).', logStream);
   }
 
   fs.writeFileSync(outputFile, osmContent, 'utf8');
-  await log(`✅ PROCÉS FINALITZAT. S'han exportat ${changesCount} canvis.`, logStream);
-  await log(`📄 Log detallat a: ${logFile}`, logStream);
+  await logToFile(`✅ PROCÉS FINALITZAT. S'han exportat ${changesCount} canvis.`, logStream);
+  await logToFile(`📄 Log detallat a: ${logFile}`, logStream);
   
   logStream.end();
 }

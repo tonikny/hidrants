@@ -4,7 +4,9 @@ import { sendTelegramMessage } from "../utils/telegram.js";
 import { tryAutoResolve, type ConflictDetail } from "./osmConflictResolver.js";
 import { validateHydrantTags } from "./osmDataValidator.js";
 import { computeDiffStrings } from "./osmDiff.js";
-import { logInfo, logSuccess, logWarn, logError } from "../utils/logger.js";
+import { logger } from "../utils/logger.js";
+
+const log = logger.child({ module: "osm", operation: "push" });
 
 export type PushSyncResult = {
   synced: number;
@@ -44,7 +46,7 @@ export async function pushSyncToOSM(options?: {
   adfId?: number;
 }): Promise<PushSyncResult> {
   const startTime = Date.now();
-  logInfo("OSM", "Iniciant push sync", options);
+  log.info({ ...options }, "Iniciant push sync");
 
   if (!osmApi.isConfigured()) {
     throw new Error("Token OSM no configurat. Afegeix OSM_ACCESS_TOKEN a back/.env");
@@ -77,13 +79,13 @@ export async function pushSyncToOSM(options?: {
     return { synced: 0, conflicts: 0, errors: 0, reviewed: 0, details: [] };
   }
 
-  console.log(`[OSM Push] ${pending.length} canvis pendents de pujar`);
+  log.info({ count: pending.length }, "Canvis pendents de pujar a OSM");
 
   // Crear changeset
   const changesetId = await osmApi.createChangeset(
     `HidrantsADF — ${pending.length} canvis pendents`,
   );
-  console.log(`[OSM Push] Changeset ${changesetId} creat`);
+  log.info({ changesetId }, "Changeset OSM creat");
 
   const result: PushSyncResult = { synced: 0, conflicts: 0, errors: 0, reviewed: 0, details: [] };
   const conflictDetails: ConflictDetail[] = [];
@@ -98,7 +100,7 @@ export async function pushSyncToOSM(options?: {
         await processDelete(h, changesetId, result, conflictDetails);
       }
     } catch (err) {
-      console.error(`[OSM Push] Error processant hidrant ${h.id}:`, err);
+      log.error({ err, hydrantId: h.id }, "Error processant hidrant a OSM push");
       HidrantsRepository.markError(h.id, String(err));
       result.errors++;
       result.details.push({
@@ -112,29 +114,35 @@ export async function pushSyncToOSM(options?: {
 
   // Tancar changeset
   await osmApi.closeChangeset(changesetId);
-  console.log(`[OSM Push] Changeset ${changesetId} tancat`);
+  log.info({ changesetId }, "Changeset OSM tancat");
 
   // Notificar conflictes per Telegram
   if (conflictDetails.length > 0) {
-    logInfo("OSM", "Notificant conflictes via Telegram", {
-      conflictCount: conflictDetails.length,
-      firstConflicts: conflictDetails.slice(0, 2).map((c) => ({
-        hidrantId: c.hidrant.id,
-        osmVersion: c.osmVersion,
-      })),
-    });
+    log.info(
+      {
+        conflictCount: conflictDetails.length,
+        firstConflicts: conflictDetails.slice(0, 2).map((c) => ({
+          hidrantId: c.hidrant.id,
+          osmVersion: c.osmVersion,
+        })),
+      },
+      "Notificant conflictes via Telegram",
+    );
     await notifyConflicts(conflictDetails);
   } else {
-    logInfo("OSM", "No hi ha conflictes per notificar");
+    log.info("No hi ha conflictes per notificar");
   }
 
-  logSuccess("OSM", "Push completat", {
-    duration: Date.now() - startTime,
-    synced: result.synced,
-    conflicts: result.conflicts,
-    reviewed: result.reviewed,
-    errors: result.errors,
-  });
+  log.info(
+    {
+      duration: Date.now() - startTime,
+      synced: result.synced,
+      conflicts: result.conflicts,
+      reviewed: result.reviewed,
+      errors: result.errors,
+    },
+    "Push completat",
+  );
 
   return result;
 }
@@ -143,11 +151,10 @@ export async function pushSyncToOSM(options?: {
 
 async function processCreate(h: HidrantData, changesetId: number, result: PushSyncResult) {
   const tags = parseOsmTags(h.osm_tags);
-  logInfo("OSM", "Processant creació", {
-    hydrantId: h.id,
-    tagsCount: Object.keys(tags).length,
-    changesetId,
-  });
+  log.info(
+    { hydrantId: h.id, tagsCount: Object.keys(tags).length, changesetId },
+    "Processant creació",
+  );
 
   // Validar dades abans de pujar
   const validation = validateHydrantTags(tags);
@@ -156,18 +163,21 @@ async function processCreate(h: HidrantData, changesetId: number, result: PushSy
       .filter((i) => i.level === "error")
       .map((i) => i.message)
       .join("; ");
-    logError("OSM", "Creació fallida: dades invàlides");
+    log.error("Creació fallida: dades invàlides");
     HidrantsRepository.markError(h.id, `Dades invàlides: ${errorMessages}`);
     result.errors++;
     result.details.push({ id: h.id, osmId: null, status: "error", message: "Dades invàlides" });
     return;
   }
   if (validation.issues.length > 0) {
-    logWarn("OSM", "Creació amb warnings", {
-      hydrantId: h.id,
-      warnings: validation.issues.length,
-      issues: validation.issues.slice(0, 2),
-    });
+    log.warn(
+      {
+        hydrantId: h.id,
+        warnings: validation.issues.length,
+        issues: validation.issues.slice(0, 2),
+      },
+      "Creació amb warnings",
+    );
     HidrantsRepository.markReview(h.id, validation.issues);
     result.reviewed++;
     result.details.push({
@@ -180,25 +190,19 @@ async function processCreate(h: HidrantData, changesetId: number, result: PushSy
   }
 
   try {
-    logInfo("OSM", "Pujant nou node a OSM", {
-      hydrantId: h.id,
-      lat: h.lat,
-      lon: h.lon,
-      tags: Object.keys(tags),
-    });
+    log.info(
+      { hydrantId: h.id, lat: h.lat, lon: h.lon, tags: Object.keys(tags) },
+      "Pujant nou node a OSM",
+    );
     const { osmId, newVersion } = await osmApi.createNode(h.lat, h.lon, tags, changesetId);
     HidrantsRepository.markSynced(h.id, newVersion, osmId);
     // Guardar les dades que hem pujat com a remote (per al futur diff)
     HidrantsRepository.saveRemoteData(h.id, h.lat, h.lon, tags);
-    logSuccess("OSM", "Creació exitosa", {
-      hydrantId: h.id,
-      osmId,
-      newVersion,
-    });
+    log.info({ hydrantId: h.id, osmId, newVersion }, "Creació exitosa");
     result.synced++;
     result.details.push({ id: h.id, osmId, status: "synced" });
   } catch (err) {
-    logError("OSM", "Creació fallida");
+    log.error("Creació fallida");
     HidrantsRepository.markError(h.id, String(err));
     result.errors++;
     result.details.push({ id: h.id, osmId: null, status: "error", message: String(err) });
@@ -213,15 +217,10 @@ async function processUpdate(
 ) {
   const osmId = h.osm_id;
   const osmVersion = h.osm_version;
-  logInfo("OSM", "Processant actualització", {
-    hydrantId: h.id,
-    osmId,
-    osmVersion,
-    changesetId,
-  });
+  log.info({ hydrantId: h.id, osmId, osmVersion, changesetId }, "Processant actualització");
 
   if (!osmId || !osmVersion) {
-    logError("OSM", "Actualització fallida: osm_id o osm_version no definits");
+    log.error("Actualització fallida: osm_id o osm_version no definits");
     HidrantsRepository.markError(h.id, "osm_id o osm_version no definits");
     result.errors++;
     result.details.push({
@@ -242,17 +241,14 @@ async function processUpdate(
       .filter((i) => i.level === "error")
       .map((i) => i.message)
       .join("; ");
-    logError("OSM", "Actualització fallida: dades invàlides");
+    log.error("Actualització fallida: dades invàlides");
     HidrantsRepository.markError(h.id, `Dades invàlides: ${errorMessages}`);
     result.errors++;
     result.details.push({ id: h.id, osmId, status: "error", message: "Dades invàlides" });
     return;
   }
   if (validation.issues.length > 0) {
-    logWarn("OSM", "Actualització amb warnings", {
-      hydrantId: h.id,
-      warnings: validation.issues.length,
-    });
+    log.warn({ hydrantId: h.id, warnings: validation.issues.length }, "Actualització amb warnings");
     HidrantsRepository.markReview(h.id, validation.issues);
     result.reviewed++;
     result.details.push({
@@ -264,14 +260,10 @@ async function processUpdate(
     return;
   }
 
-  logInfo("OSM", "Pujant actualització a OSM", {
-    hydrantId: h.id,
-    osmId,
-    osmVersion,
-    lat: h.lat,
-    lon: h.lon,
-    tags: Object.keys(tags),
-  });
+  log.info(
+    { hydrantId: h.id, osmId, osmVersion, lat: h.lat, lon: h.lon, tags: Object.keys(tags) },
+    "Pujant actualització a OSM",
+  );
 
   const r = await osmApi.updateNode(osmId, osmVersion, h.lat, h.lon, tags, changesetId);
 
@@ -280,22 +272,18 @@ async function processUpdate(
     HidrantsRepository.markSynced(h.id, newVersion);
     // Guardar les dades que hem pujat com a remote (per al futur diff)
     HidrantsRepository.saveRemoteData(h.id, h.lat, h.lon, tags);
-    logSuccess("OSM", "Actualització exitosa", {
-      hydrantId: h.id,
-      osmId,
-      newVersion,
-    });
+    log.info({ hydrantId: h.id, osmId, newVersion }, "Actualització exitosa");
     result.synced++;
     result.details.push({ id: h.id, osmId, status: "synced" });
   } else if (r.status === 400) {
-    logError("OSM", "Actualització fallida (400)");
+    log.error("Actualització fallida (400)");
     HidrantsRepository.markError(h.id, r.error);
     result.errors++;
     result.details.push({ id: h.id, osmId, status: "error", message: r.error });
   } else if ("osmVersion" in r) {
     // 409 — Conflicte de versió
     const diffFields = computeDiffStrings(h.lat, h.lon, tags, r.osmLat, r.osmLon, r.osmTags);
-    logWarn("OSM", "Conflicte de versió detectat");
+    log.warn("Conflicte de versió detectat");
 
     const errorDetails = {
       localVersion: osmVersion,
@@ -316,14 +304,11 @@ async function processUpdate(
     const autoMerged = await tryAutoResolve(h);
 
     if (autoMerged) {
-      logSuccess("OSM", "Conflicte resolt automàticament", {
-        hydrantId: h.id,
-        osmId,
-      });
+      log.info({ hydrantId: h.id, osmId }, "Conflicte resolt automàticament");
       result.synced++;
       result.details.push({ id: h.id, osmId, status: "synced", message: "Resolt automàticament" });
     } else {
-      logError("OSM", "Conflicte no resolt");
+      log.error("Conflicte no resolt");
       HidrantsRepository.markConflict(h.id, errorDetails);
       conflictDetails.push({
         hidrant: h,
@@ -342,7 +327,7 @@ async function processUpdate(
       });
     }
   } else {
-    logError("OSM", "Actualització fallida");
+    log.error("Actualització fallida");
     HidrantsRepository.markError(h.id, r.error);
     result.errors++;
     result.details.push({ id: h.id, osmId: h.osm_id ?? null, status: "error", message: r.error });

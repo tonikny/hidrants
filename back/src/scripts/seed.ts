@@ -3,6 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { users, adfs } from '../db/schema.js';
+import { logger } from '../utils/logger.js';
+
+const log = logger.child({module: 'db', operation: 'seed'});
 
 // Catàleg d'ADFs basat en la llista anterior de municipis
 // En aquest cas, cada municipi té la seva pròpia ADF per defecte
@@ -29,7 +32,7 @@ const USERS_INICIALS: { username: string; role: 'coordinador' | 'voluntari' }[] 
 ];
 
 async function run() {
-  console.log('🌱 Iniciant seed de dades (ADF i Usuaris)...');
+  log.info('🌱 Iniciant seed de dades (ADF i Usuaris)...');
 
   const DEFAULT_PASSWORD = 'anoia';
   const hash = bcrypt.hashSync(DEFAULT_PASSWORD, 10);
@@ -45,7 +48,7 @@ async function run() {
         })
         .onConflictDoNothing()
         .run();
-      console.log(`✅ ADF ${adfData.id} - ${adfData.nom} creada.`);
+      log.info({ adf_id: adfData.id, adf_nom: adfData.nom }, '✅ ADF creada');
     }
 
     // 2. Admin global (únic usuari fora de la nomenclatura per ADF)
@@ -59,7 +62,7 @@ async function run() {
       })
       .onConflictDoNothing()
       .run();
-    console.log('👤 Usuari admin global creat (admin/anoia)');
+    log.info('👤 Usuari admin global creat (admin/anoia)');
 
     // 3. Usuaris operatius definits a USERS_INICIALS (valida format i es deriva l'ADF del prefix)
     for (const u of USERS_INICIALS) {
@@ -81,12 +84,12 @@ async function run() {
         })
         .onConflictDoNothing()
         .run();
-      console.log(`👤 Usuari ${u.username} (${u.role}) per a ${adf.nom}, creat (${u.username}/${DEFAULT_PASSWORD})`);
+      log.info({ username: u.username, role: u.role, adf_nom: adf.nom }, '👤 Usuari creat');
     }
 
-    console.log('✨ Seed completat correctament.');
+    log.info('✨ Seed completat correctament.');
   } catch (error) {
-    console.error('❌ Error durant el seed:', error);
+    log.error({ error }, '❌ Error durant el seed');
     process.exit(1);
   }
 }

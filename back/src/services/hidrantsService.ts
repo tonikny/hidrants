@@ -7,6 +7,9 @@ import { db } from "../db/index.js";
 import { adfs } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { isPointInBoundary } from "../utils/geo.js";
+import { logger } from "../utils/logger.js";
+
+const log = logger.child({ module: "hidrants", operation: "service" });
 
 export const HidrantsService = {
   async forceSync(adfId: number, force = false) {
@@ -18,11 +21,11 @@ export const HidrantsService = {
     const count = HidrantsRepository.countByAdf(adfId);
 
     if (count === 0) {
-      console.log(`[Service] Inicialitzant dades per ADF ${adfId}...`);
+      log.info({ adfId }, "Inicialitzant dades per ADF");
       try {
         await syncAdfFromOSM(adfId);
       } catch (syncErr) {
-        console.error(`[Service] Failed initial sync for ADF ${adfId}:`, syncErr);
+        log.error({ err: syncErr, adfId }, "Error a la sincronització inicial d'OSM");
       }
     }
 

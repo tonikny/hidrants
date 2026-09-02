@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- adapter Express simplificat, tipejar tot seria cerimònia */
+import type { FastifyBaseLogger } from "fastify";
+
 export type ApiRequest = {
   method: string;
   query?: any;
@@ -6,6 +8,7 @@ export type ApiRequest = {
   headers?: any;
   params?: any;
   url?: string;
+  log: FastifyBaseLogger;
   user?: {
     id: string;
     username: string;

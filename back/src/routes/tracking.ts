@@ -5,8 +5,15 @@ import { mqttUsers, users, adfs } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import type { ApiHandler } from "../types.js";
 import { encrypt, decrypt } from "../utils/crypto.js";
-import { isAvailable, createMqttUser, deleteMqttUser, getPositions, mqttNameFor, type LocationData } from "../services/mqtt.js";
-import { config } from "../config.js";
+import {
+  isAvailable,
+  createMqttUser,
+  deleteMqttUser,
+  getPositions,
+  mqttNameFor,
+  type LocationData,
+} from "../services/mqtt.js";
+import { config } from "../utils/config.js";
 import { permissionsFor } from "../permissions.js";
 
 /** Retorna si el servei MQTT està disponible i si l'usuari té OwnTracks activat. */
@@ -103,7 +110,9 @@ const enable: ApiHandler = async (req, res) => {
     if (existing.mqtt_username !== mqUsername) {
       try {
         await deleteMqttUser(existing.mqtt_username);
-      } catch { /* client antic pot no existir */ }
+      } catch {
+        /* client antic pot no existir */
+      }
     }
     db.update(mqttUsers)
       .set({ mqtt_password_enc: encrypt(password), mqtt_username: mqUsername, enabled: true })
@@ -150,7 +159,9 @@ const configHandler: ApiHandler = async (req, res) => {
   if (row.mqtt_username !== mqUsername) {
     try {
       await deleteMqttUser(row.mqtt_username);
-    } catch { /* client antic pot no existir */ }
+    } catch {
+      /* client antic pot no existir */
+    }
     db.update(mqttUsers).set({ mqtt_username: mqUsername }).where(eq(mqttUsers.id, row.id)).run();
   }
   return res.json(buildOtrc(mqUsername, password));

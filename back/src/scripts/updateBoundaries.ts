@@ -1,6 +1,9 @@
 import { db } from '../db/index.js';
 import { adfs } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { logger } from '../utils/logger.js';
+
+const log = logger.child({ module: 'adf', operation: 'update_boundaries' });
 
 async function fetchMunicipiBoundary(osmRelation: string) {
   // Use Nominatim or similar
@@ -29,18 +32,18 @@ async function run() {
     const adfId = parseInt(adfIdArg);
     allAdfs = db.select().from(adfs).where(eq(adfs.id, adfId)).all();
     if (allAdfs.length === 0) {
-      console.error(`❌ ADF amb ID ${adfId} no trobada.`);
-      process.exit(1);
-    }
-    console.log(`🌍 Iniciant actualització de boundaries NOMÉS per a l'ADF ${allAdfs[0].nom}...`);
-  } else {
-    allAdfs = db.select().from(adfs).all();
-    console.log('🌍 Iniciant actualització de boundaries a la base de dades...');
+       log.error({ adfId }, '❌ ADF no trobada');
+       process.exit(1);
+     }
+     log.info({ adf_nom: allAdfs[0].nom }, '🌍 Iniciant actualització de boundaries per a aquesta ADF');
+   } else {
+     allAdfs = db.select().from(adfs).all();
+     log.info('🌍 Iniciant actualització de boundaries a la base de dades...');
   }
 
   for (const adf of allAdfs) {
     const relations: string[] = JSON.parse(adf.osm_relations);
-    console.log(`\n🔍 Processant ADF ${adf.id} (${relations.join(', ')})...`);
+    log.info({ adf_id: adf.id, adf_nom: adf.nom, relations: relations.join(', ') }, '🔍 Processant ADF');
 
     try {
       let combinedGeoJson: unknown = null;
@@ -49,7 +52,7 @@ async function run() {
 
       for (const rel of relations) {
         try {
-          console.log(`  ⬇️ Descarregant ${rel}...`);
+          log.info({ relation: rel }, '  ⬇️ Descarregant');
           const result = await fetchMunicipiBoundary(rel);
           
           if (!combinedGeoJson) {
@@ -69,7 +72,7 @@ async function run() {
           
           successCount++;
         } catch (relErr) {
-          console.error(`  ⚠️ Error descarregant relació ${rel}:`, relErr instanceof Error ? relErr.message : relErr);
+          log.error({ error: relErr instanceof Error ? relErr.message : relErr, relation: rel }, '⚠️ Error descarregant relació');
         }
 
         // Espera de seguretat per Nominatim
@@ -87,16 +90,16 @@ async function run() {
           boundary_geojson: JSON.stringify(combinedGeoJson)
         }).where(eq(adfs.id, adf.id)).run();
 
-        console.log(`✅ ADF ${adf.id} actualitzada amb GeoJSON i BBox.`);
-      } else {
-        console.warn(`⚠️ ADF ${adf.id} saltada per errors parcials (${successCount}/${relations.length} relacions). Es mantenen les dades actuals.`);
-      }
-    } catch (err) {
-      console.error(`❌ Error inesperat processant ADF ${adf.id}:`, err);
+        log.info({ adf_id: adf.id }, '✅ ADF actualitzada amb GeoJSON i BBox');
+       } else {
+          log.warn({ adf_id: adf.id, successCount, relationsCount: relations.length }, '⚠️ ADF saltada per errors parcials');
+       }
+     } catch (err) {
+       log.error({ error: err, adf_id: adf.id }, '❌ Error inesperat processant ADF');
     }
   }
 
-  console.log('\n✨ Actualització de boundaries finalitzada.');
+  log.info('\n✨ Actualització de boundaries finalitzada.');
 }
 
 await run();

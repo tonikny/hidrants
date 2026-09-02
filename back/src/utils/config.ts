@@ -1,5 +1,8 @@
 import { z } from "zod";
 import dotenv from "dotenv";
+import { logger } from "./logger.js";
+
+const log = logger.child({ module: "config", operation: "load" });
 
 dotenv.config();
 
@@ -51,8 +54,8 @@ const configSchema = z.object({
 const parsed = configSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error("❌ Error en la configuració de les variables d'entorn:");
-  console.error(parsed.error.format());
+  log.error("❌ Error en la configuració de les variables d'entorn:");
+  log.error(parsed.error.format());
   process.exit(1);
 }
 

@@ -106,6 +106,8 @@ export function LeafletMap({
   onOpenCreate,
   onCloseCreate,
   onSelectIncidencia,
+  trackingChecked,
+  setTrackingChecked,
 }: {
   onSelectNode: (f: HidrantFeature) => void;
   onMapClick?: () => void;
@@ -137,6 +139,8 @@ export function LeafletMap({
   onOpenCreate: (latlng: L.LatLng) => void;
   onCloseCreate: () => void;
   onSelectIncidencia: (f: IncidenciaFeature) => void;
+  trackingChecked: boolean;
+  setTrackingChecked: (v: boolean) => void;
 }) {
   const { activeAdf, isLoading } = useAdf();
   const { user } = useAuth();
@@ -196,6 +200,8 @@ export function LeafletMap({
           baseLayer={baseLayer}
           setBaseLayer={setBaseLayer}
           positions={positions}
+          trackingChecked={trackingChecked}
+          setTrackingChecked={setTrackingChecked}
         />
         <MapRightClickHandler onCreate={onOpenCreate} user={user} />
         {hydrantsVisible && (

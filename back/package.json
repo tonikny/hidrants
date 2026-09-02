@@ -1,4 +1,5 @@
 {
+  "name": "hidrants-back",
   "type": "module",
   "scripts": {
     "db:generate": "drizzle-kit generate",

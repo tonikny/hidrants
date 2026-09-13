@@ -8,6 +8,10 @@ import { logger } from "../utils/logger.js";
 
 const log = logger.child({ module: "mqtt", operation: "service" });
 
+const RECONNECT_BASE = 5000;
+const RECONNECT_MAX = 60000;
+const RECONNECT_FACTOR = 2;
+
 export interface LocationData {
   lat: number;
   lon: number;
@@ -55,9 +59,14 @@ class MqttService {
   private positions = new Map<string, LocationData>();
   private available = false;
   private pruneTimer: ReturnType<typeof setInterval> | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempts = 0;
+  private shouldReconnect = false;
 
   /** Inicia: bootstrap DynSec, connexió com backend, timer de neteja. */
   async start(): Promise<void> {
+    this.shouldReconnect = true;
+    this.reconnectAttempts = 0;
     await this.bootstrap();
     await this.connectBackend();
     this.pruneTimer = setInterval(() => this.prunePositions(900), 120000);
@@ -65,6 +74,8 @@ class MqttService {
 
   /** Atura tot: clients MQTT, timers, i neteja posicions. */
   stop(): void {
+    this.shouldReconnect = false;
+    this.clearReconnectTimer();
     if (this.pruneTimer) {
       clearInterval(this.pruneTimer);
       this.pruneTimer = null;
@@ -163,14 +174,46 @@ class MqttService {
     }
   }
 
+  private getReconnectDelay(): number {
+    return Math.min(RECONNECT_BASE * Math.pow(RECONNECT_FACTOR, this.reconnectAttempts), RECONNECT_MAX);
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer || !this.shouldReconnect) {
+      return;
+    }
+    const delay = this.getReconnectDelay();
+    this.reconnectAttempts++;
+    log.debug(`MQTT reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      void this.connectBackend();
+    }, delay);
+  }
+
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
+
   /** Connecta com a backend, es subscriu a owntracks/# i comença a rebre posicions. */
   private connectBackend(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.client) {
+        try {
+          this.client.removeAllListeners();
+          this.client.end(true);
+        } catch {
+          /* ignore */
+        }
+      }
       this.client = mqtt.connect(config.MQTT_BROKER_URL, {
         clientId: "hidrants-backend",
         username: config.MQTT_BACKEND_USERNAME,
         password: config.MQTT_BACKEND_PASSWORD,
-        reconnectPeriod: 5000,
+        reconnectPeriod: 0,
         connectTimeout: 5000,
       });
 
@@ -185,6 +228,8 @@ class MqttService {
 
       this.client.on("connect", () => {
         clearTimeout(startupTimer);
+        this.clearReconnectTimer();
+        this.reconnectAttempts = 0;
         this.available = true;
         log.info("MQTT broker connected");
         this.client!.subscribe(`${config.MQTT_TOPIC_PREFIX}/#`, { qos: 1 }, (err) => {
@@ -236,11 +281,22 @@ class MqttService {
         }
       });
 
-      this.client.on("error", (err) => log.warn({ err }, "MQTT client error"));
+      this.client.on("error", (err) => {
+        log.warn({ err }, "MQTT client error");
+        this.available = false;
+        clearTimeout(startupTimer);
+        resolveOnce();
+        this.scheduleReconnect();
+      });
       this.client.on("close", () => {
         this.available = false;
+        clearTimeout(startupTimer);
+        resolveOnce();
+        this.scheduleReconnect();
       });
-      this.client.on("reconnect", () => log.debug("MQTT reconnecting"));
+      this.client.on("offline", () => {
+        this.available = false;
+      });
     });
   }
 

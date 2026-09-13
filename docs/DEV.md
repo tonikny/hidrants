@@ -90,6 +90,10 @@ Prova manual amb credencials DynSec vàlides:
 docker compose exec mosquitto mosquitto_pub -h localhost -u <usuari> -P <password> -t 'owntracks/hidrants/<usuari>/phone' -m '{"_type":"location","lat":41.5,"lon":1.8,"tst":1721667688,"acc":10,"batt":80}'
 ```
 
+### Reconnexió amb backoff exponencial
+
+El backend desactiva l'auto-reconnect fix de la llibreria (`reconnectPeriod: 0` a `back/src/services/mqtt.ts`) i gestiona reconnexió manual amb backoff exponencial: `5s → 10s → 20s → 40s → 60s → 60s...` (`RECONNECT_BASE=5000`, `RECONNECT_MAX=60000`, `RECONNECT_FACTOR=2`). En `connect` reseteja comptador; `close`/`error` programen següent intent amb `scheduleReconnect()`. `stop()` neteja timer. Evita spam quan Mosquitto no disponible (ex. docker local amb config producció).
+
 ## Notificacions Telegram per ADF
 
 Cada ADF pot tenir el seu bot de Telegram i un grup on rep els avisos (incidències, alts i edicions d'hidrants). Es configura des de la pestanya **Configuració → Notificacions de Telegram**: el backend registra el bot (token xifrat a la DB), genera un deep link `startgroup` d'un sol ús (15 min) i el webhook completa la vinculació quan el bot s'afegeix al grup.

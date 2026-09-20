@@ -9,6 +9,7 @@ import { buildTabs } from "../panel/PanelTabs";
 import { useHydrantData } from "../../hooks/useHidrantData";
 import type { HidrantFeature } from "../../hooks/useHidrantData";
 import { useIncidencies } from "../../hooks/useIncidencies";
+import { useAppConfig } from "../../hooks/useAppConfig";
 import {
   POSITIONS_POLL_ACTIVE_MS,
   POSITIONS_POLL_IDLE_MS,
@@ -51,6 +52,8 @@ export function MapPanel() {
     loading: loadingIncidencies,
     refresh: refreshIncidencies,
   } = useIncidencies();
+
+  const { maxHydrantMoveMeters } = useAppConfig();
 
   const [trackingChecked, setTrackingChecked] = useLocalStorage<boolean>(
     TRACKING_STORAGE_KEY,
@@ -205,6 +208,7 @@ export function MapPanel() {
           editingNodeId={editing ? selectedNode?.id : null}
           draftPosition={draftPosition}
           onNodeDrag={setDraftPosition}
+          maxMoveMeters={maxHydrantMoveMeters}
         />
       }
       tabs={buildTabs({

@@ -19,6 +19,7 @@ import trackingSharing from "./routes/trackingSharing.js";
 import telegram from "./routes/telegram.js";
 import telegramWebhook from "./routes/telegramWebhook.js";
 import osm from "./routes/osm.js";
+import appConfig from "./routes/appConfig.js";
 import { startMqttService, stopMqttService } from "./services/mqtt.js";
 import sqlite from "./db/index.js";
 
@@ -211,6 +212,7 @@ const routes = [
   { path: "/api/auth/login", handler: login },
   { path: "/api/auth/logout", handler: logout },
   { path: "/api/auth/me", handler: me },
+  { path: "/api/config", handler: appConfig },
   { path: "/api/overpass", handler: overpass },
   { path: "/api/hidrants/sync", handler: hidrants, protected: true },
   { path: "/api/hidrants", handler: hidrants },

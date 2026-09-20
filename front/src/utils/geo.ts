@@ -1,9 +1,6 @@
 import L from 'leaflet';
 
-// Distancia màxima que es pot arrossegar un hidrant respecte a la seva posició
-// original. MANTENIR SINCRONITZAT amb back/src/utils/geo.ts (MAX_HYDRANT_MOVE_METERS).
-export const MAX_HYDRANT_MOVE_METERS = 50;
-
+// El límit (maxMeters) el defineix el backend: vegeu useAppConfig (GET /api/config).
 export function clampToMaxDistance(original: L.LatLng, target: L.LatLng, maxMeters: number): L.LatLng {
   const dist = original.distanceTo(target);
   if (dist <= maxMeters) {return target;}

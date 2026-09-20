@@ -111,6 +111,7 @@ export function LeafletMap({
   editingNodeId,
   draftPosition,
   onNodeDrag,
+  maxMoveMeters,
 }: {
   onSelectNode: (f: HidrantFeature) => void;
   onMapClick?: () => void;
@@ -147,6 +148,7 @@ export function LeafletMap({
   editingNodeId?: string | null;
   draftPosition?: L.LatLng | null;
   onNodeDrag?: (latlng: L.LatLng) => void;
+  maxMoveMeters?: number | null;
 }) {
   const { activeAdf, isLoading } = useAdf();
   const { user } = useAuth();
@@ -223,6 +225,7 @@ export function LeafletMap({
             editingNodeId={editingNodeId}
             draftPosition={draftPosition}
             onNodeDrag={onNodeDrag}
+            maxMoveMeters={maxMoveMeters}
           />
         )}
         {incidenciesVisible && (

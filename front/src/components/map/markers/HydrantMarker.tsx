@@ -1,9 +1,8 @@
-import { useRef } from 'react';
 import { Marker, Circle } from 'react-leaflet';
 import L, { latLng } from 'leaflet';
 import getHydrantIcon from '../../../utils/icons';
 import type { HidrantFeature } from '../../../hooks/useHidrantData';
-import { clampToMaxDistance, MAX_HYDRANT_MOVE_METERS } from '../../../utils/geo';
+import { clampToMaxDistance } from '../../../utils/geo';
 
 const ringIcon = L.divIcon({
   className: '',
@@ -24,12 +23,14 @@ export interface HydrantMarkerProps {
   draggable?: boolean;
   overridePosition?: L.LatLng | null;
   onDragEnd?: (latlng: L.LatLng) => void;
+  /** Radi màxim de moviment, definit pel backend (useAppConfig). Sense valor no s'arrossega. */
+  maxMoveMeters?: number | null;
 }
 
 /**
  * Marcador d'hidrant. En clicar selecciona el node (la informació
  * es mostra al panell lateral / bottomsheet). Quan està seleccionat es marca subtilment.
- * En mode edició es pot arrossegar dins d'un radi de MAX_HYDRANT_MOVE_METERS.
+ * En mode edició es pot arrossegar dins d'un radi de `maxMoveMeters`.
  */
 export function HydrantMarker({
   feature,
@@ -39,21 +40,20 @@ export function HydrantMarker({
   draggable,
   overridePosition,
   onDragEnd,
+  maxMoveMeters,
 }: HydrantMarkerProps) {
   const coords = feature.geometry.coordinates;
   const originalLatLng = latLng(coords[1], coords[0]);
   const markerPosition = overridePosition ?? originalLatLng;
-  // Leaflet dispara un 'click' fantasma just després del 'dragend' sobre el mateix
-  // marcador; l'ignorem perquè no reseleccioni el node en soltar l'arrossegament.
-  const justDraggedRef = useRef(false);
+  const maxMeters = maxMoveMeters ?? null;
 
   return (
     <>
       {selected && <Marker position={markerPosition} icon={ringIcon} interactive={false} />}
-      {draggable && (
+      {draggable && maxMeters !== null && (
         <Circle
           center={originalLatLng}
-          radius={MAX_HYDRANT_MOVE_METERS}
+          radius={maxMeters}
           pathOptions={{ color: '#3388ff', weight: 1, fillOpacity: 0.08 }}
           interactive={false}
         />
@@ -61,27 +61,21 @@ export function HydrantMarker({
       <Marker
         position={markerPosition}
         icon={getHydrantIcon(feature.properties)}
-        draggable={!!draggable}
+        draggable={!!draggable && maxMeters !== null}
         eventHandlers={{
           click: () => {
-            if (justDraggedRef.current) {
-              justDraggedRef.current = false;
-              return;
-            }
+            // En mode edició (draggable) el marcador ja és el node seleccionat: ignorem els clics.
+            // Així no es pot reseleccionar (sortint de l'edició i perdent la posició arrossegada)
+            // ni pel 'click' fantasma que Leaflet dispara just després del 'dragend', ni per un
+            // clic simple accidental.
+            if (draggable) {return;}
             setPoi(markerPosition);
             if (onSelectNode) {onSelectNode(feature);}
           },
           dragend: (e) => {
-            justDraggedRef.current = true;
-            setTimeout(() => {
-              justDraggedRef.current = false;
-            }, 300);
+            if (maxMeters === null) {return;}
             const marker = e.target as L.Marker;
-            const clamped = clampToMaxDistance(
-              originalLatLng,
-              marker.getLatLng(),
-              MAX_HYDRANT_MOVE_METERS,
-            );
+            const clamped = clampToMaxDistance(originalLatLng, marker.getLatLng(), maxMeters);
             marker.setLatLng(clamped);
             if (onDragEnd) {onDragEnd(clamped);}
           },

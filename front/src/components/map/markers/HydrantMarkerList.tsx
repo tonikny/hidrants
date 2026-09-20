@@ -14,6 +14,7 @@ interface HydrantMarkerListProps {
   editingNodeId?: string | null;
   draftPosition?: LatLng | null;
   onNodeDrag?: (latlng: LatLng) => void;
+  maxMoveMeters?: number | null;
 }
 
 export function HydrantMarkerList({
@@ -28,6 +29,7 @@ export function HydrantMarkerList({
   editingNodeId,
   draftPosition,
   onNodeDrag,
+  maxMoveMeters,
 }: HydrantMarkerListProps) {
   return (
     <>
@@ -48,6 +50,7 @@ export function HydrantMarkerList({
             draggable={isEditingThisNode}
             overridePosition={isEditingThisNode ? draftPosition : null}
             onDragEnd={isEditingThisNode ? onNodeDrag : undefined}
+            maxMoveMeters={maxMoveMeters}
           />
         );
       })}

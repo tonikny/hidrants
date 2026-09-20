@@ -10,7 +10,13 @@ import { toast } from "react-toastify";
 
 const CONNECTED_MS = 15 * 60 * 1000;
 
-export function SeguimentTab({ positions }: { positions: Record<string, Position> }) {
+export function SeguimentTab({
+  positions,
+  onCenterCoordinates,
+}: {
+  positions: Record<string, Position>;
+  onCenterCoordinates?: (coords: [number, number]) => void;
+}) {
   const { user } = useAuth();
   const { activeAdf, setActiveAdf } = useAdf();
   const [loading, setLoading] = useState(false);
@@ -146,11 +152,7 @@ export function SeguimentTab({ positions }: { positions: Record<string, Position
     if (!pos) {
       return;
     }
-    window.dispatchEvent(
-      new CustomEvent("map-center-node", {
-        detail: { geometry: { coordinates: [pos.lon, pos.lat] } },
-      }),
-    );
+    onCenterCoordinates?.([pos.lon, pos.lat]);
   };
 
   if (!user) {

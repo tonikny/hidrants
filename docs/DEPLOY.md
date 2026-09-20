@@ -41,6 +41,7 @@ Si utilitzes un servidor Debian 13 net, pots fer servir els scripts preparats:
     - Canvia `JWT_SECRET` per una clau realment segura.
     - Revisa els ports (per defecte el backend escolta al 3033 internament).
     - Configura les claus de Telegram i GraphHopper si les tens.
+    - Per a la sincronització push a OSM, configura `OSM_ACCESS_TOKEN` (token OAuth 2.0, veure secció OSM a continuació).
 
 3.  Configura les variables d'entorn de Mosquitto:
     ```bash
@@ -95,6 +96,21 @@ Configuració: copiar `mosquitto/config/mosquitto.conf.example` → `mosquitto.c
 Backend: per defecte connecta a `mqtt://mosquitto:1883`. El fitxer `.otrc` que genera la UI apunta a `OTRC_HOST`, `OTRC_PORT=51823`, `OTRC_TLS=true`.
 
 Guia completa de MQTT (certs + renovació automàtica, Dynamic Security, `npm run mqtt:sync-dynsec`/`mqtt:regen-dynsec`, accés compartit a `mosquitto/data`, backup i troubleshooting): `docs/MQTT_DEPLOY.md`.
+
+## 6b. Sincronització amb OSM (push sync)
+
+Per publicar canvislocals cap a OpenStreetMap, cal configurar el token OAuth 2.0:
+
+1. Registra una aplicació a https://www.openstreetmap.org/oauth2/applications
+2. Scope necessari: `write_api`
+3. Afegeix a `back/.env`:
+
+```env
+OSM_ACCESS_TOKEN=el_teu_token_oauth2_aqui
+#OSM_API_URL=https://api.openstreetmap.org/api/0.6
+```
+
+El token OAuth 2.0 d'OSM no expira. Sense aquesta variable, el push sync (`POST /api/osm/push-sync`) retornarà error. La pull sync (`GET /api/osm/sync`) funciona sense token (usa Overpass API pública).
 
 ## 7. Manteniment i Actualitzacions
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Incidencia } from "../../types";
 import { useIncidencies } from "../../hooks/useIncidencies";
 import { toast } from "react-toastify";
@@ -15,7 +15,6 @@ import {
   TIPUS_INCIDENCIA,
   VISIBILITATS_INCIDENCIA,
 } from "../../utils/incidenciaConstants";
-import { setFormDirty } from "../../utils/formDirty";
 
 export function IncidenciaEditForm({
   incidencia,
@@ -42,17 +41,6 @@ export function IncidenciaEditForm({
     newPrecisio !== incidencia.precisio ||
     newVisibilitat !== incidencia.visibilitat ||
     !!newComment;
-
-  useEffect(() => {
-    setFormDirty(hasChanges);
-  }, [hasChanges]);
-
-  useEffect(
-    () => () => {
-      setFormDirty(false);
-    },
-    [],
-  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

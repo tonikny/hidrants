@@ -43,6 +43,20 @@
       "when": 1786379859786,
       "tag": "0005_fast_goblin_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786648049343,
+      "tag": "0006_awesome_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1786719911492,
+      "tag": "0007_remote_osm_data",
+      "breakpoints": true
     }
   ]
 }

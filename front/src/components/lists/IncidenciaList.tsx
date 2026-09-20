@@ -6,14 +6,13 @@ import {
   labelDeCategoria,
 } from "../../utils/incidenciaConstants";
 
-function centerIncidencia(incidenciaId: string) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("node", incidenciaId);
-  window.history.replaceState({}, "", url.toString());
-  window.dispatchEvent(new CustomEvent("map-force-url-check"));
-}
-
-export function IncidenciaList({ features }: { features: IncidenciaFeature[] }) {
+export function IncidenciaList({
+  features,
+  onSelectIncidencia,
+}: {
+  features: IncidenciaFeature[];
+  onSelectIncidencia?: (feature: IncidenciaFeature) => void;
+}) {
   if (features.length === 0) {
     return <p className="text-muted text-[0.85rem]">No hi ha incidències obertes.</p>;
   }
@@ -25,7 +24,7 @@ export function IncidenciaList({ features }: { features: IncidenciaFeature[] }) 
         return (
           <div
             key={f.id}
-            onClick={() => centerIncidencia(f.id)}
+            onClick={() => onSelectIncidencia?.(f)}
             className="flex items-center gap-3 px-3 py-2.5 border-b border-soft cursor-pointer transition-colors duration-100 hover:bg-[#f5f5f5]"
           >
             <span className="text-[1.1rem]">{emojiTipusIncidencia(p.tipus)}</span>

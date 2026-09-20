@@ -9,25 +9,21 @@ import { buildTabs } from "../panel/PanelTabs";
 import { useHydrantData } from "../../hooks/useHidrantData";
 import type { HidrantFeature } from "../../hooks/useHidrantData";
 import { useIncidencies } from "../../hooks/useIncidencies";
-import { usePositionPolling } from "../../hooks/usePositionPolling";
+import {
+  POSITIONS_POLL_ACTIVE_MS,
+  POSITIONS_POLL_IDLE_MS,
+  TRACKING_STORAGE_KEY,
+  usePositionPolling,
+} from "../../hooks/usePositionPolling";
+import { useLocalStorage } from "../../utils/useLocalStorage";
 import { NodeInfo } from "../hidrants/NodeInfo";
 import { CreateNodePanel } from "../panel/CreateNodePanel";
 import { createTitle } from "../panel/createTitle";
 import { IncidenciaInfo } from "../incidencies/IncidenciaInfo";
 import { isPointInBoundary } from "../../utils/geo";
 import { emojiPrioritatIncidencia } from "../../utils/incidenciaConstants";
-import { confirmDiscardChanges } from "../../utils/formDirty";
+import { setNodeUrlParam } from "../../utils/urlParams";
 import type { CreateType, IncidenciaFeature } from "../../types";
-
-function setUrlNodeParam(nodeId: string | null) {
-  const url = new URL(window.location.href);
-  if (nodeId) {
-    url.searchParams.set("node", nodeId);
-  } else {
-    url.searchParams.delete("node");
-  }
-  window.history.replaceState({}, "", url.toString());
-}
 
 export function MapPanel() {
   const { isLoading, activeAdf, boundaryGeojson } = useAdf();
@@ -40,6 +36,7 @@ export function MapPanel() {
   const [createForm, setCreateForm] = useState<CreateType>(null);
   const [position, setPosition] = useState<L.LatLng | null>(null);
   const [showRoute, setShowRoute] = useState(false);
+  const [nodeInfoKey, setNodeInfoKey] = useState(0); // Nova clau per forzar re-render
   const sheetRef = useRef<BottomSheetHandle>(null);
 
   const {
@@ -55,7 +52,40 @@ export function MapPanel() {
     refresh: refreshIncidencies,
   } = useIncidencies();
 
-  const positions = usePositionPolling(15000);
+  const [trackingChecked, setTrackingChecked] = useLocalStorage<boolean>(
+    TRACKING_STORAGE_KEY,
+    false,
+  );
+  const positions = usePositionPolling({
+    enabled: !!user,
+    intervalMs: trackingChecked ? POSITIONS_POLL_ACTIVE_MS : POSITIONS_POLL_IDLE_MS,
+  });
+
+  const handleSelectHydrantById = (id: string) => {
+    const feature = features.find((f) => f.id === id);
+    if (feature) {
+      handleSelectNode(feature);
+    }
+  };
+
+  const handleCenterCoordinates = (coords: [number, number]) => {
+    window.dispatchEvent(
+      new CustomEvent("map-center-node", {
+        detail: { geometry: { coordinates: coords } },
+      }),
+    );
+  };
+
+  // Actualitzar selectedNode quan features canvia (després de refreshHidrants)
+  /* eslint-disable react-hooks/set-state-in-effect -- actualització necessària quan canvien les dades */
+  useEffect(() => {
+    if (selectedNode) {
+      const updatedFeature = features.find((f) => f.id === selectedNode.id);
+      if (updatedFeature && updatedFeature !== selectedNode) {
+        setSelectedNode(updatedFeature);
+      }
+    }
+  }, [features, selectedNode]);
 
   useEffect(() => {
     if (!createPos) {
@@ -78,10 +108,7 @@ export function MapPanel() {
   const canEdit = !!user && (user.role === "admin" || user.adf_id === activeAdf?.id);
 
   const handleSelectNode = (feature: HidrantFeature) => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setUrlNodeParam(feature.id);
+    setNodeUrlParam(feature.id);
     setSelectedNode(feature);
     setSelectedIncidencia(null);
     setEditing(false);
@@ -94,20 +121,14 @@ export function MapPanel() {
   };
 
   const handleDeselectNode = () => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setUrlNodeParam(null);
+    setNodeUrlParam(null);
     setSelectedNode(null);
     setEditing(false);
     setDraftPosition(null);
   };
 
   const handleSelectIncidencia = (feature: IncidenciaFeature) => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setUrlNodeParam(feature.id);
+    setNodeUrlParam(feature.id);
     setSelectedIncidencia(feature);
     setSelectedNode(null);
     setEditing(false);
@@ -120,13 +141,18 @@ export function MapPanel() {
   };
 
   const handleDeselectIncidencia = () => {
-    if (!confirmDiscardChanges()) {
-      return;
-    }
-    setUrlNodeParam(null);
+    setNodeUrlParam(null);
     setSelectedIncidencia(null);
     setEditing(false);
     setDraftPosition(null);
+  };
+
+  // En sortir del mode edició es descarta la posició arrossegada però no desada.
+  const toggleEditing = () => {
+    if (editing) {
+      setDraftPosition(null);
+    }
+    setEditing(!editing);
   };
 
   const closeCreate = () => {
@@ -174,19 +200,32 @@ export function MapPanel() {
           onOpenCreate={openCreate}
           onCloseCreate={closeCreate}
           onSelectIncidencia={handleSelectIncidencia}
+          trackingChecked={trackingChecked}
+          setTrackingChecked={setTrackingChecked}
           editingNodeId={editing ? selectedNode?.id : null}
           draftPosition={draftPosition}
           onNodeDrag={setDraftPosition}
         />
       }
-      tabs={buildTabs({ features, incidenciaFeatures, positions })}
+      tabs={buildTabs({
+        features,
+        incidenciaFeatures,
+        positions,
+        onSelectNode: handleSelectNode,
+        onSelectIncidencia: handleSelectIncidencia,
+        onSelectHydrantById: handleSelectHydrantById,
+        onRefreshHidrants: () => {
+          void refreshHidrants().then(() => setNodeInfoKey((prev) => prev + 1));
+        },
+        onCenterCoordinates: handleCenterCoordinates,
+      })}
       node={
         selectedNode
           ? {
               id: selectedNode.id,
               content: (
                 <NodeInfo
-                  key={selectedNode.id}
+                  key={nodeInfoKey}
                   feature={selectedNode}
                   canEdit={canEdit}
                   editing={editing}
@@ -194,10 +233,13 @@ export function MapPanel() {
                   draftPosition={draftPosition}
                   setDraftPosition={setDraftPosition}
                   refreshHidrants={() => refreshHidrants()}
+                  showRoute={showRoute}
+                  setShowRoute={setShowRoute}
+                  hasLocation={!!position}
                 />
               ),
               onClose: handleDeselectNode,
-              onEdit: canEdit ? () => setEditing((prev) => !prev) : undefined,
+              onEdit: canEdit ? toggleEditing : undefined,
               editing,
             }
           : selectedIncidencia
@@ -220,16 +262,7 @@ export function MapPanel() {
                   />
                 ),
                 onClose: handleDeselectIncidencia,
-                onEdit: canEdit
-                  ? () => {
-                      setEditing((prev) => {
-                        if (prev) {
-                          setDraftPosition(null);
-                        }
-                        return !prev;
-                      });
-                    }
-                  : undefined,
+                onEdit: canEdit ? () => setEditing((prev) => !prev) : undefined,
                 editing,
               }
             : createPos && createForm && user

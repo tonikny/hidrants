@@ -73,10 +73,11 @@ function FixMapSize() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
-      if (map?._loaded && map.getContainer()) {
-        map.invalidateSize();
-      }
+      map.whenReady(() => {
+        if (map.getContainer()) {
+          map.invalidateSize();
+        }
+      });
     }, 200);
 
     return () => clearTimeout(timer);
@@ -105,11 +106,13 @@ export function LeafletMap({
   onOpenCreate,
   onCloseCreate,
   onSelectIncidencia,
+  trackingChecked,
+  setTrackingChecked,
   editingNodeId,
   draftPosition,
   onNodeDrag,
 }: {
-  onSelectNode?: (f: HidrantFeature) => void;
+  onSelectNode: (f: HidrantFeature) => void;
   onMapClick?: () => void;
   selectedNodeId?: string | null;
   features: HidrantFeature[];
@@ -139,6 +142,8 @@ export function LeafletMap({
   onOpenCreate: (latlng: L.LatLng) => void;
   onCloseCreate: () => void;
   onSelectIncidencia: (f: IncidenciaFeature) => void;
+  trackingChecked: boolean;
+  setTrackingChecked: (v: boolean) => void;
   editingNodeId?: string | null;
   draftPosition?: L.LatLng | null;
   onNodeDrag?: (latlng: L.LatLng) => void;
@@ -185,6 +190,7 @@ export function LeafletMap({
           incidenciaFeatures={incidenciaFeatures}
           loadingHidrants={loadingHidrants}
           loadingIncidencies={loadingIncidencies}
+          onSelectNode={onSelectNode}
           onSelectIncidencia={onSelectIncidencia}
         />
         <MapStateListener onMapClick={onMapClick} />
@@ -200,6 +206,8 @@ export function LeafletMap({
           baseLayer={baseLayer}
           setBaseLayer={setBaseLayer}
           positions={positions}
+          trackingChecked={trackingChecked}
+          setTrackingChecked={setTrackingChecked}
         />
         <MapRightClickHandler onCreate={onOpenCreate} user={user} />
         {hydrantsVisible && (

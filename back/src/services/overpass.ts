@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from "../utils/config.js";
 
 const OVERPASS_API_URL = config.OVERPASS_URL;
 
@@ -21,12 +21,12 @@ export type OverpassResult =
  */
 export async function queryOverpass(query: string): Promise<OverpassResult> {
   const response = await fetch(OVERPASS_API_URL, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      Accept: '*/*',
-      'User-Agent': 'HidrantsADF/1.0 (dalecanya@gmail.com)',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Accept-Language': 'en-US,en;q=0.9',
+      Accept: "*/*",
+      "User-Agent": "HidrantsADF/1.0 (dalecanya@gmail.com)",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Accept-Language": "en-US,en;q=0.9",
     },
     body: query,
   });

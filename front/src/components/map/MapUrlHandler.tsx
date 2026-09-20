@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { toast } from 'react-toastify';
 import { useAdf } from '../../contexts/AdfContext';
+import { getQueryParam, setNodeUrlParam } from '../../utils/urlParams';
 import type { IncidenciaFeature } from '../../types';
 import type { HidrantFeature } from '../../hooks/useHidrantData';
 
@@ -10,6 +11,7 @@ interface MapUrlHandlerProps {
   incidenciaFeatures: IncidenciaFeature[];
   loadingHidrants: boolean;
   loadingIncidencies: boolean;
+  onSelectNode: (feature: HidrantFeature) => void;
   onSelectIncidencia: (feature: IncidenciaFeature) => void;
 }
 
@@ -23,6 +25,7 @@ export function MapUrlHandler({
   incidenciaFeatures,
   loadingHidrants,
   loadingIncidencies,
+  onSelectNode,
   onSelectIncidencia,
 }: MapUrlHandlerProps) {
   const map = useMap();
@@ -31,8 +34,7 @@ export function MapUrlHandler({
   const fittedAdfId = useRef<number | null>(null);
 
   const checkUrl = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const nodeId = urlParams.get('node');
+    const nodeId = getQueryParam('node');
 
     if (nodeId && nodeId !== lastNodeId.current) {
       const feature = features.find(f => f.id === nodeId);
@@ -43,14 +45,15 @@ export function MapUrlHandler({
 
         // La selecció obre el panell; el centratge amb correcció del
         // bottomsheet el fa MapNodeCenter en un sol moviment.
-        // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
-        if (map?._loaded && map.getContainer().clientWidth > 0) {
-          if (feature) {
-            window.dispatchEvent(new CustomEvent('map-node-centered', { detail: { nodeId } }));
-          } else {
-            onSelectIncidencia(incidencia!);
+        map.whenReady(() => {
+          if (map.getContainer().clientWidth > 0) {
+            if (feature) {
+              onSelectNode(feature);
+            } else {
+              onSelectIncidencia(incidencia!);
+            }
           }
-        }
+        });
         // Si encara estan carregant, esperem: l'effect tornarà a executar checkUrl
       } else if (!loadingHidrants && !loadingIncidencies) {
         // Node no trobat i ja no carreguen les llistes: decidim definitivament
@@ -58,22 +61,21 @@ export function MapUrlHandler({
         lastNodeId.current = nodeId;
 
         // Netegem el paràmetre de la URL
-        const url = new URL(window.location.href);
-        url.searchParams.delete('node');
-        window.history.replaceState({}, '', url.toString());
+        setNodeUrlParam(null);
 
         // Forcem el fitBounds de l'ADF com si no haguéssim tingut node
         if (activeAdf && fittedAdfId.current !== activeAdf.id) {
-          // @ts-expect-error accés intern de Leaflet per esperar que el mapa estigui carregat
-          if (map?._loaded && map.getContainer().clientWidth > 0) {
-            if (activeAdf.bbox) {
-              const bbox = activeAdf.bbox;
-              map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);
-            } else if (activeAdf.center) {
-              map.setView(activeAdf.center, 14);
+          map.whenReady(() => {
+            if (map.getContainer().clientWidth > 0) {
+              if (activeAdf.bbox) {
+                const bbox = activeAdf.bbox;
+                map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);
+              } else if (activeAdf.center) {
+                map.setView(activeAdf.center, 14);
+              }
+              fittedAdfId.current = activeAdf.id;
             }
-            fittedAdfId.current = activeAdf.id;
-          }
+          });
         }
       }
       // Si encara estan carregant, esperem: l'effect tornarà a executar checkUrl
@@ -82,15 +84,8 @@ export function MapUrlHandler({
 
   useEffect(() => {
     checkUrl();
-
-    const handleForcedCheck = () => {
-      lastNodeId.current = null; // Reset per permetre re-centrar si cal
-      checkUrl();
-    };
-
-    window.addEventListener('map-force-url-check', handleForcedCheck);
-    return () => window.removeEventListener('map-force-url-check', handleForcedCheck);
-  }, [features, incidenciaFeatures, loadingHidrants, loadingIncidencies, map, activeAdf, onSelectIncidencia]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [features, incidenciaFeatures, loadingHidrants, loadingIncidencies, map, activeAdf, onSelectNode, onSelectIncidencia]);
 
   return null;
 }

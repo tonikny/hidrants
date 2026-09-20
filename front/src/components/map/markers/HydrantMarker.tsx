@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { Marker, Circle } from 'react-leaflet';
 import L, { latLng } from 'leaflet';
 import getHydrantIcon from '../../../utils/icons';
@@ -28,8 +28,8 @@ export interface HydrantMarkerProps {
 
 /**
  * Marcador d'hidrant. En clicar selecciona el node (la informació
- * es mostra al panell lateral / bottomsheet) i respon al centratge
- * via URL (?node=ID). Quan està seleccionat es marca subtilment.
+ * es mostra al panell lateral / bottomsheet). Quan està seleccionat es marca subtilment.
+ * En mode edició es pot arrossegar dins d'un radi de MAX_HYDRANT_MOVE_METERS.
  */
 export function HydrantMarker({
   feature,
@@ -44,21 +44,8 @@ export function HydrantMarker({
   const originalLatLng = latLng(coords[1], coords[0]);
   const markerPosition = overridePosition ?? originalLatLng;
   // Leaflet dispara un 'click' fantasma just després del 'dragend' sobre el mateix
-  // marcador; l'ignorem perquè no reobri/reseleccioni el node en soltar l'arrossegament.
+  // marcador; l'ignorem perquè no reseleccioni el node en soltar l'arrossegament.
   const justDraggedRef = useRef(false);
-
-  useEffect(() => {
-    const handleCentered = (e: Event) => {
-      const { nodeId } = (e as CustomEvent<{ nodeId: string }>).detail;
-      if (nodeId === feature.id && onSelectNode) {
-        onSelectNode(feature);
-      }
-    };
-
-    window.addEventListener('map-node-centered', handleCentered);
-
-    return () => window.removeEventListener('map-node-centered', handleCentered);
-  }, [feature.id, feature, onSelectNode]);
 
   return (
     <>
@@ -86,10 +73,16 @@ export function HydrantMarker({
           },
           dragend: (e) => {
             justDraggedRef.current = true;
-            setTimeout(() => { justDraggedRef.current = false; }, 300);
-            const dragged = (e.target as L.Marker).getLatLng();
-            const clamped = clampToMaxDistance(originalLatLng, dragged, MAX_HYDRANT_MOVE_METERS);
-            (e.target as L.Marker).setLatLng(clamped);
+            setTimeout(() => {
+              justDraggedRef.current = false;
+            }, 300);
+            const marker = e.target as L.Marker;
+            const clamped = clampToMaxDistance(
+              originalLatLng,
+              marker.getLatLng(),
+              MAX_HYDRANT_MOVE_METERS,
+            );
+            marker.setLatLng(clamped);
             if (onDragEnd) {onDragEnd(clamped);}
           },
         }}

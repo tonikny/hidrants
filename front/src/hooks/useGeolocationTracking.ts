@@ -42,8 +42,7 @@ export function useGeolocationTracking() {
 
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
-          // @ts-expect-error accés intern de Leaflet per verificar estat del mapa
-          if (!map?._loaded || !map.getContainer()) {
+          if (!map || !map.getContainer()) {
             return;
           }
 
@@ -53,13 +52,14 @@ export function useGeolocationTracking() {
           setAccuracy(accuracy);
 
           if (firstUpdateRef.current) {
-            map.setView(latlng, 17);
-            setTimeout(() => {
-              // @ts-expect-error accés intern de Leaflet per verificar estat del mapa
-              if (map?._loaded && map.getContainer()) {
-                map.invalidateSize();
-              }
-            }, 100);
+            map.whenReady(() => {
+              map.setView(latlng, 17);
+              setTimeout(() => {
+                if (map.getContainer()) {
+                  map.invalidateSize();
+                }
+              }, 100);
+            });
             firstUpdateRef.current = false;
           }
         },

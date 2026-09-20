@@ -4,7 +4,7 @@ import type { Incidencia, IncidenciaEvent, IncidenciaFeature } from '../../types
 import { IncidenciaInfoView } from './IncidenciaInfoView';
 import { IncidenciaEditForm } from './IncidenciaEditForm';
 import { logError } from '../../utils/log';
-import { confirmDiscardChanges, setFormDirty } from '../../utils/formDirty';
+import { usePreventLeave } from '../../hooks/usePreventLeave';
 
 export const IncidenciaInfo = ({
   incidencia,
@@ -32,6 +32,8 @@ export const IncidenciaInfo = ({
   const [loading, setLoading] = useState(true);
   const base: Incidencia = incidencia.properties;
 
+  usePreventLeave(editing);
+
   const loadDetail = async () => {
     try {
       setLoading(true);
@@ -50,16 +52,10 @@ export const IncidenciaInfo = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base.id]);
 
-  useEffect(() => {
-    if (!editing) {
-      setFormDirty(false);
-    }
-  }, [editing]);
-
-  useEffect(() => () => { setFormDirty(false); }, []);
-
   const handleCancelEdit = () => {
-    if (confirmDiscardChanges()) {setEditing(false);}
+    if (window.confirm("Hi ha canvis sense desar. Si tanques ara, es perdran. Vols continuar?")) {
+      setEditing(false);
+    }
   };
 
   return (

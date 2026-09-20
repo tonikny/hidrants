@@ -3,14 +3,13 @@ import type { HidrantFeature } from "../../hooks/useHidrantData";
 import { getHydrantStatus, getHydrantIconUrl } from "../../utils/icons";
 import { inputClass } from "../../styles/uiStyles";
 
-function centerNode(nodeId: string) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("node", nodeId);
-  window.history.replaceState({}, "", url.toString());
-  window.dispatchEvent(new CustomEvent("map-force-url-check"));
-}
-
-export function HydrantList({ features }: { features: HidrantFeature[] }) {
+export function HydrantList({
+  features,
+  onSelectNode,
+}: {
+  features: HidrantFeature[];
+  onSelectNode?: (feature: HidrantFeature) => void;
+}) {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -47,7 +46,7 @@ export function HydrantList({ features }: { features: HidrantFeature[] }) {
             return (
               <div
                 key={f.id}
-                onClick={() => centerNode(f.id)}
+                onClick={() => onSelectNode?.(f)}
                 className="flex items-center gap-3 px-3 py-2.5 border-b border-soft cursor-pointer transition-colors duration-100 hover:bg-[#f5f5f5]"
               >
                 <img

@@ -1,9 +1,15 @@
 import { useAuth } from "../../../contexts/AuthContext";
 import { useAdf } from "../../../contexts/AdfContext";
-import { SyncButton } from "../../controls/SyncButton";
+import { OsmSyncPanel } from "../../osm/OsmSyncPanel";
 import { adfLabel } from "../../../utils/adfLabel";
 
-export function MapaTab() {
+export function MapaTab({
+  onSelectHydrant,
+  onRefresh,
+}: {
+  onSelectHydrant?: (id: string) => void;
+  onRefresh?: () => void;
+}) {
   const { adfs, isLoading, activeAdf, setActiveAdf } = useAdf();
   const { user } = useAuth();
 
@@ -36,15 +42,7 @@ export function MapaTab() {
 
       {(user?.permissions ?? []).includes("sync_osm") && (
         <div className="mt-4">
-          <h4 className="m-0 mb-2 text-[0.85rem] font-semibold">Sincronització amb OSM</h4>
-          <SyncButton
-            label="Sincronitzar amb OSM"
-            className="w-full bg-white text-ink border border-border rounded cursor-pointer p-2 flex items-center justify-center gap-2 text-[0.9rem]"
-          />
-          <p className="text-muted text-[0.8rem] mt-2 mb-0">
-            Descarrega les dades d'OSM cap a l'app. Els canvis locals pendents podrien
-            sobreescriure's si són més antics que el d'OSM.
-          </p>
+          <OsmSyncPanel onSelectHydrant={onSelectHydrant} onRefresh={onRefresh} />
         </div>
       )}
     </div>

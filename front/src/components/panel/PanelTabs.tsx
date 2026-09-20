@@ -13,24 +13,46 @@ export function buildTabs({
   features,
   incidenciaFeatures,
   positions,
+  onSelectNode,
+  onSelectIncidencia,
+  onSelectHydrantById,
+  onRefreshHidrants,
+  onCenterCoordinates,
 }: {
   features: HidrantFeature[];
   incidenciaFeatures: IncidenciaFeature[];
   positions: Record<string, Position>;
+  onSelectNode?: (feature: HidrantFeature) => void;
+  onSelectIncidencia?: (feature: IncidenciaFeature) => void;
+  onSelectHydrantById?: (id: string) => void;
+  onRefreshHidrants?: () => void;
+  onCenterCoordinates?: (coords: [number, number]) => void;
 }): PanelTab[] {
   return [
-    { id: "mapa", icon: "🗺️", label: "ADF", content: <MapaTab /> },
+    {
+      id: "mapa",
+      icon: "🗺️",
+      label: "ADF",
+      content: <MapaTab onSelectHydrant={onSelectHydrantById} onRefresh={onRefreshHidrants} />,
+    },
     {
       id: "seguiment",
       icon: "👣",
       label: "Seguiment",
-      content: <SeguimentTab positions={positions} />,
+      content: <SeguimentTab positions={positions} onCenterCoordinates={onCenterCoordinates} />,
     },
     {
       id: "informes",
       icon: "📃",
       label: "Informes",
-      content: <InformesTab features={features} incidenciaFeatures={incidenciaFeatures} />,
+      content: (
+        <InformesTab
+          features={features}
+          incidenciaFeatures={incidenciaFeatures}
+          onSelectNode={onSelectNode}
+          onSelectIncidencia={onSelectIncidencia}
+        />
+      ),
     },
     { id: "usuaris", icon: "👤", label: "Usuaris", content: <UsuarisTab /> },
     { id: "config", icon: "⚙️", label: "Configuració", content: <ConfigTab /> },

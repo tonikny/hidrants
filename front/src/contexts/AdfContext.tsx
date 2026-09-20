@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import { adfLabel } from "../utils/adfLabel";
+import { getQueryParam, setAdfUrlParam, setNodeUrlParam } from "../utils/urlParams";
 
 export interface AdfData {
   id: number;
@@ -24,31 +25,30 @@ interface AdfContextType {
 const AdfContext = createContext<AdfContextType | undefined>(undefined);
 
 export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, setActiveAdfId: setAuthActiveAdfId } = useAuth();
   const [activeAdf, setActiveAdfState] = useState<AdfData | null>(null);
   const [adfs, setAdfs] = useState<AdfData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [boundaryGeojsonRaw, setBoundaryGeojsonRaw] = useState<string | null>(null);
 
-  const setActiveAdf = useCallback((adf: AdfData | null) => {
-    setActiveAdfState(adf);
-    const url = new URL(window.location.href);
-    if (adf) {
-      localStorage.setItem("active_adf_id", adf.id.toString());
-      document.title = `Hidrants - ${adfLabel(adf.id, adf.nom)}`;
-      url.searchParams.set("adf", adf.id.toString());
-    } else {
-      localStorage.removeItem("active_adf_id");
-      document.title = "Mapa d'hidrants";
-      url.searchParams.delete("adf");
-      url.searchParams.delete("node");
-    }
-    window.history.replaceState({}, "", url.toString());
-    window.dispatchEvent(
-      new CustomEvent("hidrant-adf-active", { detail: { id: adf?.id ?? null } }),
-    );
-  }, []);
+  const setActiveAdf = useCallback(
+    (adf: AdfData | null) => {
+      setActiveAdfState(adf);
+      if (adf) {
+        localStorage.setItem("active_adf_id", adf.id.toString());
+        document.title = `Hidrants - ${adfLabel(adf.id, adf.nom)}`;
+        setAdfUrlParam(adf.id);
+      } else {
+        localStorage.removeItem("active_adf_id");
+        document.title = "Mapa d'hidrants";
+        setAdfUrlParam(null);
+        setNodeUrlParam(null);
+      }
+      setAuthActiveAdfId(adf?.id ?? null);
+    },
+    [setAuthActiveAdfId],
+  );
 
   // Carregar llista d'ADFs inicial
   useEffect(() => {
@@ -62,8 +62,7 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const data = await response.json();
         setAdfs(data);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlAdfId = urlParams.get("adf");
+        const urlAdfId = getQueryParam("adf");
 
         // Prioritat 0: Paràmetre ADF a la URL
         if (urlAdfId) {
@@ -114,7 +113,7 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       .then((r) => (r.ok ? r.json() : null))
       .then((gj) => setBoundaryGeojsonRaw(gj ? JSON.stringify(gj) : null))
       .catch(() => setBoundaryGeojsonRaw(null));
-  }, [activeAdf?.id]);
+  }, [activeAdf]);
 
   const boundaryGeojson = activeAdf ? boundaryGeojsonRaw : null;
 

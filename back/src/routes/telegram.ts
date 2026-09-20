@@ -6,7 +6,7 @@ import { adfs, telegramBots, telegramLinks } from "../db/schema.js";
 import type { ApiHandler } from "../types.js";
 import { permissionsFor } from "../permissions.js";
 import { appBaseUrl } from "../utils/appUrl.js";
-import { config } from "../config.js";
+import { config } from "../utils/config.js";
 import { encrypt, decrypt } from "../utils/crypto.js";
 import {
   getMe,
@@ -28,7 +28,10 @@ function adfExists(adfId: number): boolean {
 }
 
 /** Admin pot qualsevol ADF; coordinador només la seva (capacitat manage_telegram). */
-function canManage(user: { role: string; adf_id: number | null } | undefined, adfId: number): boolean {
+function canManage(
+  user: { role: string; adf_id: number | null } | undefined,
+  adfId: number,
+): boolean {
   if (!user || user.role === "admin") {
     return user?.role === "admin";
   }
@@ -68,7 +71,9 @@ const register: ApiHandler = async (req, res) => {
     return res.status(404).json({ error: "ADF no trobada" });
   }
   if (!canManage(req.user, adfId)) {
-    return res.status(403).json({ error: "No tens permisos per configurar Telegram d'aquesta ADF" });
+    return res
+      .status(403)
+      .json({ error: "No tens permisos per configurar Telegram d'aquesta ADF" });
   }
 
   const token = String(req.body?.token ?? "").trim();
@@ -177,7 +182,9 @@ const link: ApiHandler = async (req, res) => {
     return res.status(404).json({ error: "ADF no trobada" });
   }
   if (!canManage(req.user, adfId)) {
-    return res.status(403).json({ error: "No tens permisos per configurar Telegram d'aquesta ADF" });
+    return res
+      .status(403)
+      .json({ error: "No tens permisos per configurar Telegram d'aquesta ADF" });
   }
   const bot = db.select().from(telegramBots).where(eq(telegramBots.adf_id, adfId)).get();
   const token = bot?.token_enc ? decrypt(bot.token_enc) : null;
@@ -221,7 +228,9 @@ const test: ApiHandler = async (req, res) => {
     return res.status(404).json({ error: "ADF no trobada" });
   }
   if (!canManage(req.user, adfId)) {
-    return res.status(403).json({ error: "No tens permisos per configurar Telegram d'aquesta ADF" });
+    return res
+      .status(403)
+      .json({ error: "No tens permisos per configurar Telegram d'aquesta ADF" });
   }
   const bot = db.select().from(telegramBots).where(eq(telegramBots.adf_id, adfId)).get();
   const token = bot?.token_enc ? decrypt(bot.token_enc) : null;
@@ -260,7 +269,9 @@ const unlink: ApiHandler = async (req, res) => {
     return res.status(404).json({ error: "ADF no trobada" });
   }
   if (!canManage(req.user, adfId)) {
-    return res.status(403).json({ error: "No tens permisos per configurar Telegram d'aquesta ADF" });
+    return res
+      .status(403)
+      .json({ error: "No tens permisos per configurar Telegram d'aquesta ADF" });
   }
   const bot = db.select().from(telegramBots).where(eq(telegramBots.adf_id, adfId)).get();
   if (bot) {

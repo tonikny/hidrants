@@ -1,4 +1,7 @@
 {
+  "name": "hidrants",
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev -w back\" \"sleep 3 && npm run dev -w front\"",
     "build": "npm run build -w front && npm run build -w back",

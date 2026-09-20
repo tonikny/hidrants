@@ -1,6 +1,6 @@
 {
-  "name": "hidrants",
-  "version": "1.0.0",
+  "name": "hidrants-front",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -55,6 +55,7 @@ function BottomSheetView(
         }
       },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [node],
   );
 

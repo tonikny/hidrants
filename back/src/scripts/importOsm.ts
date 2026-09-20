@@ -2,6 +2,9 @@ import { syncAdfFromOSM } from '../services/osmSync.js';
 import { db } from '../db/index.js';
 import { adfs } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { logger } from '../utils/logger.js';
+
+const log = logger.child({ module: 'osm', operation: 'import' });
 
 async function run() {
   const adfIdArg = process.argv[2];
@@ -11,29 +14,29 @@ async function run() {
     const adfId = parseInt(adfIdArg);
     allAdfs = db.select().from(adfs).where(eq(adfs.id, adfId)).all();
     if (allAdfs.length === 0) {
-      console.error(`❌ ADF amb ID ${adfId} no trobada.`);
-      process.exit(1);
+       log.error({ adfId }, '❌ ADF no trobada');
+       process.exit(1);
+     }
+     log.info({ adf_nom: allAdfs[0].nom }, '🚀 Iniciant importació d\'hidrants des d\'OSM per a aquesta ADF');
+    } else {
+      allAdfs = db.select().from(adfs).all();
+      log.info({ adf_count: allAdfs.length }, '🚀 Iniciant importació d\'hidrants des d\'OSM');
     }
-    console.log(`🚀 Iniciant importació d'hidrants des d'OSM NOMÉS per a l'ADF ${allAdfs[0].nom}...`);
-  } else {
-    allAdfs = db.select().from(adfs).all();
-    console.log(`🚀 Iniciant importació d'hidrants des d'OSM per a ${allAdfs.length} ADFs...`);
-  }
 
-  for (const adf of allAdfs) {
-    try {
-      console.log(`\n🔍 Processant ADF ${adf.id} (${adf.nom})...`);
-      const count = await syncAdfFromOSM(adf.id);
-      console.log(`✅ Sincronitzats ${count} hidrants per a ${adf.nom}`);
-    } catch (error) {
-      console.error(`❌ Error sincronitzant ${adf.nom}:`, error instanceof Error ? error.message : error);
+    for (const adf of allAdfs) {
+      try {
+        log.info({ adf_id: adf.id, adf_nom: adf.nom }, '🔍 Processant ADF');
+        const count = await syncAdfFromOSM(adf.id);
+        log.info({ count, adf_nom: adf.nom }, '✅ Hidrants sincronitzats per a aquesta ADF');
+      } catch (error) {
+        log.error({ error: error instanceof Error ? error.message : error, adf_nom: adf.nom }, '❌ Error sincronitzant');
+      }
+      
+      // Esperem una mica entre ADFs per no saturar Overpass
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
-    
-    // Esperem una mica entre ADFs per no saturar Overpass
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  }
 
-  console.log('\n✨ Importació des d\'OSM finalitzada.');
+    log.info('\n✨ Importació des d\'OSM finalitzada.');
 }
 
 await run();

@@ -31,7 +31,7 @@ export default tseslint.config(
       curly: "error",
       "prefer-const": "error",
       "no-var": "error",
-      "no-console": "off",
+      "no-console": "error",
 
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-floating-promises": "error",

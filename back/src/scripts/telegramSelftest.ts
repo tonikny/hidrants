@@ -3,6 +3,9 @@
 import assert from "node:assert/strict";
 import { sha256hex } from "../services/telegramService.js";
 import { extractCode } from "../routes/telegramWebhook.js";
+import { logger } from '../utils/logger.js';
+
+const log = logger.child({ module: 'telegram', operation: 'selftest' });
 
 try {
   // sha256 estable i determinista
@@ -28,8 +31,8 @@ try {
   // extractCode: espais marginals
   assert.equal(extractCode("  codi  "), "codi");
 
-  console.log("✅ Self-test Telegram: totes les comprovacions passen.");
+  log.info("✅ Self-test Telegram: totes les comprovacions passen.");
 } catch (err) {
-  console.error("❌ Self-test Telegram falla:", err);
+  log.error({ err }, "❌ Self-test Telegram falla");
   process.exit(1);
 }

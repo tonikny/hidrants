@@ -3,40 +3,27 @@ import { getHydrantDisplayData, getHydrantImages } from "../../utils/osmConversi
 import { HydrantImages } from "./HydrantImages";
 import { QuickStatusButtons } from "./QuickStatusButtons";
 import { HydrantActions } from "./HydrantActions";
+import { HydrantSyncActions } from "./HydrantSyncActions";
 import { TelegramNotifyBox } from "./TelegramNotifyBox";
-import type { User } from "../../contexts/AuthContext";
-
-function formatSyncStatus(status: string) {
-  switch (status) {
-    case "SYNCED":
-      return "🟢 Sincronitzat";
-    case "PENDING_CREATE":
-      return "🟡 Pendent de crear (local)";
-    case "PENDING_UPDATE":
-      return "🔵 Pendent d'actualitzar";
-    case "PENDING_DELETE":
-      return "🔴 Pendent d'esborrar";
-    default:
-      return status;
-  }
-}
 
 export function HydrantInfoView({
   feature,
-  user,
   canEdit,
+  isAdmin,
   showRoute,
   setShowRoute,
   hasLocation,
   onQuickStatus,
+  refreshHidrants,
 }: {
   feature: HidrantFeature;
-  user: User | null;
   canEdit: boolean;
+  isAdmin: boolean;
   showRoute?: boolean;
   setShowRoute?: (v: boolean) => void;
   hasLocation?: boolean;
   onQuickStatus: (isOperative: boolean) => void;
+  refreshHidrants?: () => Promise<void>;
 }) {
   const props = feature.properties;
   const displayData = getHydrantDisplayData(props.ui_fields);
@@ -49,15 +36,11 @@ export function HydrantInfoView({
             {displayData.map(({ label }) => (
               <span key={label}>{label}</span>
             ))}
-            {(user?.permissions ?? []).includes("view_sync_status") && <span>Sync</span>}
           </div>
           <div className="flex flex-col items-start gap-y-1.5 text-ink">
             {displayData.map(({ label, value }) => (
               <span key={label}>{value}</span>
             ))}
-            {(user?.permissions ?? []).includes("view_sync_status") && (
-              <span>{formatSyncStatus(props.sync_status)}</span>
-            )}
           </div>
         </div>
         <HydrantImages images={getHydrantImages(props.osm_tags)} />
@@ -72,6 +55,8 @@ export function HydrantInfoView({
         </div>
       )}
 
+      {isAdmin && <HydrantSyncActions feature={feature} refreshHidrants={refreshHidrants} />}
+
       {canEdit && (
         <QuickStatusButtons
           onOperative={() => onQuickStatus(true)}
@@ -84,7 +69,6 @@ export function HydrantInfoView({
         showRoute={showRoute}
         setShowRoute={setShowRoute}
         hasLocation={hasLocation}
-        user={user}
       />
 
       <TelegramNotifyBox feature={feature} />

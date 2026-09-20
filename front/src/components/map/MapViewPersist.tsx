@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { useAdf } from '../../contexts/AdfContext';
+import { getQueryParam } from '../../utils/urlParams';
 
 const MAP_POS_KEY = 'hidrants_map_pos';
 
@@ -11,17 +12,17 @@ interface MapPos {
   zoom: number;
 }
 
-// Persistència de posició/zoom de l'ADF actual: clau única (no per ADF) que es
-// desa a cada moveend/zoomend d'usuari i només es restaura a la recàrrega si
-// l'ADF desada coincideix amb l'activa. Quan es canvia de vista d'ADF (elegir
-// àmbit territorial) s'esborra la pos desada i es torna a l'estat inicial
-// (fitBounds del bbox, o centre+zoom 14). ?node= a la URL té prioritat. Sense
-// animació per no xocar amb els markers del mapa en canviar d'ADF.
+/**
+ * Persisteix la posició i el zoom del mapa a localStorage quan l'usuari
+ * navega o fa zoom. En recarregar restaura la posició només si pertany
+ * a la mateixa ADF activa i NO s'ha passat ?node= a la URL.
+ * En canvi d'ADF o en obrir amb ?node=ID, no restaura (fa fitBounds o centra el node).
+ */
 export function MapViewPersist() {
   const map = useMap();
   const { activeAdf } = useAdf();
-  const handledAdfId = useRef<number | null>(null);
   const restoring = useRef(false);
+  const handledAdfId = useRef<number | null>(null);
 
   useEffect(() => {
     if (!map) {return;}
@@ -31,7 +32,7 @@ export function MapViewPersist() {
     if (handledAdfId.current === adfId) {return;}
     handledAdfId.current = adfId;
 
-    if (new URLSearchParams(window.location.search).has('node')) {return;}
+    if (getQueryParam('node')) {return;}
 
     // Al canviar d'ADF s'esborra la pos desada: la posició només pertany a
     // l'ADF que es veia en aquell moment.

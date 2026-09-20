@@ -3,6 +3,7 @@ import { stdin, stdout } from 'process';
 import fs from 'fs';
 import path from 'path';
 import sqlite, { db } from '../db/index.js';
+import { logger } from '../utils/logger.js';
 import {
   hidrants,
   users,
@@ -11,6 +12,8 @@ import {
   incidencies,
   incidencia_events,
 } from '../db/schema.js';
+
+const log = logger.child({ module: 'db', operation: 'reset' });
 
 async function makeBackup() {
   const backupsDir = path.resolve(import.meta.dirname, '../../data/backups');
@@ -22,7 +25,7 @@ async function makeBackup() {
 }
 
 async function run() {
-  console.log('🗑️ Buident la base de dades...');
+  log.info('🗑️ Buidant la base de dades...');
 
   const rl = createInterface({ input: stdin, output: stdout });
   const answer = await rl.question(
@@ -31,34 +34,34 @@ async function run() {
   rl.close();
 
   if (answer.trim() !== 'RESET') {
-    console.log('❌ Cancel·lat. Res no s\'ha modificat.');
+    log.warn('❌ Cancel·lat. Res no s\'ha modificat.');
     process.exit(1);
   }
 
   try {
     const backupPath = await makeBackup();
-    console.log(`💾 Còpia de seguretat creada a: ${backupPath}`);
+    log.info({ backupPath }, '💾 Còpia de seguretat creada');
     db.delete(incidencia_events).run();
-    console.log('✅ Taula "incidencia_events" buidada.');
+    log.info('✅ Taula "incidencia_events" buidada.');
 
     db.delete(mqttUsers).run();
-    console.log('✅ Taula "mqtt_users" buidada.');
+    log.info('✅ Taula "mqtt_users" buidada.');
 
     db.delete(incidencies).run();
-    console.log('✅ Taula "incidencies" buidada.');
+    log.info('✅ Taula "incidencies" buidada.');
 
     db.delete(hidrants).run();
-    console.log('✅ Taula "hidrants" buidada.');
+    log.info('✅ Taula "hidrants" buidada.');
 
     db.delete(users).run();
-    console.log('✅ Taula "users" buidada.');
+    log.info('✅ Taula "users" buidada.');
 
     db.delete(adfs).run();
-    console.log('✅ Taula "adfs" buidada.');
+    log.info('✅ Taula "adfs" buidada.');
 
-    console.log('✨ Base de dades buidada correctament.');
+    log.info('✨ Base de dades buidada correctament.');
   } catch (error) {
-    console.error('❌ Error buident la base de dades:', error);
+    log.error({ error }, '❌ Error buient la base de dades');
     process.exit(1);
   }
 }

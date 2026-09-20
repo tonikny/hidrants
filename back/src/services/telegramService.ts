@@ -4,6 +4,9 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { telegramBots } from "../db/schema.js";
 import { decrypt } from "../utils/crypto.js";
+import { logger } from "../utils/logger.js";
+
+const log = logger.child({ module: "telegram", operation: "service" });
 
 const API = "https://api.telegram.org";
 
@@ -99,12 +102,12 @@ export async function sendToAdf(adfId: number, text: string) {
   }
   const token = row.token_enc ? decrypt(row.token_enc) : null;
   if (!token) {
-    console.warn(`[TG] No es pot desxifrar el token del bot de l'ADF ${adfId}`);
+    log.warn({ adfId }, "No es pot desxifrar el token del bot de Telegram");
     return;
   }
   try {
     await sendMessage(token, row.chat_id, text);
   } catch (err) {
-    console.error(`[TG] Error enviant notificació a l'ADF ${adfId}:`, err);
+    log.error({ err, adfId }, "Error enviant notificació de Telegram a l'ADF");
   }
 }

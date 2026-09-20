@@ -1,13 +1,13 @@
-import { HidrantsService } from '../services/hidrantsService.js';
-import type { ApiHandler } from '../types.js';
-import { BadRequestError } from '../errors.js';
-import { z } from 'zod';
+import { HidrantsService } from "../services/hidrantsService.js";
+import type { ApiHandler } from "../types.js";
+import { BadRequestError } from "../errors.js";
+import { z } from "zod";
 
 const createSchema = z.object({
   lat: z.number(),
   lon: z.number(),
   ui_fields: z.any().optional(),
-  private_tags: z.any().optional()
+  private_tags: z.any().optional(),
 });
 
 const updateSchema = z.object({
@@ -15,7 +15,7 @@ const updateSchema = z.object({
   lat: z.number().optional(),
   lon: z.number().optional(),
   ui_fields: z.any().optional(),
-  private_tags: z.any().optional()
+  private_tags: z.any().optional(),
 });
 
 const handler: ApiHandler = async (req, res) => {
@@ -23,31 +23,38 @@ const handler: ApiHandler = async (req, res) => {
   const adf_id = Number(query?.adf || req.body?.adf_id);
 
   if (!adf_id) {
-    throw new BadRequestError('ADF ID not identified.');
+    throw new BadRequestError("ADF ID not identified.");
   }
 
   // --- POST /api/hidrants/sync: Forçar sincronització amb OSM ---
-  const isSyncPath = url?.split('?')[0].endsWith('/sync');
-  if (method === 'POST' && isSyncPath) {
-    const count = await HidrantsService.forceSync(adf_id);
-    return res.json({ success: true, message: `Sincronitzats ${count} hidrants d'OSM.` });
+  const isSyncPath = url?.split("?")[0].endsWith("/sync");
+  if (method === "POST" && isSyncPath) {
+    const force = req.body?.force === true;
+    const result = await HidrantsService.forceSync(adf_id, force);
+    const msg = force
+      ? `Forçat des d'OSM: ${result.total} hidrants.`
+      : `Sincronitzats ${result.total} hidrants d'OSM. ${result.skipped > 0 ? `${result.skipped} locals mantinguts.` : ""}${result.conflicts > 0 ? `${result.conflicts} conflictes nous.` : ""}`;
+    return res.json({ success: true, message: msg, ...result });
   }
 
   // --- GET /api/hidrants/stats: Obtenir estadístiques de sincronització ---
-  const isStatsPath = url?.split('?')[0].endsWith('/stats');
-  if (method === 'GET' && isStatsPath) {
+  const isStatsPath = url?.split("?")[0].endsWith("/stats");
+  if (method === "GET" && isStatsPath) {
     const stats = HidrantsService.getSyncStats(adf_id);
     return res.json(stats);
   }
 
   // --- GET: Llistar hidrants (GeoJSON) ---
-  if (method === 'GET') {
+  if (method === "GET") {
     const geoJson = await HidrantsService.getGeoJson(adf_id);
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     return res.json(geoJson);
   }
 
   // --- POST: Crear nou hidrant local ---
-  if (method === 'POST') {
+  if (method === "POST") {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.message);
@@ -58,13 +65,15 @@ const handler: ApiHandler = async (req, res) => {
   }
 
   // --- PUT: Actualitzar hidrant ---
-  if (method === 'PUT') {
+  if (method === "PUT") {
     const parsed = updateSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.message);
     }
     const id = req.params?.id || parsed.data.id;
-    if (!id) {throw new BadRequestError('Missing hydrant ID');}
+    if (!id) {
+      throw new BadRequestError("Missing hydrant ID");
+    }
 
     const { lat, lon, ui_fields, private_tags } = parsed.data;
     const result = HidrantsService.updateLocal(id, adf_id, lat, lon, ui_fields, private_tags);
@@ -72,13 +81,13 @@ const handler: ApiHandler = async (req, res) => {
   }
 
   // --- DELETE: Esborrar hidrant ---
-  if (method === 'DELETE') {
+  if (method === "DELETE") {
     const id = req.params?.id || req.query?.id;
     const result = HidrantsService.deleteLocal(id, adf_id);
     return res.json(result);
   }
 
-  res.status(405).json({ error: 'Method not allowed' });
+  res.status(405).json({ error: "Method not allowed" });
 };
 
 export default handler;

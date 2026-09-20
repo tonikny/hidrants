@@ -1,5 +1,5 @@
-import type { ApiHandler } from '../types.js';
-import { config } from '../config.js';
+import type { ApiHandler } from "../types.js";
+import { config } from "../utils/config.js";
 
 const handler: ApiHandler = async (req, res) => {
   try {
@@ -7,14 +7,14 @@ const handler: ApiHandler = async (req, res) => {
     const apiKey = config.GRAPHHOPPER_API_KEY;
 
     if (!from || !to) {
-      return res
-        .status(400)
-        .json({ error: "Missing 'from' or 'to' query params" });
+      return res.status(400).json({ error: "Missing 'from' or 'to' query params" });
     }
 
     const url = `https://graphhopper.com/api/1/route?point=${from}&point=${to}&vehicle=car&points_encoded=false&locale=en&key=${apiKey}`;
 
-    console.log('Requesting:', url);
+    req.log
+      .child({ module: "routing", operation: "graphHopper" })
+      .debug({ from, to }, "Requesting GraphHopper route");
 
     const r = await fetch(url);
     const text = await r.text(); // get text first
@@ -23,14 +23,14 @@ const handler: ApiHandler = async (req, res) => {
       const data = JSON.parse(text);
       return res.status(200).json(data);
     } catch {
-      console.error('GraphHopper response was not JSON:\n', text);
-      return res
-        .status(502)
-        .json({ error: 'Invalid response from GraphHopper', raw: text });
+      req.log
+        .child({ module: "routing", operation: "graphHopper" })
+        .error({ raw: text, status: r.status }, "GraphHopper response was not JSON");
+      return res.status(502).json({ error: "Invalid response from GraphHopper", raw: text });
     }
   } catch (err) {
-    console.error('Routing error:', err);
-    res.status(500).json({ error: 'Server error' });
+    req.log.child({ module: "routing", operation: "graphHopper" }).error({ err }, "Routing error");
+    res.status(500).json({ error: "Server error" });
   }
 };
 

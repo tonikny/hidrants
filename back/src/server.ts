@@ -18,16 +18,18 @@ import tracking from "./routes/tracking.js";
 import trackingSharing from "./routes/trackingSharing.js";
 import telegram from "./routes/telegram.js";
 import telegramWebhook from "./routes/telegramWebhook.js";
+import osm from "./routes/osm.js";
 import { startMqttService, stopMqttService } from "./services/mqtt.js";
 import sqlite from "./db/index.js";
 
 import type { ApiHandler, ApiRequest } from "./types.js";
-import { config } from "./config.js";
+import { config } from "./utils/config.js";
 import { AppError } from "./errors.js";
 import { permissionsFor, type Permission } from "./permissions.js";
+import { logger } from "./utils/logger.js";
 
 const app = Fastify({
-  logger: { level: config.FASTIFY_LOGLEVEL },
+  loggerInstance: logger.child({ module: "server", operation: "api" }),
 });
 
 app.register(fastifyCookie);
@@ -38,6 +40,11 @@ app.register(fastifyJwt, {
     cookieName: "auth_token",
     signed: false,
   },
+});
+
+app.addHook("onRequest", (request, _reply, done) => {
+  request.log = request.log.child({ module: "http", operation: request.url.split("?")[0] });
+  done();
 });
 
 app.setErrorHandler((error: any, request, reply) => {
@@ -132,12 +139,8 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
     let user: any = undefined;
 
     try {
-      // DEBUG: Log cookies
-      // console.log('Cookies:', request.cookies);
-
       await request.jwtVerify();
       user = (request as any).user;
-      // console.log('User verified:', user.username);
     } catch {
       if (options.protected) {
         return reply.status(401).send({ error: "Sessió caducada o no vàlida" });
@@ -152,21 +155,22 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
       const url = request.url.split("?")[0];
 
       // Permís requerit per operació (GET sense mutació no requereix cap)
-      const required: Permission | null = url.endsWith("/sync")
-        ? "sync_osm"
-        : url.includes("/incidencies")
-          ? isMutation
-            ? "create_incidencia"
-            : null
-          : url.includes("/hidrants")
-            ? request.method === "DELETE"
-              ? "delete_hydrant"
-              : request.method === "POST"
-                ? "create_hydrant"
-                : request.method === "PUT"
-                  ? "edit_hydrant"
-                  : null
-            : null;
+      const required: Permission | null =
+        url.endsWith("/sync") || url.includes("/api/osm")
+          ? "sync_osm"
+          : url.includes("/incidencies")
+            ? isMutation
+              ? "create_incidencia"
+              : null
+            : url.includes("/hidrants")
+              ? request.method === "DELETE"
+                ? "delete_hydrant"
+                : request.method === "POST"
+                  ? "create_hydrant"
+                  : request.method === "PUT"
+                    ? "edit_hydrant"
+                    : null
+              : null;
 
       if (required && !perms.has(required)) {
         return reply.status(403).send({ error: "No tens permisos per realitzar aquesta acció" });
@@ -190,6 +194,7 @@ function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
       headers: request.headers,
       params: request.params,
       url: request.url,
+      log: request.log,
       user,
     };
 
@@ -230,6 +235,17 @@ const routes = [
   { path: "/api/telegram/webhook/:secret", handler: telegramWebhook },
   { path: "/api/users", handler: users, protected: true },
   { path: "/api/users/:id", handler: users, protected: true },
+  { path: "/api/osm/status", handler: osm, protected: true },
+  { path: "/api/osm/pending", handler: osm, protected: true },
+  { path: "/api/osm/push-sync", handler: osm, protected: true },
+  { path: "/api/osm/push-selected", handler: osm, protected: true },
+  { path: "/api/osm/discard-selected", handler: osm, protected: true },
+  { path: "/api/osm/conflicts", handler: osm, protected: true },
+  { path: "/api/osm/conflicts/osc", handler: osm, protected: true },
+  { path: "/api/osm/conflicts/resolve", handler: osm, protected: true },
+  { path: "/api/osm/pull-hydrant", handler: osm, protected: true },
+  { path: "/api/osm/diff/:id", handler: osm, protected: true },
+  { path: "/api/osm/reviews", handler: osm, protected: true },
 ];
 
 routes.forEach((r) => {
@@ -253,13 +269,15 @@ const start = async () => {
       host: "0.0.0.0",
       port: config.PORT,
     });
-    console.log("🚀 API running on port", config.PORT);
+    app.log.child({ operation: "startup" }).info({ port: config.PORT }, "API running");
 
     startMqttService().catch((err: Error) => {
-      console.log(`[MQTT] ⚠️ Servei no disponible: ${err.message}`);
+      app.log
+        .child({ operation: "startup" })
+        .warn({ err: err.message }, "Servei MQTT no disponible");
     });
   } catch (err) {
-    app.log.error(err);
+    app.log.child({ operation: "startup" }).fatal({ err }, "Error arrencant servidor");
     process.exit(1);
   }
 };
@@ -273,7 +291,7 @@ const shutdown = () => {
     return;
   }
   shuttingDown = true;
-  console.log("🛑 Aturant servei...");
+  app.log.child({ operation: "shutdown" }).info("Aturant servei...");
   try {
     void app.close();
   } catch {

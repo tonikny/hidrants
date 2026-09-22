@@ -1,3 +1,55 @@
+// Distancia màxima que es pot arrossegar un hidrant respecte a la seva posició actual.
+// Única font de veritat: el frontend la consulta a GET /api/config (routes/appConfig.ts).
+export const MAX_HYDRANT_MOVE_METERS = 50;
+
+// Tolerància (en graus) per considerar dues coordenades iguals: ~11 cm de latitud. Mateix criteri que
+// osmConflictResolver; OSM només desa 7 decimals, així que diferències menors no són canvis reals.
+export const COORD_TOLERANCE_DEG = 0.000001;
+
+/**
+ * Indica si la posició sol·licitada difereix de l'actual més enllà de COORD_TOLERANCE_DEG.
+ * Evita comparar amb `!==` nombres de coma flotant (arrodoniments del client, soroll numèric,
+ * arrossegar i tornar a l'origen), que generarien un PENDING_UPDATE i un push a OSM sense canvi real.
+ */
+export function hasPositionChanged(
+  currentLat: number,
+  currentLon: number,
+  lat?: number,
+  lon?: number,
+): boolean {
+  return (
+    (lat !== undefined && Math.abs(lat - currentLat) > COORD_TOLERANCE_DEG) ||
+    (lon !== undefined && Math.abs(lon - currentLon) > COORD_TOLERANCE_DEG)
+  );
+}
+
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+export function clampToMaxDistance(
+  origLat: number,
+  origLon: number,
+  targetLat: number,
+  targetLon: number,
+  maxMeters: number,
+): { lat: number; lon: number } {
+  const dist = haversineMeters(origLat, origLon, targetLat, targetLon);
+  if (dist <= maxMeters) {return { lat: targetLat, lon: targetLon };}
+  const ratio = maxMeters / dist;
+  return {
+    lat: origLat + (targetLat - origLat) * ratio,
+    lon: origLon + (targetLon - origLon) * ratio,
+  };
+}
+
 function pointInRing(lat: number, lon: number, ring: number[][]): boolean {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {

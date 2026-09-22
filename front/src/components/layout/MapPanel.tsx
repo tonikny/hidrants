@@ -9,6 +9,7 @@ import { buildTabs } from "../panel/PanelTabs";
 import { useHydrantData } from "../../hooks/useHidrantData";
 import type { HidrantFeature } from "../../hooks/useHidrantData";
 import { useIncidencies } from "../../hooks/useIncidencies";
+import { useAppConfig } from "../../hooks/useAppConfig";
 import {
   POSITIONS_POLL_ACTIVE_MS,
   POSITIONS_POLL_IDLE_MS,
@@ -31,6 +32,7 @@ export function MapPanel() {
   const [selectedNode, setSelectedNode] = useState<HidrantFeature | null>(null);
   const [selectedIncidencia, setSelectedIncidencia] = useState<IncidenciaFeature | null>(null);
   const [editing, setEditing] = useState(false);
+  const [draftPosition, setDraftPosition] = useState<L.LatLng | null>(null);
   const [createPos, setCreatePos] = useState<L.LatLng | null>(null);
   const [createForm, setCreateForm] = useState<CreateType>(null);
   const [position, setPosition] = useState<L.LatLng | null>(null);
@@ -50,6 +52,8 @@ export function MapPanel() {
     loading: loadingIncidencies,
     refresh: refreshIncidencies,
   } = useIncidencies();
+
+  const { maxHydrantMoveMeters } = useAppConfig();
 
   const [trackingChecked, setTrackingChecked] = useLocalStorage<boolean>(
     TRACKING_STORAGE_KEY,
@@ -111,6 +115,7 @@ export function MapPanel() {
     setSelectedNode(feature);
     setSelectedIncidencia(null);
     setEditing(false);
+    setDraftPosition(null);
     setCreatePos(null);
     setCreateForm(null);
     setTimeout(() => {
@@ -122,6 +127,7 @@ export function MapPanel() {
     setNodeUrlParam(null);
     setSelectedNode(null);
     setEditing(false);
+    setDraftPosition(null);
   };
 
   const handleSelectIncidencia = (feature: IncidenciaFeature) => {
@@ -129,6 +135,7 @@ export function MapPanel() {
     setSelectedIncidencia(feature);
     setSelectedNode(null);
     setEditing(false);
+    setDraftPosition(null);
     setCreatePos(null);
     setCreateForm(null);
     setTimeout(() => {
@@ -140,6 +147,15 @@ export function MapPanel() {
     setNodeUrlParam(null);
     setSelectedIncidencia(null);
     setEditing(false);
+    setDraftPosition(null);
+  };
+
+  // En sortir del mode edició es descarta la posició arrossegada però no desada.
+  const toggleEditing = () => {
+    if (editing) {
+      setDraftPosition(null);
+    }
+    setEditing(!editing);
   };
 
   const closeCreate = () => {
@@ -189,6 +205,10 @@ export function MapPanel() {
           onSelectIncidencia={handleSelectIncidencia}
           trackingChecked={trackingChecked}
           setTrackingChecked={setTrackingChecked}
+          editingNodeId={editing ? selectedNode?.id : null}
+          draftPosition={draftPosition}
+          onNodeDrag={setDraftPosition}
+          maxMoveMeters={maxHydrantMoveMeters}
         />
       }
       tabs={buildTabs({
@@ -214,6 +234,8 @@ export function MapPanel() {
                   canEdit={canEdit}
                   editing={editing}
                   setEditing={setEditing}
+                  draftPosition={draftPosition}
+                  setDraftPosition={setDraftPosition}
                   refreshHidrants={() => refreshHidrants()}
                   showRoute={showRoute}
                   setShowRoute={setShowRoute}
@@ -221,7 +243,7 @@ export function MapPanel() {
                 />
               ),
               onClose: handleDeselectNode,
-              onEdit: canEdit ? () => setEditing((prev) => !prev) : undefined,
+              onEdit: canEdit ? toggleEditing : undefined,
               editing,
             }
           : selectedIncidencia

@@ -6,13 +6,15 @@ import type { AdfData } from "../../contexts/AdfContext";
 import { sendToTelegram } from "../../utils/sendToTelegram";
 import { logError } from "../../utils/log";
 
-type FieldPatch = Partial<HydrantUiFields & { observacions: string }>;
+type FieldPatch = Partial<HydrantUiFields & { observacions: string; coordinates: string }>;
 
 function calculateChanges(
   original: HydrantUiFields,
   modified: HydrantUiFields,
   originalObservacions: string,
   modifiedObservacions: string,
+  originalCoords?: { lat: number; lon: number },
+  newCoords?: { lat: number; lon: number },
 ) {
   const changes: FieldPatch = {};
   const originalValues: FieldPatch = {};
@@ -31,6 +33,15 @@ function calculateChanges(
   } else {
     // Netejar observacions si no ha canviat (per netejar el valor buit)
     delete changes.observacions;
+  }
+
+  if (
+    newCoords &&
+    originalCoords &&
+    (newCoords.lat !== originalCoords.lat || newCoords.lon !== originalCoords.lon)
+  ) {
+    changes.coordinates = `${newCoords.lat.toFixed(6)}, ${newCoords.lon.toFixed(6)}`;
+    originalValues.coordinates = `${originalCoords.lat.toFixed(6)}, ${originalCoords.lon.toFixed(6)}`;
   }
 
   return { changes, originalValues };
@@ -58,6 +69,8 @@ export function useHydrantActions(
     observacions: string;
     originalUiFields: HydrantUiFields;
     originalObservacions: string;
+    newLat?: number;
+    newLon?: number;
   }): Promise<boolean> => {
     if (!adf) {
       return false;
@@ -68,11 +81,16 @@ export function useHydrantActions(
         ...feature.properties.private_tags,
         observacions: opts.observacions.trim() || undefined,
       };
+      const hasNewPosition = opts.newLat !== undefined && opts.newLon !== undefined;
+      const finalLat = opts.newLat ?? poi.lat;
+      const finalLon = opts.newLon ?? poi.lng;
       const { changes, originalValues } = calculateChanges(
         opts.originalUiFields,
         opts.uiFields,
         opts.originalObservacions,
         opts.observacions.trim(),
+        { lat: poi.lat, lon: poi.lng },
+        hasNewPosition ? { lat: finalLat, lon: finalLon } : undefined,
       );
       const response = await fetch(`/api/hidrants/${feature.id}?adf=${adf.id}`, {
         method: "PUT",
@@ -80,6 +98,7 @@ export function useHydrantActions(
         body: JSON.stringify({
           ui_fields: opts.uiFields,
           private_tags: privateTags,
+          ...(hasNewPosition ? { lat: opts.newLat, lon: opts.newLon } : {}),
         }),
       });
       if (!response.ok) {
@@ -87,8 +106,8 @@ export function useHydrantActions(
       }
 
       await sendToTelegram({
-        lat: poi.lat,
-        lon: poi.lng,
+        lat: finalLat,
+        lon: finalLon,
         tags: { ...feature.properties, ui_fields: opts.uiFields, private_tags: privateTags },
         originalData: originalValues,
         changes,

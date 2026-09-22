@@ -6,7 +6,12 @@ import { osm2Ui, ui2Osm, type HydrantUiFields } from "../utils/osmConversion.js"
 import { db } from "../db/index.js";
 import { adfs } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { isPointInBoundary } from "../utils/geo.js";
+import {
+  isPointInBoundary,
+  clampToMaxDistance,
+  hasPositionChanged,
+  MAX_HYDRANT_MOVE_METERS,
+} from "../utils/geo.js";
 import { logger } from "../utils/logger.js";
 
 const log = logger.child({ module: "hidrants", operation: "service" });
@@ -118,18 +123,34 @@ export const HidrantsService = {
       throw new NotFoundError("Hydrant not found");
     }
 
+    // Limitem el desplaçament respecte a la posició actual (defensa en profunditat,
+    // el frontend ja fa el mateix clamp visualment durant el drag).
+    if (lat !== undefined || lon !== undefined) {
+      const clamped = clampToMaxDistance(
+        current.lat,
+        current.lon,
+        lat ?? current.lat,
+        lon ?? current.lon,
+        MAX_HYDRANT_MOVE_METERS,
+      );
+      lat = clamped.lat;
+      lon = clamped.lon;
+    }
+
     // Determinem si hi ha canvis que afecten OSM (lat, lon, osm_tags)
     let hasOsmChanges = false;
 
-    // Comprovar canvis de posició
-    if (lat !== undefined && lat !== current.lat) {
+    // Comprovar canvis de posició (amb tolerància: no es comparen floats amb `!==`)
+    const positionChanged = hasPositionChanged(current.lat, current.lon, lat, lon);
+    if (positionChanged) {
       hasOsmChanges = true;
-    }
-    if (lon !== undefined && lon !== current.lon) {
-      hasOsmChanges = true;
+    } else {
+      // Sense canvi real: no desem el soroll numèric, la posició guardada es manté intacta.
+      lat = undefined;
+      lon = undefined;
     }
 
-    if (hasOsmChanges && (lat !== undefined || lon !== undefined)) {
+    if (positionChanged) {
       const finalLat = lat ?? current.lat;
       const finalLon = lon ?? current.lon;
       const adf = db

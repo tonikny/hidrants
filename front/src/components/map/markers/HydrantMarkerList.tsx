@@ -1,6 +1,6 @@
-import type { LatLng } from 'leaflet';
-import { HydrantMarker } from './HydrantMarker';
-import type { HidrantFeature } from '../../../hooks/useHidrantData';
+import type { LatLng } from "leaflet";
+import { HydrantMarker } from "./HydrantMarker";
+import type { HidrantFeature } from "../../../hooks/useHidrantData";
 
 interface HydrantMarkerListProps {
   features: HidrantFeature[];
@@ -11,6 +11,10 @@ interface HydrantMarkerListProps {
   hasLocation?: boolean;
   onSelectNode?: (feature: HidrantFeature) => void;
   selectedNodeId?: string | null;
+  editingNodeId?: string | null;
+  draftPosition?: LatLng | null;
+  onNodeDrag?: (latlng: LatLng) => void;
+  maxMoveMeters?: number | null;
 }
 
 export function HydrantMarkerList({
@@ -22,23 +26,34 @@ export function HydrantMarkerList({
   hasLocation,
   onSelectNode,
   selectedNodeId,
+  editingNodeId,
+  draftPosition,
+  onNodeDrag,
+  maxMoveMeters,
 }: HydrantMarkerListProps) {
   return (
     <>
-      {features.map((feature) => (
-        /* Renderitza cada marcador d'hidrant de forma independent */
-        <HydrantMarker
-          key={feature.id}
-          feature={feature}
-          setPoi={setPoi}
-          showRoute={showRoute}
-          setShowRoute={setShowRoute}
-          refreshHidrants={refreshHidrants}
-          hasLocation={hasLocation}
-          onSelectNode={onSelectNode}
-          selected={selectedNodeId === feature.id}
-        />
-      ))}
+      {features.map((feature) => {
+        const isEditingThisNode = !!editingNodeId && feature.id === editingNodeId;
+        return (
+          /* Renderitza cada marcador d'hidrant de forma independent */
+          <HydrantMarker
+            key={feature.id}
+            feature={feature}
+            setPoi={setPoi}
+            showRoute={showRoute}
+            setShowRoute={setShowRoute}
+            refreshHidrants={refreshHidrants}
+            hasLocation={hasLocation}
+            onSelectNode={onSelectNode}
+            selected={selectedNodeId === feature.id}
+            draggable={isEditingThisNode}
+            overridePosition={isEditingThisNode ? draftPosition : null}
+            onDragEnd={isEditingThisNode ? onNodeDrag : undefined}
+            maxMoveMeters={maxMoveMeters}
+          />
+        );
+      })}
     </>
   );
 }

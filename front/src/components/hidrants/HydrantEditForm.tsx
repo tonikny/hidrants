@@ -28,6 +28,9 @@ export function HydrantEditForm({
 }) {
   return (
     <div className="flex flex-col gap-3">
+      <div className="text-[0.8rem] italic flex flex-col gap-1 rounded-md text-center text-yellow-300 bg-gray-400">
+        Pots arrossegar el node per corregir la posició del hidrant
+      </div>
       <HydrantFormFields data={data} onChange={setData} showSurveyDateAndStatus={true} />
 
       <label className="text-[0.8rem] italic flex flex-col gap-1">

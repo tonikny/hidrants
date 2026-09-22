@@ -1,6 +1,6 @@
-import type { LatLng } from 'leaflet';
-import { HydrantMarker } from './HydrantMarker';
-import type { HidrantFeature } from '../../../hooks/useHidrantData';
+import type { LatLng } from "leaflet";
+import { HydrantMarker } from "./HydrantMarker";
+import type { HidrantFeature } from "../../../hooks/useHidrantData";
 
 interface HydrantMarkerListProps {
   features: HidrantFeature[];

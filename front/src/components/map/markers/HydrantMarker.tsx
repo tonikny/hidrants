@@ -1,11 +1,11 @@
-import { Marker, Circle } from 'react-leaflet';
-import L, { latLng } from 'leaflet';
-import getHydrantIcon from '../../../utils/icons';
-import type { HidrantFeature } from '../../../hooks/useHidrantData';
-import { clampToMaxDistance } from '../../../utils/geo';
+import { Marker, Circle } from "react-leaflet";
+import L, { latLng } from "leaflet";
+import getHydrantIcon from "../../../utils/icons";
+import type { HidrantFeature } from "../../../hooks/useHidrantData";
+import { clampToMaxDistance } from "../../../utils/geo";
 
 const ringIcon = L.divIcon({
-  className: '',
+  className: "",
   html: '<div class="hydrant-ring"></div>',
   iconSize: [44, 44],
   iconAnchor: [22, 22],
@@ -54,7 +54,7 @@ export function HydrantMarker({
         <Circle
           center={originalLatLng}
           radius={maxMeters}
-          pathOptions={{ color: '#3388ff', weight: 1, fillOpacity: 0.08 }}
+          pathOptions={{ color: "yellow", weight: 1, fillOpacity: 0.08 }}
           interactive={false}
         />
       )}
@@ -68,16 +68,24 @@ export function HydrantMarker({
             // Així no es pot reseleccionar (sortint de l'edició i perdent la posició arrossegada)
             // ni pel 'click' fantasma que Leaflet dispara just després del 'dragend', ni per un
             // clic simple accidental.
-            if (draggable) {return;}
+            if (draggable) {
+              return;
+            }
             setPoi(markerPosition);
-            if (onSelectNode) {onSelectNode(feature);}
+            if (onSelectNode) {
+              onSelectNode(feature);
+            }
           },
           dragend: (e) => {
-            if (maxMeters === null) {return;}
+            if (maxMeters === null) {
+              return;
+            }
             const marker = e.target as L.Marker;
             const clamped = clampToMaxDistance(originalLatLng, marker.getLatLng(), maxMeters);
             marker.setLatLng(clamped);
-            if (onDragEnd) {onDragEnd(clamped);}
+            if (onDragEnd) {
+              onDragEnd(clamped);
+            }
           },
         }}
       />

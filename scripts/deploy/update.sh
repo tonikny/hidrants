@@ -69,7 +69,7 @@ die() {
 on_error() {
   local line="$1"
   log_error "Actualització aturada a la línia $line. Els contenidors en marxa NO s'han tocat si encara érem a la fase de build."
-  log_error "Per revertir: git reset --hard $PREV_COMMIT && npm ci && docker compose up -d --build"
+  log_error "Per revertir: git reset --hard $PREV_COMMIT && docker compose up -d --build"
 }
 trap 'on_error $LINENO' ERR
 
@@ -116,6 +116,7 @@ check_prerequisites() {
   [[ -f package-lock.json ]] || die "Falta package-lock.json a l'arrel."
   [[ -f back/.env ]] || die "Falta back/.env (necessari per als contenidors)."
   command -v docker >/dev/null || die "Docker no està instal·lat."
+  command -v npm >/dev/null || die "npm no és al PATH (amb fnm: eval \"\$(fnm env)\")."
   docker compose version >/dev/null 2>&1 || die "docker compose no està disponible."
   docker info >/dev/null 2>&1 || die "No es pot connectar amb el dimoni de Docker."
   git rev-parse --git-dir >/dev/null 2>&1 || die "Aquest directori no és un repositori git."
@@ -409,7 +410,7 @@ main() {
   log_info "=========================================="
   log_info "Si cal revertir:"
   log_info "  git reset --hard ${PREV_COMMIT:0:12}"
-  log_info "  npm ci && docker compose up -d --build"
+  log_info "  docker compose up -d --build"
   log_info "  # Si les migracions ja s'han aplicat, restaura també la BD:"
   log_info "  ./scripts/backup/restore.sh daily   (o el fitxer de backups/pre-deploy/)"
 }

@@ -124,6 +124,8 @@ Per actualitzar a l'última versió de Git i reconstruir els contenidors:
 npm run docker:deploy
 ```
 
+Cal que `node` i `npm` siguin al `PATH` (amb fnm: `eval "$(fnm env)"`, que el hook de shell fa sol en entrar al directori).
+
 L'script (`scripts/deploy/update.sh`) fa, en aquest ordre i aturant-se al primer error:
 
 1. Comprovacions prèvies: `back/.env` present, Docker i `docker compose` operatius, branca amb upstream, i avís si `back/.env` no té alguna clau de `back/.env.example`.
@@ -153,7 +155,7 @@ npm run docker:deploy -- --no-boundaries  # omet update:boundaries
 
 ```bash
 git reset --hard <commit-anterior>
-npm ci && docker compose up -d --build
+docker compose up -d --build
 # Si les migracions ja s'havien aplicat, restaura també la BD:
 ./scripts/backup/restore.sh daily   # o el fitxer de backups/pre-deploy/
 ```

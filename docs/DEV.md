@@ -1,72 +1,175 @@
 # Guia de Desenvolupament Local
 
-## Instal·lació
+Aquesta guia cobreix **desenvolupament local**. Per a altres entorns i temes específics, consulta el mapa de documentació.
+
+## Mapa de documentació
+
+| Document              | Contingut                                                                                                        | Quan usar-lo                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `README.md`           | Visió general, característiques, stack i resum OSM                                                               | Presentació ràpida del projecte       |
+| `docs/DEV.md`         | **Aquest fitxer**: setup local, execució, variables, MQTT dev, Telegram dev, OSM quickref, API i troubleshooting | Desenvolupar en local                 |
+| `docs/DEPLOY.md`      | Deploy producció amb Docker, backups, Telegram prod i MQTT prod resum                                            | Pujar a servidor                      |
+| `docs/OSM_SYNC.md`    | Sincronització bidireccional OSM completa (fluxos, UI, conflictes, validació, API)                               | Treballar amb OSM a fons              |
+| `docs/MQTT_DEPLOY.md` | MQTT producció: TLS, certs, Dynamic Security, `init-dynsec.py`, permisos `mosquitto/data`                        | Configurar Mosquitto en prod          |
+| `AGENTS.md`           | Arquitectura, model ADF-centric, rols/permisos i convencions per agents                                          | Context ràpid per a IA/col·laboradors |
+| `back/.env.example`   | Referència canònica de totes les variables d'entorn del backend                                                  | Consultar valors per defecte          |
+
+---
+
+## 1. Requisits
+
+- **Node.js >=24** i **npm** (vegeu `package.json:60`, `.nvmrc`)
+- **Docker** i **Docker Compose** (per `mqtt:up` i `docker:up`)
+- **Python 3** (per `scripts/init-dynsec.py` → `mqtt:sync-dynsec` / `mqtt:regen-dynsec`)
+- **Git**
+
+---
+
+## 2. Instal·lació ràpida
 
 ```bash
 cp back/.env.example back/.env
 cp mosquitto/config/mosquitto.dev.conf.example mosquitto/config/mosquitto.conf
-npm run install
-npm run db:setup
+npm ci                 # instal·la els workspaces front + back des del lock de l'arrel
+npm run db:setup       # db:reset + db:seed + db:import-osm + update:boundaries
 npm run mqtt:sync-dynsec
 ```
 
-**Nota:** `mqtt:sync-dynsec` genera `mosquitto/data/dynamic-security.json` llegint les contrasenyes MQTT de `back/.env` (`MQTT_ADMIN_PASSWORD`, `MQTT_BACKEND_PASSWORD`). Cal executar-ho abans de `npm run mqtt:up`.
+**Nota `mqtt:sync-dynsec`:** genera `mosquitto/data/dynamic-security.json` llegint les contrasenyes MQTT de `back/.env` (`MQTT_ADMIN_PASSWORD`, `MQTT_BACKEND_PASSWORD` i opcionals `MQTT_ADMIN_USERNAME`/`MQTT_BACKEND_USERNAME`, per defecte `admin`/`backend`). Cal executar-ho **abans** de `npm run mqtt:up`. El plugin Dynamic Security llegeix aquest JSON en arrencar; sense ell Mosquitto no autoritza `backend`. Detall producció i format exacte del JSON: `docs/MQTT_DEPLOY.md#4`.
 
-Per backend local fora de Docker:
+---
 
-```env
-MQTT_BROKER_URL=mqtt://localhost:1883
-MQTT_TOPIC_PREFIX=owntracks/hidrants
-OTRC_PORT=51823
-```
+## 3. Variables d'entorn
 
-Per backend dins Docker:
+Tant `front/` com `back/` requereixen `.env`. La referència canònica és `back/.env.example` (79 línies).
 
-```env
-MQTT_BROKER_URL=mqtt://mosquitto:1883
-```
+### 3.1 Backend (`back/.env`)
 
-## Execució
+| Variable                | Obligatòria      | Per defecte                                                      | Descripció                                                                                                                                          |
+| ----------------------- | ---------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JWT_SECRET`            | sí               | —                                                                | Clau per signar JWT (`auth_token` httpOnly). Genera amb `openssl rand -base64 64`                                                                   |
+| `ENCRYPTION_SECRET`     | sí               | —                                                                | Clau per xifrar `mqtt_users.mqtt_password_enc` i `telegramBots.token_enc`                                                                           |
+| `PORT`                  | no               | `3033`                                                           | Port del backend Fastify                                                                                                                            |
+| `MQTT_BROKER_URL`       | no               | `mqtt://localhost:1883` (dev) / `mqtt://mosquitto:1883` (Docker) | URL broker. **Dev fora Docker:** `mqtt://localhost:1883`. **Dins Docker:** `mqtt://mosquitto:1883`                                                  |
+| `MQTT_ADMIN_PASSWORD`   | dev/prod         | —                                                                | Password admin Dynamic Security                                                                                                                     |
+| `MQTT_BACKEND_PASSWORD` | dev/prod         | —                                                                | Password client `backend` Dynamic Security                                                                                                          |
+| `MQTT_ADMIN_USERNAME`   | no               | `admin`                                                          | Username admin DynSec                                                                                                                               |
+| `MQTT_BACKEND_USERNAME` | no               | `backend`                                                        | Username backend DynSec                                                                                                                             |
+| `MQTT_TOPIC_PREFIX`     | no               | `owntracks/hidrants`                                             | Prefix OwnTracks; backend escolta `${MQTT_TOPIC_PREFIX}/#`                                                                                          |
+| `OTRC_HOST`             | no               | —                                                                | Host públic al `.otrc` OwnTracks (domini prod o IP LAN dev)                                                                                         |
+| `OTRC_PORT`             | no               | `51823`                                                          | Port públic MQTT                                                                                                                                    |
+| `OTRC_TLS`              | no               | `true` (prod)                                                    | `true` amb TLS (prod) / `false` pla (dev)                                                                                                           |
+| `WEBHOOK_PUBLIC_URL`    | dev sí / prod no | —                                                                | URL https pública on Telegram arriba a `/api/telegram/webhook/:secret`. En dev cal túnel (vegeu §8). En prod es deriva del `Host` si no es defineix |
+| `OVERPASS_URL`          | no               | `https://overpass-api.de/api/interpreter`                        | Overpass per pull sync                                                                                                                              |
+| `OSM_ACCESS_TOKEN`      | només push       | —                                                                | Token OAuth 2.0 OSM `write_api` (registrar a https://www.openstreetmap.org/oauth2/applications, no expira)                                          |
+| `OSM_API_URL`           | no               | `https://api.openstreetmap.org/api/0.6`                          | API OSM per push                                                                                                                                    |
+| `TELEGRAM_BOT_TOKEN`    | no               | —                                                                | Bot global admin (backups/notificacions sistema)                                                                                                    |
+| `TELEGRAM_CHAT_ID`      | no               | —                                                                | Chat global admin                                                                                                                                   |
+| `GRAPHHOPPER_API_KEY`   | no               | —                                                                | Per `/api/route`                                                                                                                                    |
+| `FASTIFY_LOGLEVEL`      | no               | `info`                                                           | `fatal`/`error`/`warn`/`info`/`debug`/`trace`                                                                                                       |
 
-Frontend + backend local:
+### 3.2 Frontend (`front/.env`)
+
+| Variable       | Descripció                                           |
+| -------------- | ---------------------------------------------------- |
+| `VITE_API_URL` | URL base API, per defecte `/api` (proxiat per Nginx) |
+
+---
+
+## 4. Execució
+
+### 4.1 Frontend + backend local (Vite + tsx)
 
 ```bash
-npm run mqtt:up
-npm run dev
+npm run mqtt:up   # docker compose up -d mosquitto (només broker)
+npm run dev       # concurrently: back (tsx watch) + front (Vite)
 ```
 
-Tot amb Docker:
+### 4.2 Tot amb Docker
 
 ```bash
-npm run docker:up
-npm run docker:logs
+npm run docker:up    # docker compose up -d (backend + frontend + mosquitto)
+npm run docker:logs  # docker compose logs -f
+npm run docker:down  # atura contenidors
 ```
 
-URLs:
+### 4.3 URLs
 
-- Frontend local: `http://localhost:3003`
-- Backend local: `http://localhost:3033`
-- Frontend Docker: `http://localhost:8080`
-- Backend Docker: `http://localhost:3034`
-- Mosquitto intern/dev: `mqtt://localhost:1883`
+| Servei                     | URL                                                             |
+| -------------------------- | --------------------------------------------------------------- |
+| Frontend local (Vite)      | `http://localhost:3003`                                         |
+| Backend local              | `http://localhost:3033`                                         |
+| Frontend Docker (Nginx)    | `http://localhost:8080`                                         |
+| Backend Docker             | `http://localhost:3034` (mapejat a 3033 intern)                 |
+| Mosquitto intern/dev       | `mqtt://localhost:1883`                                         |
+| Mosquitto OwnTracks públic | `mqtt://<OTRC_HOST>:51823` (`OTRC_TLS=true` prod / `false` dev) |
 
-## Scripts
+---
 
-- `npm run mqtt:up`: aixeca només Mosquitto.
-- `npm run mqtt:cleanup`: alinea `mqtt_users.mqtt_username` amb el nom d'usuari actual i esborra clients DynSec orfes. Dry-run per defecte; aplica els canvis amb `npm run mqtt:cleanup -- --apply` (`back/src/scripts/cleanupMqtt.ts`).
-- `npm run docker:up`: aixeca tots els contenidors.
-- `npm run docker:down`: atura contenidors.
-- `npm run docker:deploy`: deploy complet (pull `--ff-only --autostash` + rebuild).
-- `npm run db:setup`: reset + seed + import OSM + boundaries.
-- `npm run update:boundaries`: actualitza límits ADF.
+## 5. Scripts (npm)
 
-## MQTT / OwnTracks
+Font canònica: `package.json:5` i `back/package.json`. Agrupats per tema.
 
-El backend escolta `${MQTT_TOPIC_PREFIX}/#`. Per defecte: `owntracks/hidrants/#`.
+| Script                            | Descripció                                                                                                                                                                                                                                           |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                     | Frontend + backend simultanis (Vite + tsx)                                                                                                                                                                                                           |
+| `npm run build`                   | Build front + back                                                                                                                                                                                                                                   |
+| `npm run start`                   | Arrenca backend compilat (`back/dist`)                                                                                                                                                                                                               |
+| `npm run lint` / `lint:fix`       | ESLint a `front` + `back` (vegeu §11)                                                                                                                                                                                                                |
+| `npm run typecheck`               | `tsc --noEmit` a `front` + `back`                                                                                                                                                                                                                    |
+| `npm run format` / `format:check` | Prettier                                                                                                                                                                                                                                             |
+| `npm run mqtt:up`                 | `docker compose up -d mosquitto`                                                                                                                                                                                                                     |
+| `npm run mqtt:cleanup`            | Neteja identitats MQTT obsoletes: alinea `mqtt_users.mqtt_username` amb username actual i esborra clients DynSec `owntracks-device` orfes. **Dry-run** per defecte; aplica amb `npm run mqtt:cleanup -- --apply` (`back/src/scripts/cleanupMqtt.ts`) |
+| `npm run mqtt:sync-dynsec`        | `python3 scripts/init-dynsec.py sync` — no destructiu, conserva clients usuaris                                                                                                                                                                      |
+| `npm run mqtt:regen-dynsec`       | `python3 scripts/init-dynsec.py regen` — **destructiu**, esborra clients usuaris, demana confirmació                                                                                                                                                 |
+| `npm run docker:up`               | `docker compose up -d`                                                                                                                                                                                                                               |
+| `npm run docker:down`             | `docker compose down`                                                                                                                                                                                                                                |
+| `npm run docker:build`            | `docker compose build`                                                                                                                                                                                                                               |
+| `npm run docker:logs`             | `docker compose logs -f`                                                                                                                                                                                                                             |
+| `npm run docker:clean`            | `docker image prune -f`                                                                                                                                                                                                                              |
+| `npm run docker:deploy`           | Actualització en producció: executa `scripts/deploy/update.sh` (còpia prèvia de la BD, `git pull --ff-only`, `npm ci`, `docker compose build` + `up -d`, healthchecks i `update:boundaries` best-effort). Detall i opcions a `docs/DEPLOY.md` §7     |
+| `npm run db:reset`                | Buida BD (`back/data/hidrants.db`)                                                                                                                                                                                                                   |
+| `npm run db:seed`                 | Crea ADFs i usuaris inicials (admin global + coordinador per ADF)                                                                                                                                                                                    |
+| `npm run db:import-osm`           | Pull sync OSM via Overpass (requereix `osm_relations` a `adfs`)                                                                                                                                                                                      |
+| `npm run db:export-osm`           | Push sync OSM (requereix `OSM_ACCESS_TOKEN`)                                                                                                                                                                                                         |
+| `npm run db:reset-hidrants`       | Neteja només hidrants i re-importa OSM                                                                                                                                                                                                               |
+| `npm run db:setup`                | `db:reset && db:seed && db:import-osm && update:boundaries`                                                                                                                                                                                          |
+| `npm run update:boundaries`       | Actualitza `adfs.bbox`/`center`/`boundary_geojson` des d'Overpass                                                                                                                                                                                    |
+| `npm run create:user`             | `npm run create:user <usuari> <contrasenya> [rol] [adf_id]` — crea usuari directe a BD (`admin`/`coordinador`/`voluntari`)                                                                                                                           |
+| `npm run telegram:selftest`       | Self-test lògica vinculació Telegram sense xarxa                                                                                                                                                                                                     |
+| `npm run prepare`                 | Husky hooks (`prepare: husky`)                                                                                                                                                                                                                       |
 
-**Identitat MQTT aplanada**: l'ACL de Mosquitto DynSec no admet usernames MQTT amb `/`. Per això la identitat OwnTracks (client DynSec `owntracks-device` i topics) substitueix les `/` per `_`: `278/GI/011` → `278_GI_011` (conversió amb `mqttNameFor()` a `back/src/services/mqtt.ts`). `/api/tracking/positions` la reverteix per mostrar l'username real a la UI. Si queden clients antics orfes, neteja amb `npm run mqtt:cleanup -- --apply`.
+Per paquet: `front/` (`dev`, `build`), `back/` (`db:migrate`, `dev`, `build`, `mqtt:cleanup`).
 
-OwnTracks rep `.otrc` des de la UI. En producció ha d'apuntar a:
+---
+
+## 6. Arquitectura (resum)
+
+- **Stack:** React 19 + Leaflet 1.9 / React-Leaflet 5 (front), Fastify 5 + TypeScript + Drizzle ORM + SQLite + Zod (back), Mosquitto 2 (MQTT).
+- **Model ADF-centric:** `adfs` és la unitat principal (no municipis). Una ADF agrupa `osm_relations`; `bbox`, `center` i `boundary_geojson` es desen a `adfs`. `users.adf_id` vincula usuari a ADF; admin `adf_id = null`.
+- **SPA:** Un domini, canvi ADF via `AdfContext` i selector. Flux dades: `GET /api/adf?adf=ID`, `GET /api/adf/boundary?adf=ID` (GeoJSON), `GET /api/hidrants?adf=ID` (GeoJSON).
+- **Rols i permisos:** `admin` (tot) / `coordinador` (ADF pròpia) / `voluntari` (edició camp) / `public` (només lectura). Matriu central `back/src/permissions.ts: rol → capacitats` (`create_hydrant`, `delete_hydrant`, `sync_osm`, `create_incidencia`, `view_all_positions`, `manage_telegram`, etc.). Middleware `back/src/server.ts:138` valida capacitat i abast ADF; `GET /api/auth/me` retorna `permissions[]`. Username no-admin: `XXX/YYY` o `XXX/GI/YYY` (`back/src/routes/users.ts:12`).
+- **Seguretat:** JWT a cookie `httpOnly` (`secure` en prod), validació per capacitat + propietat ADF.
+- **Incidències:** `incidencies.visibilitat` (`PUBLICA` | `TOTES_ADFS` | `ADF_PRIVADA`). Públic veu només `PUBLICA`; loguejat veu seves + globals; admin tot.
+- **Tracking compartit:** `adfs.tracking_shared` boolean opt-in; `PUT /api/adfs/:id/tracking-sharing` (admin qualsevol, coordinador la seva).
+- **Resiliència MQTT:** backend funciona encara que Mosquitto no disponible (`startMqttService().catch` a `back/src/server.ts:276`).
+- **Proxy:** Nginx cap a contenidors; tiles i Overpass cachejats.
+
+> Detall complet d'arquitectura i lògica: `AGENTS.md`.
+
+---
+
+## 7. MQTT / OwnTracks
+
+El backend escolta `${MQTT_TOPIC_PREFIX}/#` (per defecte `owntracks/hidrants/#`) i valida payloads amb Zod (`back/src/services/mqtt.ts`).
+
+### 7.1 Identitat MQTT aplanada
+
+L'ACL DynSec no admet `/` als usernames. La identitat OwnTracks (client DynSec `owntracks-device` i topics) substitueix `/` per `_`: `278/GI/011` → `278_GI_011` (`mqttNameFor()` a `back/src/services/mqtt.ts`). `/api/tracking/positions` la reverteix per mostrar `278/GI/011` a la UI. El `.otrc` també es genera amb la identitat plana.
+
+### 7.2 Configuració .otrc (OwnTracks)
+
+**Producció** (TLS):
 
 ```env
 OTRC_HOST=<DOMINI>
@@ -74,7 +177,9 @@ OTRC_PORT=51823
 OTRC_TLS=true
 ```
 
-En desenvolupament el broker escolta sense TLS al port 51823 (publicat a `0.0.0.0` a `docker-compose.yml`). El `.otrc` ha d'apuntar a la IP LAN de la màquina dev amb `OTRC_TLS=false`:
+El listener `51823` usa certs Let's Encrypt (`mosquitto/certs/fullchain.pem`/`privkey.pem`). Vegeu `docs/MQTT_DEPLOY.md` per certs, `docker-compose.yml` i `scripts/copy-mosquitto-certs.sh` (hook renovació que llegeix `OTRC_HOST`).
+
+**Desenvolupament** (pla, sense TLS, mateix port publicat a `0.0.0.0` a `docker-compose.yml`):
 
 ```env
 OTRC_HOST=<IP_LAN_DEV>
@@ -82,249 +187,309 @@ OTRC_PORT=51823
 OTRC_TLS=false
 ```
 
-En producció, el 51823 usa TLS. El listener del mateix port a dev és pla (sense TLS).
+El `.otrc` que baixa la UI (`/api/tracking/config` / `enable`) apunta a aquests valors.
 
-Prova manual amb credencials DynSec vàlides:
+### 7.3 Reconnexió amb backoff exponencial
+
+El backend desactiva l'auto-reconnect fix (`reconnectPeriod: 0` a `back/src/services/mqtt.ts`) i gestiona reconnexió manual: `5s → 10s → 20s → 40s → 60s → 60s…` (`RECONNECT_BASE=5000`, `RECONNECT_MAX=60000`, `RECONNECT_FACTOR=2`). En `connect` reseteja comptador; `close`/`error` programen `scheduleReconnect()`; `stop()` neteja timer. Evita spam quan Mosquitto no disponible.
+
+### 7.4 Prova manual
+
+Amb credencials DynSec vàlides:
 
 ```bash
 docker compose exec mosquitto mosquitto_pub -h localhost -u <usuari> -P <password> -t 'owntracks/hidrants/<usuari>/phone' -m '{"_type":"location","lat":41.5,"lon":1.8,"tst":1721667688,"acc":10,"batt":80}'
 ```
 
-### Reconnexió amb backoff exponencial
+Logs útils: `[MQTT] ✅ Connected`, `🔄 Reconnecting`, `❌ Subscribe error`.
 
-El backend desactiva l'auto-reconnect fix de la llibreria (`reconnectPeriod: 0` a `back/src/services/mqtt.ts`) i gestiona reconnexió manual amb backoff exponencial: `5s → 10s → 20s → 40s → 60s → 60s...` (`RECONNECT_BASE=5000`, `RECONNECT_MAX=60000`, `RECONNECT_FACTOR=2`). En `connect` reseteja comptador; `close`/`error` programen següent intent amb `scheduleReconnect()`. `stop()` neteja timer. Evita spam quan Mosquitto no disponible (ex. docker local amb config producció).
+### 7.5 Neteja d'identitats
 
-## Notificacions Telegram per ADF
+Si queden clients antics orfes (usernames sense `GI/` o amb format antic), neteja:
 
-Cada ADF pot tenir el seu bot de Telegram i un grup on rep els avisos (incidències, alts i edicions d'hidrants). Es configura des de la pestanya **Configuració → Notificacions de Telegram**: el backend registra el bot (token xifrat a la DB), genera un deep link `startgroup` d'un sol ús (15 min) i el webhook completa la vinculació quan el bot s'afegeix al grup.
+```bash
+npm run mqtt:cleanup          # dry-run
+npm run mqtt:cleanup -- --apply
+```
 
-El backend rep les actualitzacions de Telegram a:
+Alinia `mqtt_users.mqtt_username` amb el nom actual i esborra clients DynSec orfes. Script: `back/src/scripts/cleanupMqtt.ts`. També s'auto-cura a `PUT /api/users/:id` i `GET /api/tracking/config`.
+
+> **Producció completa:** `docs/MQTT_DEPLOY.md` (certs + renovació, Dynamic Security JSON exacte, `mqtt:sync-dynsec`/`regen`, permisos `mosquitto/data` amb `group mosquitto` + `setfacl`, backup, `createMqttUser` via `$CONTROL`).
+
+---
+
+## 8. Notificacions Telegram per ADF
+
+Cada ADF pot tenir **bot propi** i **grup propi** on rep avisos (incidències, altes i edicions d'hidrants). Es configura des de la UI **Configuració → Notificacions de Telegram**: backend registra bot (token xifrat `ENCRYPTION_SECRET` a `telegramBots.token_enc`), genera deep link `startgroup` d'un sol ús (TTL 15 min, `telegramLinks` amb `code_hash = sha256hex(code)`) i el webhook completa la vinculació quan el bot s'afegeix al grup.
+
+Endpoint webhook:
 
 ```
 POST /api/telegram/webhook/:secret
 ```
 
-### Dev local: cal un túnel
+Lògica a `back/src/routes/telegramWebhook.ts:39` (vincula amb codi `startgroup`, valida `group`/`supergroup`, conflicte grup-ADF, expiració/ús, `my_chat_member` per detectar sortida del bot).
 
-Telegram exigeix que el webhook sigui **HTTPS amb un certificat de confiança** (rebutja self-signed i IPs privades). Un nip.io amb cert `mkcert` NO serveix. La manera més senzilla és un túnel de Cloudflare (cert vàlid, sense registre):
+### 8.1 Dev local: cal túnel
+
+Telegram exigeix webhook **HTTPS amb cert de confiança** (rebutja self-signed i IPs privades). Un `nip.io` amb `mkcert` **NO serveix**. La manera senzilla és Cloudflare:
 
 ```bash
 npx -y cloudflared tunnel --url http://localhost:3033
 ```
 
-Copia la URL que genera (`https://xxx.trycloudflare.com`) a `back/.env` i reinicia el backend:
+Copia la URL (`https://xxx.trycloudflare.com`) a `back/.env` i reinicia backend:
 
 ```env
 WEBHOOK_PUBLIC_URL=https://xxx.trycloudflare.com
 ```
 
-Comprova que Telegram hi arriba:
+Comprova:
 
 ```bash
 curl https://xxx.trycloudflare.com/api/telegram/webhook/prova
 # {"ok":false}
 ```
 
-**Avís:** la URL del túnel _quick_ de Cloudflare canvia a cada execució. Per una URL estable, crea un túnel amb nom (`cloudflared tunnel create`) o fes servir un certificat de veritat al teu host.
+**Avís:** la URL _quick_ de Cloudflare canvia a cada execució. Per URL estable, crea túnel amb nom (`cloudflared tunnel create`) o usa cert de veritat.
 
-**Com es construeix la URL del webhook:** si `WEBHOOK_PUBLIC_URL` està definit, s'usa tal qual. Si no, es deriva del `Host` de la petició de registre (per tant, en producció cal entrar per un domini públic, on ja funciona). Si en dev accedeixes per `localhost:5173` sense la variable, el backend generaria una URL LAN no accessible per Telegram.
+### 8.2 Com es construeix la URL del webhook
 
-Self-test de la lògica de vinculació (sense xarxa):
+Si `WEBHOOK_PUBLIC_URL` definit, s'usa tal qual (`back/src/routes/telegram.ts:125` → `config.WEBHOOK_PUBLIC_URL ?? appBaseUrl(req)`). Si no, es deriva del `Host` de la petició de registre (`appBaseUrl()` a `back/src/utils/appUrl.ts`). En prod cal entrar per domini públic; en dev per `localhost:5173` sense variable es generaria URL LAN no accessible.
+
+### 8.3 Self-test
 
 ```bash
-npm run telegram:selftest
+npm run telegram:selftest   # lògica vinculació sense xarxa
 ```
 
-## Sincronització amb OSM
+> **Producció:** no cal `WEBHOOK_PUBLIC_URL` si entres per domini públic amb Nginx que proxya `/api/telegram/webhook/*`. El domini ha de ser públic. Detall: `docs/DEPLOY.md#9`.
 
-El projecte suporta sincronització bidireccional amb OpenStreetMap: descarregar hidrants existents (pull) i publicar canvislocals (push).
+---
 
-### Configuració
+## 9. Sincronització amb OSM
 
-Per al push sync, cal afegir a `back/.env`:
+Sincronització **bidireccional** amb OpenStreetMap: pull (Overpass) i push (API OSM OAuth 2.0). Detall complet amb fluxos, UI, conflictes i validació: **`docs/OSM_SYNC.md`**.
+
+### 9.1 Configuració
+
+Per push cal a `back/.env`:
 
 ```env
 OSM_ACCESS_TOKEN=el_teu_token_oauth2_aqui
 #OSM_API_URL=https://api.openstreetmap.org/api/0.6
+#OVERPASS_URL=https://overpass-api.de/api/interpreter
 ```
 
-El token OAuth 2.0 d'OSM no expira. Registrar l'aplicació a: https://www.openstreetmap.org/oauth2/applications (scope: `write_api`). Sense aquesta variable, el push sync retornarà error. La pull sync funciona sense token (usa Overpass API pública).
+Token OAuth 2.0 sense expiració: registrar a https://www.openstreetmap.org/oauth2/applications amb scope `write_api`. Sense token, `POST /api/osm/push-sync` retorna error; pull funciona sense token (Overpass públic).
 
-### Pull sync (importació)
+### 9.2 Pull sync (importació)
 
 ```bash
 npm run db:import-osm
-# o via API: POST /api/hidrants/sync?adf=<ID>
+# o via API: POST /api/hidrants/sync?adf=<ID>  body: {}
+#            POST /api/hidrants/sync?adf=<ID>  body: { "force": true }
 ```
 
-Descarrega hidrants des d'OpenStreetMap via Overpass API per a les relacions de l'ADF activa.
+Descarrega via Overpass per les `osm_relations` de l'ADF.
 
-**Comportament segons l'estat local:**
+**Comportament segons estat local:**
 
-| Estat local      | Pull sync normal                             | Pull sync amb `force=true` |
-| ---------------- | -------------------------------------------- | -------------------------- |
-| `SYNCED`         | Actualitza des d'OSM                         | Actualitza des d'OSM       |
-| `PENDING_CREATE` | No toca (es manté)                           | Sobreescriu → SYNCED       |
-| `PENDING_UPDATE` | No toca si local és més nou; sinó → CONFLICT | Sobreescriu → SYNCED       |
-| `PENDING_DELETE` | No toca                                      | Torna d'OSM → SYNCED       |
-| `CONFLICT`       | No toca                                      | Sobreescriu → SYNCED       |
-| `ERROR`          | No toca                                      | Sobreescriu → SYNCED       |
-| `REVIEW`         | No toca                                      | Sobreescriu → SYNCED       |
+| Estat local      | Pull normal                                 | Pull `force=true`      |
+| ---------------- | ------------------------------------------- | ---------------------- |
+| `SYNCED`         | Actualitza des d'OSM                        | Actualitza des d'OSM   |
+| `PENDING_CREATE` | No toca (es manté)                          | Sobreescriu → `SYNCED` |
+| `PENDING_UPDATE` | No toca si local més nou; sinó → `CONFLICT` | Sobreescriu → `SYNCED` |
+| `PENDING_DELETE` | No toca                                     | Torna d'OSM → `SYNCED` |
+| `CONFLICT`       | No toca                                     | Sobreescriu → `SYNCED` |
+| `ERROR`          | No toca                                     | Sobreescriu → `SYNCED` |
+| `REVIEW`         | No toca                                     | Sobreescriu → `SYNCED` |
 
-**Paràmetre force:**
-
-```bash
-# Pull sync normal (respecta canvis locals)
-POST /api/hidrants/sync?adf=<ID>
-Body: {}
-
-# Pull sync amb force (sobreescriu tot)
-POST /api/hidrants/sync?adf=<ID>
-Body: { "force": true }
-```
-
-### Push sync (publicació)
+### 9.3 Push sync (publicació)
 
 ```bash
 npm run db:export-osm
 # o via API: POST /api/osm/push-sync
 ```
 
-Publica els canvis pendents (`PENDING_CREATE`, `PENDING_UPDATE`, `PENDING_DELETE`) cap a OSM. Gestiona:
+Publica `PENDING_CREATE`/`PENDING_UPDATE`/`PENDING_DELETE` en un changeset. Gestiona **409 conflicte versió** (merge automàtic si ubicació no canvia, sinó `CONFLICT`) i `ERROR`.
 
-- **Conflictes de versió (409)**: intenta resolució automàtica, sinó marca `CONFLICT`.
-- **Errors**: marca `ERROR` amb detalls.
-
-**Push selectiu:**
+**Push selectiu / descartar / pull individual:**
 
 ```bash
-# Pujar només hidrants seleccionats
-POST /api/osm/push-selected
-Body: { "ids": ["abc123", "def456"] }
+POST /api/osm/push-selected   # { "ids": ["abc123", "def456"] }
+POST /api/osm/discard-selected # { "ids": [...] }  PENDING_CREATE→esborra BD, resta→SYNCED
+POST /api/osm/pull-hydrant     # { "id": "abc123" } sobreescriu amb OSM
 ```
 
-**Descartar canvis:**
+### 9.4 UI panell sincronització
+
+`front/src/components/osm/OsmSyncPanel.tsx`: capçalera “Baixar d'OSM” (pull normal), seccions col·lapsables per estat amb comptador, checkboxes + “Seleccionar tot”, accions lot “Pujar seleccionats” / “Descartar”, accions individuals ↑ Pujar / ↓ Baixar (sobreescriu) / ✕ Descartar (amb confirmació), selecció al mapa (`select-hydrant-by-id` → cercle + info), refresc automàtic `refresh-hidrants`. Vegeu `docs/OSM_SYNC.md#4` per detall.
+
+### 9.5 Exportació .osc
 
 ```bash
-# Descartar canvis seleccionats
-POST /api/osm/discard-selected
-Body: { "ids": ["abc123", "def456"] }
+GET /api/osm/conflicts/osc?adf=ID
 ```
 
-Els `PENDING_CREATE` s'esborren de la BD; la resta es marca com a `SYNCED`.
+Fitxer OSM XML compatible JOSM.
 
-**Baixar un node individual d'OSM:**
+### 9.6 Validació de dades
 
-```bash
-# Aplicar versió d'OSM a un hidrant (sobreescriu locals)
-POST /api/osm/pull-hydrant
-Body: { "id": "abc123" }
-```
+Abans de pujar, `back/src/services/osmDataValidator.ts` valida tags:
 
-### UI del panell de sincronització
+| Camp        | Tag OSM                 | Valors permesos                      |
+| ----------- | ----------------------- | ------------------------------------ |
+| Tipus       | `fire_hydrant:type`     | `pillar`, `underground`              |
+| Posició     | `fire_hydrant:position` | `lane`, `sidewalk`, `green`          |
+| Acoblaments | `couplings`             | `1`, `2`, `3`, `4`                   |
+| Diàmetres   | `couplings:diameters`   | `45`, `70`, `100` (altres → warning) |
+| Pressió     | `fire_hydrant:pressure` | Número vàlid                         |
+| Data        | `survey:date`           | `YYYY-MM-DD`                         |
 
-`OsmSyncPanel.tsx` mostra un panell unificat amb:
+Addicional: majúscules ≥3 caràcters → warning; tag >255 caràcters → error; tags buits s'eliminen. **Error → `ERROR` (bloqueja push); Warning → `REVIEW` (es mostra perquè admin revisi, `docs/OSM_SYNC.md#8` i `OsmReviewList.tsx`).**
 
-- **Capçalera**: botó "Baixar d'OSM" (pull sync normal, respecta locals)
-- **Seccions col·lapsables** per estat (tancades per defecte, amb comptador)
-- **Checkboxes** individuals + "Sel·leccionar tot" per secció
-- **Accions per lot**: "Pujar seleccionats" / "Descartar seleccionats"
-- **Accions individuals** amb confirmació:
-  - ↑ Pujar a OSM / Confirmar esborrat / Reintentar
-  - ↓ Baixar d'OSM (CONFIRMAT: sobreescriu locals)
-  - ✕ Descartar (CONFIRMAT: esborra o reverteix)
-- **Selecció al mapa**: clic al nom del node → cercle + info panell
-- **Refresc automàtic**: després de qualsevolacció, la capa d'hidrants es refresca
+### 9.7 Estats
 
-Events utilitzats:
+| Estat            | Significat                               |
+| ---------------- | ---------------------------------------- |
+| `SYNCED`         | Sincronitzat amb OSM                     |
+| `PENDING_CREATE` | Nou local, pendent crear                 |
+| `PENDING_UPDATE` | Modificat localment, pendent actualitzar |
+| `PENDING_DELETE` | Marcat per esborrar                      |
+| `CONFLICT`       | Conflicte versió                         |
+| `ERROR`          | Error sincronització                     |
+| `REVIEW`         | Warnings, pendent revisió                |
 
-- `select-hydrant-by-id` → selecciona hidrant al mapa (cercle + panell info)
-- `refresh-hidrants` → refresca la capa d'hidrants
+Transicions i casos d'ús detallats: `docs/OSM_SYNC.md#5-6`.
 
-### Exportació .osc
+### 9.8 Endpoints OSM
 
-```bash
-GET /api/osm/conflicts/osc
-```
+| Endpoint                        | Mètode | Descripció                                |
+| ------------------------------- | ------ | ----------------------------------------- |
+| `/api/osm/status`               | GET    | Estat token i comptador conflictes        |
+| `/api/osm/pending?adf=ID`       | GET    | Canvis pendents amb detalls               |
+| `/api/osm/push-sync`            | POST   | Push global                               |
+| `/api/osm/push-selected`        | POST   | Push selectiu `{ ids }`                   |
+| `/api/osm/discard-selected`     | POST   | Descarta `{ ids }`                        |
+| `/api/osm/conflicts?adf=ID`     | GET    | Conflictes amb detalls                    |
+| `/api/osm/conflicts/osc?adf=ID` | GET    | Fitxer `.osc` per JOSM                    |
+| `/api/osm/conflicts/resolve`    | POST   | Resol conflicte `{ id, changeset? }`      |
+| `/api/osm/reviews?adf=ID`       | GET    | Hidrants `REVIEW`                         |
+| `/api/osm/pull-hydrant`         | POST   | Baixa node `{ id }`                       |
+| `/api/osm/diff/:id`             | GET    | Diff local vs OSM                         |
+| `/api/hidrants/sync?adf=ID`     | POST   | Pull sync `{ force? }` (vegeu taula §9.2) |
+| `/api/hidrants/stats?adf=ID`    | GET    | Comptadors per `sync_status`              |
 
-Genera un fitxer de canvi (OSM XML) compatible amb JOSM per importar manualment a OSM.
+Fitxers clau: `back/src/services/osmSync.ts` (pull Overpass), `back/src/services/osmPushSync.ts` (push), `back/src/services/osmDataValidator.ts`, `back/src/services/osmConflictResolver.ts`, `back/src/routes/osm.ts`, `front/src/components/osm/OsmConflictList.tsx`, `OsmReviewList.tsx`. Detall API complet: `docs/OSM_SYNC.md#9`.
 
-### Validació de dades
+---
 
-Abans de pujar a OSM, el backend valida els tags de cada hidrant mitjançant `back/src/services/osmDataValidator.ts`.
+## 10. API — Referència ràpida (endpoints no OSM)
 
-**Regles de validació:**
+Tots els `POST/PUT/DELETE` d'hidrants i incidències requereixen sessió (`auth_token` httpOnly, 30 dies, `sameSite=lax`, `secure` en prod). El middleware `wrap()` a `back/src/server.ts:138` aplica capacitat (`permissionsFor()` a `back/src/permissions.ts`) i abast ADF (no-admin només la seva ADF); les rutes amb `protected: true` exigeixen JWT sempre. Per OSM vegeu §9.8 i `docs/OSM_SYNC.md#9`. Definició i protecció a `back/src/server.ts:211`.
 
-| Camp        | Tag OSM                 | Valors permesos             |
-| ----------- | ----------------------- | --------------------------- |
-| Tipus       | `fire_hydrant:type`     | `pillar`, `underground`     |
-| Posició     | `fire_hydrant:position` | `lane`, `sidewalk`, `green` |
-| Acoblaments | `couplings`             | `1`, `2`, `3`, `4`          |
-| Diàmetres   | `couplings:diameters`   | `45`, `70`, `100`           |
-| Pressió     | `fire_hydrant:pressure` | Número vàlid                |
-| Data        | `survey:date`           | Format `YYYY-MM-DD`         |
+### 10.1 Auth / Config
 
-**Detecció addicional:**
+| Endpoint           | Mètode | Auth                        | Descripció                                                                                                   |
+| ------------------ | ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `/api/auth/login`  | POST   | no                          | `{ username, password }` → cookie `auth_token` + `{ user }` (`back/src/routes/auth.ts:13`)                   |
+| `/api/auth/logout` | POST   | no                          | Esborra cookie                                                                                               |
+| `/api/auth/me`     | GET    | no (401 si no hi ha sessió) | Usuari actual + `mqtt_enabled` + `permissions[]`                                                             |
+| `/api/config`      | GET    | no                          | `{ max_hydrant_move_meters }` límit desplaçament (`back/src/routes/appConfig.ts:8`, `back/src/utils/geo.ts`) |
 
-- Text tot en majuscules (≥3 caràcters) → warning.
-- Tags > 255 caràcters → error.
-- Tags buits → s'eliminen automàticament.
+### 10.2 ADFs / Boundaries
 
-**Resultats:**
+| Endpoint                         | Mètode | Auth | Descripció                                                                                                                                                                   |
+| -------------------------------- | ------ | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/adfs`                      | GET    | no   | Llista ADFs amb `osm_relations`, `bbox`, `center` (`back/src/routes/municipis.ts:5`)                                                                                         |
+| `/api/adf?adf=ID`                | GET    | no   | Detall ADF per ID (`back/src/routes/municipi.ts:6`)                                                                                                                          |
+| `/api/adf/boundary?adf=ID`       | GET    | no   | Només `boundary_geojson` GeoJSON (`back/src/routes/boundary.ts:6`)                                                                                                           |
+| `/api/adfs/:id/tracking-sharing` | PUT    | sí   | `{ shared: boolean }` — comparteix tracking amb altres ADFs; admin qualsevol, coordinador la seva (`back/src/routes/trackingSharing.ts:12`, permís `manage_own_adf_sharing`) |
 
-- **Error** → hidrant marcada com a `ERROR`, no es puja a OSM.
-- **Warning** → hidrant marcada com a `REVIEW`, es mostra a la UI perquè l'admin revisi.
+### 10.3 Hidrants
 
-### Estats de sincronització
+| Endpoint                     | Mètode | Auth (capacitat)      | Descripció                                                                                     |
+| ---------------------------- | ------ | --------------------- | ---------------------------------------------------------------------------------------------- |
+| `/api/hidrants?adf=ID`       | GET    | no                    | GeoJSON hidrants ADF (`back/src/routes/hidrants.ts:48`, `Cache-Control: no-cache`)             |
+| `/api/hidrants`              | POST   | sí (`create_hydrant`) | Crea hidrant local `PENDING_CREATE` `{ lat, lon, ui_fields?, private_tags? }`                  |
+| `/api/hidrants/:id`          | PUT    | sí (`edit_hydrant`)   | Actualitza `{ lat?, lon?, ui_fields?, private_tags? }`; valida límit `max_hydrant_move_meters` |
+| `/api/hidrants/:id?id=ID`    | DELETE | sí (`delete_hydrant`) | Marca `PENDING_DELETE` (esborra directe si era `PENDING_CREATE`)                               |
+| `/api/hidrants/sync?adf=ID`  | POST   | sí (`sync_osm`)       | Pull Overpass (vegeu §9.2)                                                                     |
+| `/api/hidrants/stats?adf=ID` | GET    | no                    | Comptadors per `sync_status`                                                                   |
 
-| Estat            | Significat                                 |
-| ---------------- | ------------------------------------------ |
-| `SYNCED`         | Sincronitzat amb OSM                       |
-| `PENDING_CREATE` | Nou local, pendent de crear a OSM          |
-| `PENDING_UPDATE` | Modificat localment, pendent d'actualitzar |
-| `PENDING_DELETE` | Marcat per esborrar                        |
-| `CONFLICT`       | Conflicte de versió amb OSM                |
-| `ERROR`          | Error durant la sincronització             |
-| `REVIEW`         | Dades amb warnings, pendent de revisió     |
+### 10.4 Incidències
 
-### Endpoints API
+| Endpoint                                         | Mètode | Auth                     | Descripció                                                                                                              |
+| ------------------------------------------------ | ------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `/api/incidencies?adf=ID&incloure_tancades=true` | GET    | no                       | GeoJSON filtrat per `visibilitat` (públic només `PUBLICA`) (`back/src/routes/incidencies.ts:45`)                        |
+| `/api/incidencies/:id`                           | GET    | no                       | Detall amb esdeveniments                                                                                                |
+| `/api/incidencies`                               | POST   | sí (`create_incidencia`) | Crea `{ titol, tipus, prioritat?, visibilitat?, lat, lon, precisio?, comentari? }` + notifica Telegram (`appBaseUrl()`) |
+| `/api/incidencies/:id/events`                    | POST   | sí (`create_incidencia`) | Afegeix esdeveniment `{ tipus_event, dades }`                                                                           |
 
-| Endpoint                     | Method | Descripció                                |
-| ---------------------------- | ------ | ----------------------------------------- |
-| `/api/osm/status`            | GET    | Estat del token i comptador de conflictes |
-| `/api/osm/pending?adf=ID`    | GET    | Llista canvis pendents amb detalls        |
-| `/api/osm/push-sync`         | POST   | Push sync global                          |
-| `/api/osm/push-selected`     | POST   | Push selectiu per IDs                     |
-| `/api/osm/discard-selected`  | POST   | Descarta/esborra seleccionats             |
-| `/api/osm/conflicts`         | GET    | Llistat de conflictes amb detalls         |
-| `/api/osm/conflicts/osc`     | GET    | Fitxer .osc per JOSM                      |
-| `/api/osm/conflicts/resolve` | POST   | Resoldre conflicte                        |
-| `/api/osm/reviews`           | GET    | Hidrants amb warnings                     |
-| `/api/osm/pull-hydrant`      | POST   | Baixar node individual d'OSM              |
-| `/api/hidrants/sync?adf=ID`  | POST   | Pull sync (accepta `{ force }`)           |
-| `/api/hidrants/stats`        | GET    | Stats per ADF                             |
-| `/api/osm/conflicts/osc`     | GET    | Descarregar .osc amb conflictes           |
-| `/api/osm/conflicts/resolve` | POST   | Resoldre un conflicte després de JOSM     |
-| `/api/osm/reviews`           | GET    | Hidrants amb warnings per revisar         |
+### 10.5 Usuaris
 
-### Fitxers clau
+Username `XXX/YYY` o `XXX/GI/YYY` (3 dígits, `back/src/routes/users.ts:12`), rols `admin|coordinador|voluntari`. Admin veu/toca tot; coordinador només la seva ADF i mai a si mateix.
 
-- `back/src/services/osmSync.ts` — Pull sync (Overpass API).
-- `back/src/services/osmPushSync.ts` — Push sync (API OSM).
-- `back/src/services/osmDataValidator.ts` — Validació de tags.
-- `back/src/services/osmConflictResolver.ts` — Resolució automàtica de conflictes.
-- `back/src/routes/osm.ts` — Endpoints API.
-- `front/src/components/osm/OsmConflictList.tsx` — UI conflictes.
-- `front/src/components/osm/OsmReviewList.tsx` — UI revisions pendents.
+| Endpoint         | Mètode | Auth | Descripció                                                                                          |
+| ---------------- | ------ | ---- | --------------------------------------------------------------------------------------------------- |
+| `/api/users`     | GET    | sí   | Llista (abast per rol: admin tots, coordinador ADF pròpia)                                          |
+| `/api/users`     | POST   | sí   | Crea `{ username, role, password }` (coordinador no pot crear `admin` ni d'altra ADF)               |
+| `/api/users/:id` | PUT    | sí   | Edita `{ username?, role?, password? }` — re-alinia identitat MQTT si cal (`propagateMqttRename()`) |
+| `/api/users/:id` | DELETE | sí   | Elimina (neteja `mqtt_users`, `incidencia_events.usuari_id→null`, `deleteMqttUser`)                 |
 
-## Qualitat de codi: ESLint, Husky i CI
+### 10.6 Tracking / MQTT (OwnTracks)
 
-- **ESLint** (flat config `eslint.config.mjs`, un per `front/` i `back/`): `npm run lint` i `npm run lint:fix` a la arrel o a cada paquet. Objectiu 0 errors, 0 warnings.
-- **Husky + lint-staged** (hook de pre-commit): `.husky/pre-commit` corre `npx lint-staged` (ESLint amb `--fix` als fitxers staged). Evita saltar-te'l amb `--no-verify` sense justificació.
-- **CI** (`.github/workflows/ci.yml`): es dispara en `push` a `main`/`develop` i en `pull_request`. Pipeline (Node 24): `npm ci` → `typecheck` → `lint` → `build`. És mínim: no fa tests ni desplega encara.
+Identitat aplanada `278/GI/011` → `278_GI_011` (`mqttNameFor()` a `back/src/services/mqtt.ts`).
 
-## Troubleshooting
+| Endpoint                  | Mètode | Auth | Descripció                                                                                                                  |
+| ------------------------- | ------ | ---- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/api/tracking/status`    | GET    | sí   | `{ available, enabled }`                                                                                                    |
+| `/api/tracking/positions` | GET    | sí   | `{ positions: { "278/GI/011": LocationData } }` — filtra `view_all_positions` / `view_shared_positions` + `tracking_shared` |
+| `/api/tracking/enable`    | POST   | sí   | Crea/rota DynSec `owntracks-device`, guarda `mqtt_password_enc`, retorna `.otrc`                                            |
+| `/api/tracking/config`    | GET    | sí   | Retorna `.otrc` existent (recrea client si cal, auto-cura username)                                                         |
 
-- `getaddrinfo ENOTFOUND mosquitto`: backend local usa `mqtt://localhost:1883`, backend Docker usa `mqtt://mosquitto:1883`.
-- `Not authorized`: contrasenyes `back/.env` i `dynamic-security.json` no coincideixen.
-- `docker compose config` no cal `mosquitto/.env`: Mosquitto no en té (contreseny a `back/.env`).
+### 10.7 Telegram per ADF
+
+| Endpoint                        | Mètode | Auth                   | Descripció                                                                                                      |
+| ------------------------------- | ------ | ---------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `/api/adfs/:id/telegram/status` | GET    | sí                     | `{ status, bot_username, bot_name, group_name }` (`NO_CONFIGURAT`/`BOT_CONFIGURAT`/`GRUP_PENDENT`/`CONFIGURAT`) |
+| `/api/adfs/:id/telegram`        | POST   | sí (`manage_telegram`) | Registra bot `{ token }` → `getMe` + `setWebhook` a `${WEBHOOK_PUBLIC_URL\|Host}/api/telegram/webhook/:secret`  |
+| `/api/adfs/:id/telegram`        | DELETE | sí (`manage_telegram`) | `deleteWebhook` + esborra `telegramBots`/`telegramLinks`                                                        |
+| `/api/adfs/:id/telegram/link`   | POST   | sí (`manage_telegram`) | Genera `https://t.me/<bot>?startgroup=<code>` TTL 15 min, un sol ús (`sha256hex`)                               |
+| `/api/adfs/:id/telegram/test`   | POST   | sí (`manage_telegram`) | Envia `{ message? }` al grup vinculat                                                                           |
+| `/api/telegram/webhook/:secret` | POST   | no (secret URL)        | Webhook Telegram (vegeu §8)                                                                                     |
+
+### 10.8 Altres
+
+| Endpoint                             | Mètode | Auth | Descripció                                                                                                                                                                         |
+| ------------------------------------ | ------ | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/overpass`                      | POST   | no   | Proxy Overpass `{ query }` → JSON (`back/src/routes/overpass.ts:4`, CORS `*`)                                                                                                      |
+| `/api/sendToTelegram`                | POST   | no   | Envia missatge (hidrant nou/incidència/edit) a bot global + bot ADF; si hidrant nou amb `adf_id` el crea a BD (`back/src/routes/sendToTelegram.ts:17`, `ui2Osm()`, `appBaseUrl()`) |
+| `/api/route?from=lat,lon&to=lat,lon` | GET    | no   | Proxy GraphHopper `vehicle=car` (`back/src/routes/route.ts:4`)                                                                                                                     |
+
+---
+
+## 11. Qualitat de codi: ESLint, Husky i CI
+
+- **ESLint** (flat `eslint.config.mjs`, un per `front/` i `back/`): `npm run lint` / `lint:fix` a arrel o paquet. Stack `typescript-eslint` (recommended) + `eslint-config-prettier`, `eslint-plugin-react-hooks` i `react-refresh` (front). Objectiu **0 errors, 0 warnings**. `no-console` via `front/src/utils/log.ts`; `no-explicit-any` adapter Fastify amb `eslint-disable` justificat (`back/src/server.ts:1`).
+- **Husky + lint-staged** (hook pre-commit): `.husky/pre-commit` → `npx lint-staged` (ESLint `--fix` als staged). **No `--no-verify`** sense justificació. Config a `package.json:51` (`*.{ts,tsx,js,jsx}` → `eslint --fix` + `prettier`, `*.{json,md,yml}` → `prettier`).
+- **CI** (`.github/workflows/ci.yml`): `push` a `main`/`develop` i `pull_request`. Pipeline Node 24: `npm ci` → `typecheck` → `lint` → `build`. Mínim: no tests ni deploy encara.
+
+---
+
+## 12. Troubleshooting
+
+| Símptoma                                        | Causa / Context                                                       | Solució                                                                                                                                                                 |
+| ----------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getaddrinfo ENOTFOUND mosquitto`               | `MQTT_BROKER_URL` incorrecte segons entorn                            | Dev local: `mqtt://localhost:1883`. Docker: `mqtt://mosquitto:1883`                                                                                                     |
+| `Not authorized` (Mosquitto)                    | `back/.env` vs `dynamic-security.json` desincronitzats                | `npm run mqtt:sync-dynsec` (o `regen` si cal), verificar `docker compose logs mosquitto` → `Opening TLS listening socket on port 51823` (vegeu `docs/MQTT_DEPLOY.md#7`) |
+| `Not authorized` amb `mosquitto_sub -u backend` | Hash `encoded_password` incorrecte / format JSON DynSec invàlid       | Regenerar amb `scripts/init-dynsec.py` (Python directe, sense `mosquitto_passwd` amb expansió shell) — detall `docs/MQTT_DEPLOY.md#4`                                   |
+| `Permission denied` generant DynSec             | `mosquitto/data` propietat `root` (contenidor) sense grup `mosquitto` | `chown root:mosquitto`, `chmod 2770/660`, `setfacl -d -m g:mosquitto:rw` — vegeu `docs/MQTT_DEPLOY.md#4`                                                                |
+| `docker compose config` no cal `mosquitto/.env` | Mosquitto no consumeix env en runtime                                 | Contrasenyes només a `back/.env` (`MQTT_*_PASSWORD`); el JSON és la font de veritat                                                                                     |
+| Webhook Telegram `{"ok":false}` sempre          | Secret no trobat (`telegramBots.webhook_secret`)                      | Verificar `WEBHOOK_PUBLIC_URL` i que Nginx proxya `/api/telegram/webhook/*` (vegeu §8.2)                                                                                |
+| `Token OSM no vàlid` / push 401                 | `OSM_ACCESS_TOKEN` invàlid o sense `write_api`                        | Regenerar a https://www.openstreetmap.org/oauth2/applications, scope `write_api`                                                                                        |
+
+---
+
+_Darrera actualització: generat des de `back/src/server.ts:211` (rutes), `back/.env.example`, `package.json:5` i `docs/OSM_SYNC.md` / `docs/MQTT_DEPLOY.md` / `docs/DEPLOY.md`._

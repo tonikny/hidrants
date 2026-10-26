@@ -1,0 +1,48 @@
+# Context de build = arrel del repositori (vegeu docker-compose.yml).
+# Només calen package.json, package-lock.json, back/ i front/; la resta s'exclou
+# per no enviar al dimoni fitxers innecessaris (i mai dades de producció).
+
+# Dependències i artefactes generats
+node_modules
+**/node_modules
+**/dist
+**/.vite
+
+# Git i eines de l'editor / CI
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Secrets i configuració local (els contenidors els reben per env_file)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dades de producció: la BD viu al volum, no a la imatge
+back/data
+backups
+mosquitto/data
+mosquitto/certs
+**/*.db
+**/*.db-wal
+**/*.db-shm
+
+# Certificats i claus
+*.pem
+*.crt
+*.key
+
+# Logs i temporals
+**/*.log
+**/*.tgz
+**/*.tar.gz
+
+# Documentació
+docs
+*.md
+
+# Els Dockerfiles no calen dins la imatge
+**/Dockerfile
+**/.dockerignore

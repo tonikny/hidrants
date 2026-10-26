@@ -53,10 +53,10 @@ Si utilitzes un servidor Debian 13 net, pots fer servir els scripts preparats:
 
 Per tal que el volum de Docker ja tingui les dades carregades, farem el setup inicial des del host:
 
-1.  Instal·la dependències mínimes:
+1.  Instal·la dependències mínimes (des de l'arrel, amb workspaces):
 
     ```bash
-    npm run install
+    npm ci
     ```
 
 2.  Executa el setup de la base de dades i importació d'OSM:
@@ -73,6 +73,8 @@ Per tal que el volum de Docker ja tingui les dades carregades, farem el setup in
     ```bash
     npm run docker:build
     ```
+
+    Les imatges s'instal·len amb el `package-lock.json` de l'arrel (`npm ci -w back` / `-w front`), així que porten exactament les versions provades en local. Per això el context de build és **l'arrel del repositori** (`context: .` a `docker-compose.yml`) i hi ha un `.dockerignore` a l'arrel: si afegeixes un paquet, actualitza el lock (`npm install`) i fes commit dels dos fitxers, o el build fallarà amb un error de lock desincronitzat.
 
 2.  **Aixecar els serveis:**
     ```bash
@@ -122,7 +124,41 @@ Per actualitzar a l'última versió de Git i reconstruir els contenidors:
 npm run docker:deploy
 ```
 
-Aquest script de conveniència fa: `git pull --ff-only --autostash` + `npm run install` + `update:boundaries` + `docker compose up --build` + `docker image prune -f`. `--autostash` desa i reaplica qualsevol canvi local (ex. `package-lock.json`) sense perdre'l; `--ff-only` falla amb error si el repo local divergeix del remot.
+L'script (`scripts/deploy/update.sh`) fa, en aquest ordre i aturant-se al primer error:
+
+1. Comprovacions prèvies: `back/.env` present, Docker i `docker compose` operatius, branca amb upstream, i avís si `back/.env` no té alguna clau de `back/.env.example`.
+2. **Còpia de seguretat prèvia** de `back/data/` a `backups/pre-deploy/` (es conserven les 5 últimes). Atura el backend uns segons perquè la còpia sigui coherent.
+3. `git pull --ff-only`. Si hi ha canvis locals, **s'atura** i t'ho diu; per forçar-ho, `--allow-dirty` (fa servir `--autostash`).
+4. Neteja de `back/node_modules` i `front/node_modules` heretats del layout antic (`--prefix`), que podrien ombrejar les dependències noves.
+5. `npm ci` amb el `package-lock.json` de l'arrel (reproducible; falla si el lock no quadra amb els `package.json`).
+6. `docker compose build`. Si el build falla, **els contenidors en marxa no es toquen**.
+7. `docker compose up -d` (les migracions s'apliquen en arrencar el contenidor).
+8. Espera del healthcheck del backend (fins a 180 s) i del frontend, i comprovació HTTP de `127.0.0.1:3034/api/adfs` i `127.0.0.1:8080`.
+9. `npm run update:boundaries` (Overpass/Nominatim). **No bloqueja**: si OSM no respon, avisa i el desplegament es dóna per bo.
+10. `docker image prune -f` només si tot ha anat bé.
+
+Opcions:
+
+```bash
+npm run docker:deploy -- --dry-run        # mostra les passes sense executar res
+npm run docker:deploy -- --yes            # sense confirmació
+npm run docker:deploy -- --allow-dirty    # permet canvis locals (autostash)
+npm run docker:deploy -- --skip-backup    # no recomanat
+npm run docker:deploy -- --no-boundaries  # omet update:boundaries
+```
+
+`update:boundaries` s'executa per defecte i és **best-effort**: depèn de l'API pública d'Overpass/Nominatim, així que un error o un temps d'espera esgostat només deixa un avís i les fronteres anteriors. Es llança després dels healthchecks, de manera que mai no impedeix que la nova versió quedi en marxa; per reintentar-lo, `npm run update:boundaries`.
+
+**Si alguna passa falla**, l'script mostra els logs del servei afectat i el commit anterior. Per revertir:
+
+```bash
+git reset --hard <commit-anterior>
+npm ci && docker compose up -d --build
+# Si les migracions ja s'havien aplicat, restaura també la BD:
+./scripts/backup/restore.sh daily   # o el fitxer de backups/pre-deploy/
+```
+
+Les migracions són només cap endavant: tornar a una versió anterior del codi amb la BD migrada dóna errors, així que el rollback sempre ha d'incloure la restauració de la base de dades.
 
 ### Backups Automàtics de la Base de Dades
 

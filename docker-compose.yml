@@ -25,8 +25,10 @@ services:
   backend:
     image: hidrants-backend:latest
     build:
-      context: ./back
-      dockerfile: Dockerfile
+      # Context a l'arrel perquè la imatge s'instal·li amb el package-lock.json únic
+      # del monorepo (workspaces); vegeu .dockerignore de l'arrel.
+      context: .
+      dockerfile: back/Dockerfile
     container_name: hidrants-back
     restart: unless-stopped
     ports:
@@ -52,8 +54,8 @@ services:
   frontend:
     image: hidrants-frontend:latest
     build:
-      context: ./front
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: front/Dockerfile
     container_name: hidrants-front
     restart: unless-stopped
     ports:

@@ -33,7 +33,8 @@ opencode.json
 !/scripts/*.example
 !/scripts/init-dynsec.py
 !/scripts/copy-mosquitto-certs.sh
-!/scripts/backup/ 
+!/scripts/backup/
+!/scripts/deploy/
 
 *.md
 !README.md

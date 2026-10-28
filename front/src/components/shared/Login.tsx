@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth, type LoginResponse } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { inputClass, primaryButtonClass } from "../../styles/uiStyles";
 
@@ -20,13 +20,13 @@ export const Login: React.FC = () => {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as LoginResponse | { error?: string };
 
-      if (response.ok) {
-        login(data.token, data.user);
+      if (response.ok && "user" in data) {
+        login(data.user);
         toast.success(`Benvingut, ${data.user.username}`);
       } else {
-        toast.error(data.error || "Error en el login");
+        toast.error(("error" in data && data.error) || "Error en el login");
       }
     } catch {
       toast.error("No es pot connectar amb el servidor");

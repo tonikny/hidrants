@@ -11,46 +11,32 @@ export interface User {
   permissions: string[];
 }
 
+/** Resposta de GET /api/auth/me. */
+export interface SessionResponse {
+  user: User;
+}
+
+/** Resposta de POST /api/auth/login: el mateix usuari + el token (l'auth real és la cookie httpOnly). */
+export interface LoginResponse extends SessionResponse {
+  token: string;
+}
+
 type ViewRole = "admin" | "coordinador" | "voluntari";
 
 const VIEW_ROLE_KEY = "hidrants_view_role";
-// Mirall de la matriu de permisos del backend (back/src/permissions.ts).
-const VIEW_PERMS: Record<ViewRole, string[]> = {
-  admin: [
-    "create_hydrant",
-    "edit_hydrant",
-    "delete_hydrant",
-    "sync_osm",
-    "view_sync_status",
-    "view_osm_link",
-    "view_own_adf_positions",
-    "view_shared_positions",
-    "view_all_positions",
-    "manage_own_adf_sharing",
-    "manage_telegram",
-    "create_incidencia",
-  ],
-  coordinador: [
-    "create_hydrant",
-    "edit_hydrant",
-    "delete_hydrant",
-    "view_own_adf_positions",
-    "view_shared_positions",
-    "manage_own_adf_sharing",
-    "manage_telegram",
-    "create_incidencia",
-  ],
-  voluntari: ["create_hydrant", "edit_hydrant", "view_own_adf_positions", "create_incidencia"],
-};
+
+// Matriu rol → permisos publicada pel backend (GET /api/config, que la treu de
+// back/src/permissions.ts). Es demana una sola vegada per sessió; mentre no ha arribat
+// (o si falla), la vista "veure com" queda sense permisos en lloc de duplicar la matriu aquí.
+let cachedRolePermissions: Record<string, string[]> | null = null;
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   actualRole: string | null;
   viewRole: ViewRole | null;
   setViewRole: (role: ViewRole | null) => void;
   setActiveAdfId: (id: number | null) => void;
-  login: (token: string, user: User) => void;
+  login: (user: User) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -69,6 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [loading, setLoading] = useState(true);
   const [prevRawUser, setPrevRawUser] = useState<User | null>(null);
+  const [rolePermissions, setRolePermissions] = useState<Record<string, string[]> | null>(
+    cachedRolePermissions,
+  );
 
   // Els usuaris no-admin no poden mantenir la vista "com": s'ajusta en render, sense setState a l'effect.
   if (rawUser !== prevRawUser) {
@@ -99,6 +88,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     void verifyToken();
   }, []);
 
+  // Carrega la matriu de permisos per rol (només una vegada per sessió).
+  useEffect(() => {
+    if (cachedRolePermissions) {
+      return;
+    }
+    let cancelled = false;
+    void fetch("/api/config")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const value = data?.role_permissions;
+        if (value && typeof value === "object") {
+          cachedRolePermissions = value as Record<string, string[]>;
+          if (!cancelled) {
+            setRolePermissions(cachedRolePermissions);
+          }
+        }
+      })
+      .catch(() => {
+        /* sense config no hi ha permisos de vista prèvia; no bloquegem la sessió */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Persisteix cada canvi de vista "com".
   useEffect(() => {
     if (viewRole) {
@@ -108,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [viewRole]);
 
-  const login = (_newToken: string, newUser: User) => {
+  const login = (newUser: User) => {
     setRawUser(newUser);
     setViewRole(null);
   };
@@ -133,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ? {
           ...rawUser,
           role: viewRole,
-          permissions: VIEW_PERMS[viewRole],
+          permissions: rolePermissions?.[viewRole] ?? [],
           adf_id: rawUser.adf_id ?? activeAdfId ?? null,
         }
       : rawUser;
@@ -142,7 +156,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
-        token: null,
         actualRole: rawUser?.role ?? null,
         viewRole,
         setViewRole,

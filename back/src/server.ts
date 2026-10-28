@@ -21,7 +21,9 @@ import telegramWebhook from "./routes/telegramWebhook.js";
 import osm from "./routes/osm.js";
 import appConfig from "./routes/appConfig.js";
 import { startMqttService, stopMqttService } from "./services/mqtt.js";
-import sqlite from "./db/index.js";
+import sqlite, { db } from "./db/index.js";
+import { users as usersTable } from "./db/schema.js";
+import { eq } from "drizzle-orm";
 
 import type { ApiHandler, ApiRequest } from "./types.js";
 import { config } from "./utils/config.js";
@@ -133,19 +135,45 @@ function createRes(reply: FastifyReply, app: any, request: FastifyRequest): ResA
 }
 
 /**
+ * Usuari de sessió fresc de la BD. El JWT només serveix per identificar l'usuari (id):
+ * el rol i l'ADF es llegeixen de `users` a cada petició, així un canvi de rol o un usuari
+ * esborrat tenen efecte immediat en lloc d'esperar l'expiració de la cookie (30 dies).
+ */
+function sessionUser(payload: any): NonNullable<ApiRequest["user"]> | undefined {
+  const id = payload?.id;
+  if (typeof id !== "string") {
+    return undefined;
+  }
+
+  const row = db.select().from(usersTable).where(eq(usersTable.id, id)).get();
+  if (!row) {
+    return undefined;
+  }
+
+  return {
+    id: row.id,
+    username: row.username,
+    adf_id: row.adf_id,
+    role: row.role ?? "voluntari",
+  };
+}
+
+/**
  * Wrapper per adaptar handlers a Fastify
  */
 function wrap(handler: ApiHandler, options: { protected?: boolean } = {}) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    let user: any = undefined;
+    let user: NonNullable<ApiRequest["user"]> | undefined;
 
     try {
       await request.jwtVerify();
-      user = (request as any).user;
+      user = sessionUser((request as any).user);
     } catch {
-      if (options.protected) {
-        return reply.status(401).send({ error: "Sessió caducada o no vàlida" });
-      }
+      user = undefined;
+    }
+
+    if (options.protected && !user) {
+      return reply.status(401).send({ error: "Sessió caducada o no vàlida" });
     }
 
     if (user && options.protected) {

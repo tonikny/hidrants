@@ -148,7 +148,7 @@ Per paquet: `front/` (`dev`, `build`), `back/` (`db:migrate`, `dev`, `build`, `m
 - **Stack:** React 19 + Leaflet 1.9 / React-Leaflet 5 (front), Fastify 5 + TypeScript + Drizzle ORM + SQLite + Zod (back), Mosquitto 2 (MQTT).
 - **Model ADF-centric:** `adfs` és la unitat principal (no municipis). Una ADF agrupa `osm_relations`; `bbox`, `center` i `boundary_geojson` es desen a `adfs`. `users.adf_id` vincula usuari a ADF; admin `adf_id = null`.
 - **SPA:** Un domini, canvi ADF via `AdfContext` i selector. Flux dades: `GET /api/adf?adf=ID`, `GET /api/adf/boundary?adf=ID` (GeoJSON), `GET /api/hidrants?adf=ID` (GeoJSON).
-- **Rols i permisos:** `admin` (tot) / `coordinador` (ADF pròpia) / `voluntari` (edició camp) / `public` (només lectura). Matriu central `back/src/permissions.ts: rol → capacitats` (`create_hydrant`, `delete_hydrant`, `sync_osm`, `create_incidencia`, `view_all_positions`, `manage_telegram`, etc.). Middleware `back/src/server.ts:138` valida capacitat i abast ADF; `GET /api/auth/me` retorna `permissions[]`. Username no-admin: `XXX/YYY` o `XXX/GI/YYY` (`back/src/routes/users.ts:12`).
+- **Rols i permisos:** `admin` (tot) / `coordinador` (ADF pròpia) / `voluntari` (edició camp) / `public` (només lectura). Matriu central `back/src/permissions.ts: rol → capacitats` (`create_hydrant`, `delete_hydrant`, `sync_osm`, `create_incidencia`, `view_all_positions`, `manage_telegram`, etc.). Middleware `back/src/server.ts:164` valida capacitat i abast ADF amb el rol i l'ADF **rellegits de la BD** a cada petició (el JWT només identifica l'usuari, així un canvi de rol o un usuari esborrat té efecte immediat); `permissionsFor()` avisa al log si el rol no és a la matriu. `POST /api/auth/login` i `GET /api/auth/me` retornen el `user` amb `permissions[]` i `mqtt_enabled`; `GET /api/config` publica `role_permissions` (matriu rol → permisos) perquè el front no la dupliqui (vista "veure com"). Username no-admin: `XXX/YYY` o `XXX/GI/YYY` (`back/src/routes/users.ts:12`).
 - **Seguretat:** JWT a cookie `httpOnly` (`secure` en prod), validació per capacitat + propietat ADF.
 - **Incidències:** `incidencies.visibilitat` (`PUBLICA` | `TOTES_ADFS` | `ADF_PRIVADA`). Públic veu només `PUBLICA`; loguejat veu seves + globals; admin tot.
 - **Tracking compartit:** `adfs.tracking_shared` boolean opt-in; `PUT /api/adfs/:id/tracking-sharing` (admin qualsevol, coordinador la seva).
@@ -387,16 +387,16 @@ Fitxers clau: `back/src/services/osmSync.ts` (pull Overpass), `back/src/services
 
 ## 10. API — Referència ràpida (endpoints no OSM)
 
-Tots els `POST/PUT/DELETE` d'hidrants i incidències requereixen sessió (`auth_token` httpOnly, 30 dies, `sameSite=lax`, `secure` en prod). El middleware `wrap()` a `back/src/server.ts:138` aplica capacitat (`permissionsFor()` a `back/src/permissions.ts`) i abast ADF (no-admin només la seva ADF); les rutes amb `protected: true` exigeixen JWT sempre. Per OSM vegeu §9.8 i `docs/OSM_SYNC.md#9`. Definició i protecció a `back/src/server.ts:211`.
+Tots els `POST/PUT/DELETE` d'hidrants i incidències requereixen sessió (`auth_token` httpOnly, 30 dies, `sameSite=lax`, `secure` en prod). El middleware `wrap()` a `back/src/server.ts:164` aplica capacitat (`permissionsFor()` a `back/src/permissions.ts`) i abast ADF (no-admin només la seva ADF) amb el rol i l'ADF llegits de la BD a cada petició (el JWT només identifica l'usuari); les rutes amb `protected: true` exigeixen sessió vàlida sempre. Per OSM vegeu §9.8 i `docs/OSM_SYNC.md#9`. Definició i protecció a `back/src/server.ts:239`.
 
 ### 10.1 Auth / Config
 
-| Endpoint           | Mètode | Auth                        | Descripció                                                                                                   |
-| ------------------ | ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `/api/auth/login`  | POST   | no                          | `{ username, password }` → cookie `auth_token` + `{ user }` (`back/src/routes/auth.ts:13`)                   |
-| `/api/auth/logout` | POST   | no                          | Esborra cookie                                                                                               |
-| `/api/auth/me`     | GET    | no (401 si no hi ha sessió) | Usuari actual + `mqtt_enabled` + `permissions[]`                                                             |
-| `/api/config`      | GET    | no                          | `{ max_hydrant_move_meters }` límit desplaçament (`back/src/routes/appConfig.ts:8`, `back/src/utils/geo.ts`) |
+| Endpoint           | Mètode | Auth                        | Descripció                                                                                                                                                                            |
+| ------------------ | ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/auth/login`  | POST   | no                          | `{ username, password }` → cookie `auth_token` + `{ user }` amb `permissions[]` i `mqtt_enabled` (`back/src/routes/auth.ts:43`)                                                       |
+| `/api/auth/logout` | POST   | no                          | Esborra cookie                                                                                                                                                                        |
+| `/api/auth/me`     | GET    | no (401 si no hi ha sessió) | Usuari actual + `mqtt_enabled` + `permissions[]`                                                                                                                                      |
+| `/api/config`      | GET    | no                          | `{ max_hydrant_move_meters, role_permissions }` límit de desplaçament i matriu rol → permisos (`back/src/routes/appConfig.ts:11`, `back/src/utils/geo.ts`, `back/src/permissions.ts`) |
 
 ### 10.2 ADFs / Boundaries
 

@@ -6,6 +6,36 @@ import type { ApiHandler } from "../types.js";
 import { permissionsFor } from "../permissions.js";
 
 /**
+ * Usuari exposat al client. Mateix shape per a /login i /me: els permisos es deriven
+ * del rol aquí (única font de veritat: back/src/permissions.ts), mai no vénen de la BD.
+ */
+function toPublicUser(user: {
+  id: string;
+  username: string;
+  adf_id: number | null;
+  role: string | null;
+}) {
+  // El rol a BD és nullable (default "voluntari"); normalitzem per no exposar null ni
+  // signar un token amb un rol diferent del de la resposta.
+  const role = user.role ?? "voluntari";
+
+  const mqttRow = db
+    .select()
+    .from(mqttUsers)
+    .where(and(eq(mqttUsers.user_id, user.id), eq(mqttUsers.enabled, true)))
+    .get();
+
+  return {
+    id: user.id,
+    username: user.username,
+    adf_id: user.adf_id,
+    role,
+    mqtt_enabled: !!mqttRow,
+    permissions: permissionsFor(role),
+  };
+}
+
+/**
  * Login handler
  * POST /api/auth/login
  * Body: { username, password }
@@ -24,21 +54,16 @@ export const login: ApiHandler = async (req, res) => {
       return res.status(401).json({ error: "Usuari o contrasenya incorrectes" });
     }
 
+    const publicUser = toPublicUser(user);
+
     res._userToSign = {
-      id: user.id,
-      username: user.username,
-      adf_id: user.adf_id,
-      role: user.role ?? "editor",
+      id: publicUser.id,
+      username: publicUser.username,
+      adf_id: publicUser.adf_id,
+      role: publicUser.role,
     };
 
-    return res.status(200).json({
-      user: {
-        id: user.id,
-        username: user.username,
-        adf_id: user.adf_id,
-        role: user.role,
-      },
-    });
+    return res.status(200).json({ user: publicUser });
   } catch (err) {
     req.log.child({ module: "auth", operation: "login" }).error({ err, username }, "Login error");
     res.status(500).json({ error: `Error intern: ${(err as Error).message}` });
@@ -63,17 +88,5 @@ export const me: ApiHandler = async (req, res) => {
     return res.status(401).json({ error: "No autenticat" });
   }
 
-  const mqttRow = db
-    .select()
-    .from(mqttUsers)
-    .where(and(eq(mqttUsers.user_id, req.user.id), eq(mqttUsers.enabled, true)))
-    .get();
-
-  return res.json({
-    user: {
-      ...req.user,
-      mqtt_enabled: !!mqttRow,
-      permissions: permissionsFor(req.user.role),
-    },
-  });
+  return res.json({ user: toPublicUser(req.user) });
 };

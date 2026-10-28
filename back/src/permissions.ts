@@ -1,5 +1,9 @@
 // Matriu de permisos centralitzada: rol → capacitats.
 // Per canviar permisos només cal tocar aquest fitxer.
+import { logger } from "./utils/logger.js";
+
+const log = logger.child({ module: "permissions" });
+
 export type Role = "admin" | "coordinador" | "voluntari";
 
 export type Permission =
@@ -47,5 +51,14 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
 };
 
 export function permissionsFor(role: string): Permission[] {
-  return [...(ROLE_PERMISSIONS[role as Role] ?? [])];
+  const perms = ROLE_PERMISSIONS[role as Role];
+
+  // Un rol fora de la matriu (dada antiga o typo a la BD) deixaria l'usuari autenticat
+  // però sense cap permís. No ho amaguem: ho loguem i retornem una llista buida.
+  if (!perms) {
+    log.warn({ role }, "Rol desconegut: no té cap permís assignat");
+    return [];
+  }
+
+  return [...perms];
 }

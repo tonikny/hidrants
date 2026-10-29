@@ -30,7 +30,12 @@ export function Panel({ map, tabs, node, sheetRef }: PanelProps) {
         </div>
         <aside className="hidden tb:block w-95 shrink-0 bg-white border-l border-border">
           {node ? (
-            <NodeHeader title={node.title} onEdit={node.onEdit} editing={node.editing} />
+            <NodeHeader
+              title={node.title}
+              onEdit={node.onEdit}
+              onClose={node.onClose}
+              editing={node.editing}
+            />
           ) : (
             <TabBar tabs={tabs} activeId={activeTab} onSelect={setActiveTab} showLabels />
           )}

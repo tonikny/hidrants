@@ -166,7 +166,12 @@ function BottomSheetView(
           <span className="h-0.75 w-9 rounded-full bg-faint" aria-hidden />
         </div>
         {nodeMode && node ? (
-          <NodeHeader title={node.title} onEdit={node.onEdit} editing={node.editing} />
+          <NodeHeader
+            title={node.title}
+            onEdit={node.onEdit}
+            onClose={node.onClose}
+            editing={node.editing}
+          />
         ) : (
           <TabBar tabs={tabs} activeId={activeTab} onSelect={handleTabSelect} showLabels={open} />
         )}

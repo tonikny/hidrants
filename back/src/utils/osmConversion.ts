@@ -136,3 +136,15 @@ export function mergeUiFieldsIntoTags(
 
   return merged;
 }
+
+/**
+ * Compara dos conjunts de tags OSM pel contingut, sense tenir en compte
+ * l'ordre de les claus (l'ordre en què OSM retorna els tags no és estable).
+ */
+export function sameOsmTags(a: HydrantOsmTags, b: HydrantOsmTags): boolean {
+  const aKeys = Object.keys(a);
+  if (aKeys.length !== Object.keys(b).length) {
+    return false;
+  }
+  return aKeys.every((key) => a[key] === b[key]);
+}

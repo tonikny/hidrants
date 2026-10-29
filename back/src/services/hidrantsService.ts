@@ -6,6 +6,7 @@ import {
   osm2Ui,
   ui2Osm,
   mergeUiFieldsIntoTags,
+  sameOsmTags,
   type HydrantUiFields,
 } from "../utils/osmConversion.js";
 import { db } from "../db/index.js";
@@ -225,9 +226,37 @@ export const HidrantsService = {
 
     // Canvi de sync_status només si hi ha canvis en camps OSM (lat/lon/etiquetes d'OSM),
     // sense tenir en compte camps privats (observacions, etc.)
+    //
+    // Si tenim la darrera versió coneguda d'OSM (remote_*), l'estat reflecteix si
+    // les dades locals difereixen d'OSM i no si hi ha hagut cap edició: així,
+    // deixar un hidrant igual que a OSM el torna a marcar com a SYNCED i no es
+    // mostra un push pendent sense cap diferència real.
     let newSyncStatus = current.sync_status;
-    if (hasOsmChanges && current.sync_status === "SYNCED") {
-      newSyncStatus = "PENDING_UPDATE";
+    const canAdjustSyncStatus =
+      current.sync_status === "PENDING_UPDATE" ||
+      (current.sync_status === "SYNCED" && hasOsmChanges);
+
+    if (canAdjustSyncStatus) {
+      const remoteOsmTags = current.remote_osm_tags
+        ? parseJsonObject<Record<string, string>>(current.remote_osm_tags)
+        : null;
+
+      if (remoteOsmTags) {
+        const localOsmTags = osm_tags ?? parseJsonObject<Record<string, string>>(current.osm_tags);
+        const finalLat = lat ?? current.lat;
+        const finalLon = lon ?? current.lon;
+        const positionMatchesRemote =
+          typeof current.remote_lat === "number" && typeof current.remote_lon === "number"
+            ? !hasPositionChanged(current.remote_lat, current.remote_lon, finalLat, finalLon)
+            : !positionChanged;
+
+        newSyncStatus =
+          sameOsmTags(localOsmTags, remoteOsmTags) && positionMatchesRemote
+            ? "SYNCED"
+            : "PENDING_UPDATE";
+      } else if (current.sync_status === "SYNCED") {
+        newSyncStatus = "PENDING_UPDATE";
+      }
     }
 
     HidrantsRepository.update(id, adfId, {

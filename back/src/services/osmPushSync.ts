@@ -5,6 +5,9 @@ import { tryAutoResolve, type ConflictDetail } from "./osmConflictResolver.js";
 import { validateHydrantTags } from "./osmDataValidator.js";
 import { computeDiffStrings } from "./osmDiff.js";
 import { logger } from "../utils/logger.js";
+import { db } from "../db/index.js";
+import { adfs } from "../db/schema.js";
+import { inArray } from "drizzle-orm";
 
 const log = logger.child({ module: "osm", operation: "push" });
 
@@ -27,6 +30,65 @@ export function parseOsmTags(osmTags: string | null | undefined): Record<string,
   } catch {
     return {};
   }
+}
+
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+/**
+ * Noms de les ADF afectades pel push, per identificar l'origen de les dades.
+ */
+function affectedAdfNames(pending: HidrantData[]): string[] {
+  const ids = [
+    ...new Set(pending.map((h) => h.adf_id).filter((id): id is number => typeof id === "number")),
+  ];
+  if (ids.length === 0) {
+    return [];
+  }
+  return db
+    .select({ nom: adfs.nom })
+    .from(adfs)
+    .where(inArray(adfs.id, ids))
+    .all()
+    .map((row) => row.nom);
+}
+
+/**
+ * Comentari del changeset. OSM el mostra com el registre públic de l'edició,
+ * així que hi indiquem què s'ha fet i per a quines ADF.
+ */
+export function buildChangesetComment(pending: HidrantData[]): string {
+  let creates = 0;
+  let updates = 0;
+  let deletes = 0;
+
+  for (const h of pending) {
+    if (h.sync_status === "PENDING_DELETE") {
+      deletes++;
+    } else if (h.sync_status === "PENDING_CREATE" || (h.sync_status === "ERROR" && !h.osm_id)) {
+      // Els ERROR sense osm_id es reintenten com a creació.
+      creates++;
+    } else {
+      updates++;
+    }
+  }
+
+  const actions: string[] = [];
+  if (creates > 0) {
+    actions.push(plural(creates, "alta", "altes"));
+  }
+  if (updates > 0) {
+    actions.push(plural(updates, "actualització", "actualitzacions"));
+  }
+  if (deletes > 0) {
+    actions.push(plural(deletes, "esborrat", "esborrats"));
+  }
+
+  const adfNames = affectedAdfNames(pending);
+  const scope = adfNames.length > 0 ? ` (${adfNames.join(", ")})` : "";
+
+  return `Hidrants d'incendis${scope}: ${actions.join(", ")}`;
 }
 
 /**
@@ -85,10 +147,9 @@ export async function pushSyncToOSM(options?: {
   log.info({ count: pending.length }, "Canvis pendents de pujar a OSM");
 
   // Crear changeset
-  const changesetId = await osmApi.createChangeset(
-    `HidrantsADF — ${pending.length} canvis pendents`,
-  );
-  log.info({ changesetId }, "Changeset OSM creat");
+  const changesetComment = buildChangesetComment(pending);
+  const changesetId = await osmApi.createChangeset(changesetComment);
+  log.info({ changesetId, changesetComment }, "Changeset OSM creat");
 
   const result: PushSyncResult = { synced: 0, conflicts: 0, errors: 0, reviewed: 0, details: [] };
   const conflictDetails: ConflictDetail[] = [];

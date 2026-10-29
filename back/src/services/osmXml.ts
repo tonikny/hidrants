@@ -14,6 +14,9 @@ function esc(value: string): string {
 
 /**
  * Generar XML per crear un changeset obert.
+ *
+ * Les dades d'hidrants provenen del treball de camp de les ADF, per això tots
+ * els changesets es marquen amb `source=survey`.
  */
 export function buildChangesetXml(comment: string): string {
   const doc = xml
@@ -23,6 +26,8 @@ export function buildChangesetXml(comment: string): string {
     .ele("tag", { k: "comment", v: comment })
     .up()
     .ele("tag", { k: "created_by", v: "HidrantsADF/1.0" })
+    .up()
+    .ele("tag", { k: "source", v: "survey" })
     .up()
     .up()
     .up();

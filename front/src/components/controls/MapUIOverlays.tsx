@@ -39,8 +39,10 @@ export function MapUIOverlays({
       </div>
 
       {/* Bottom Left: Zoom Display (Above Attribution if it were there, but on the left).
-          On mobile it sits above the bottomsheet bar (60px), aligned with the attribution. */}
-      <div className={`${controlContainerClass} bottom-15 lg:bottom-1.25 left-1.25`}>
+          On mobile it sits above the bottomsheet bar (60px), aligned with the attribution.
+          A partir del breakpoint del panell lateral (tb) no hi ha bottomsheet, així que
+          baixa fins al fons del mapa. */}
+      <div className={`${controlContainerClass} bottom-15 tb:bottom-1.25 left-1.25`}>
         <div className={controlItemClass}>
           <ZoomDisplay />
         </div>

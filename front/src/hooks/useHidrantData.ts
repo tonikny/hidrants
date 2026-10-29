@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAdf } from "../contexts/AdfContext";
 import type { HydrantUiFields } from "../utils/osmConversion";
 
@@ -38,27 +38,53 @@ export function useHydrantData() {
   const [features, setFeatures] = useState<HidrantFeature[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
+  const loadedAdfIdRef = useRef<number | null>(null);
 
   const fetchData = useCallback(async (): Promise<void> => {
-    if (!activeAdf) {
+    const adfId = activeAdf?.id ?? null;
+    if (adfId === null) {
+      requestIdRef.current += 1;
+      loadedAdfIdRef.current = null;
       setFeatures([]);
+      setError(null);
+      setLoading(false);
       return;
     }
+
+    // En canviar d'ADF buidem les dades de l'anterior: si la petició nova falla,
+    // no s'han de veure els hidrants d'una altra ADF.
+    if (loadedAdfIdRef.current !== adfId) {
+      loadedAdfIdRef.current = adfId;
+      setFeatures([]);
+      setError(null);
+    }
+
+    const requestId = ++requestIdRef.current;
     try {
       setLoading(true);
-      const response = await fetch(`/api/hidrants?adf=${activeAdf.id}&_t=${Date.now()}`);
+      const response = await fetch(`/api/hidrants?adf=${adfId}&_t=${Date.now()}`);
       if (!response.ok) {
         throw new Error("Error al carregar hidrants");
       }
       const data = await response.json();
 
-      // Només actualitzem si encara estem a la mateixa ADF
+      // Ignorem respostes antigues si mentrestant s'ha canviat d'ADF o refrescat
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
       setFeatures(data.features || []);
       setError(null);
     } catch (err) {
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+      setFeatures([]);
       setError(err instanceof Error ? err.message : "Error desconegut");
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [activeAdf]);
 

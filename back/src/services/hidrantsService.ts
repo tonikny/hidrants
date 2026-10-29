@@ -16,6 +16,41 @@ import { logger } from "../utils/logger.js";
 
 const log = logger.child({ module: "hidrants", operation: "service" });
 
+/**
+ * Parseja un camp de text que hauria de contenir un objecte JSON.
+ * Retorna {} si és buit o malmès perquè una fila defectuosa no faci
+ * fallar la llista sencera de l'ADF.
+ */
+function parseJsonObject<T extends Record<string, unknown>>(value: string | null | undefined): T {
+  if (!value) {
+    return {} as T;
+  }
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as T;
+    }
+  } catch {
+    /* valor no JSON: ignorem el contingut */
+  }
+  return {} as T;
+}
+
+/**
+ * `sync_error` pot contenir JSON (conflictes/revisions) o text pla (estat ERROR).
+ * Si no és JSON vàlid el retornem tal qual perquè el frontend el pugui mostrar.
+ */
+function parseSyncError(value: string | null | undefined): unknown {
+  if (!value) {
+    return null;
+  }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
 export const HidrantsService = {
   async forceSync(adfId: number, force = false) {
     const result = await syncAdfFromOSM(adfId, force);
@@ -37,7 +72,7 @@ export const HidrantsService = {
     const rows = HidrantsRepository.findActiveByAdf(adfId);
 
     const features = rows.map((row) => {
-      const osm_tags = JSON.parse(row.osm_tags || "{}");
+      const osm_tags = parseJsonObject<Record<string, string>>(row.osm_tags);
       const ui_fields = osm2Ui(osm_tags);
 
       return {
@@ -52,11 +87,11 @@ export const HidrantsService = {
           osm_id: row.osm_id,
           osm_tags, // Ara van en el seu propi objecte, no escampats
           ui_fields,
-          private_tags: JSON.parse(row.private_tags || "{}"),
+          private_tags: parseJsonObject(row.private_tags),
           sync_status: row.sync_status,
-          sync_error: row.sync_error ? JSON.parse(row.sync_error) : null,
+          sync_error: parseSyncError(row.sync_error),
           synced_at: row.synced_at,
-          remote_osm_tags: row.remote_osm_tags ? JSON.parse(row.remote_osm_tags) : null,
+          remote_osm_tags: row.remote_osm_tags ? parseJsonObject(row.remote_osm_tags) : null,
           remote_lat: row.remote_lat,
           remote_lon: row.remote_lon,
           updated_at: row.updated_at,

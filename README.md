@@ -11,7 +11,7 @@ Aquesta aplicació permet a les ADFs gestionar i visualitzar la xarxa d'hidrants
 - **Arquitectura SPA**: Aplicació de pàgina única, amb suport per a múltiples ADFs, cadascuna amb un o diversos municipis assignats.
 - **Dades geogràfiques per ADF**: Les fronteres (GeoJSON), l'BBOX i el center es desen directament a la taula `adfs`, sense dependre de municipis individuals.
 - **Sincronització amb OSM**: Importació i exportació bidireccional de dades amb OpenStreetMap (pull sync, push sync, exportació .osc).
-- **Validació de dades**: Abans de pujar a OSM, el backend valida els tags contra valors permesos (tipus, posició, acoblaments, diàmetres, pressió, dates). Dades invàlides → error; warnings (majuscules, valors no estàndard) → revisió pendent.
+- **Validació de dades**: Abans de pujar a OSM, el backend valida els tags contra valors permesos (tipus, posició, acoblaments, diàmetres, dates; la pressió s'accepta en qualsevol format). Dades invàlides → error; warnings (majuscules, valors no estàndard) → revisió pendent.
 - **Gestió d'incidències**: Registre i seguiment d'incidències associades als hidrants.
 - **Tracking en temps real (MQTT/OwnTracks)**: Recepció d'ubicacions GPS de les unitats per conèixer-ne la posició sobre el mapa.
 - **Notificacions Telegram per ADF**: Cada ADF pot tenir el seu bot i un grup de Telegram on rep automàticament els avisos (incidències, altes i edicions d'hidrants). Configuració guiada des de la pestanya **Configuració → Notificacions de Telegram**: token xifrat, deep link `startgroup` d'un sol ús i avís de prova directament al grup.

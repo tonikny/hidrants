@@ -321,7 +321,7 @@ REVIEW → SYNCED (revertit) o modificat
 | `fire_hydrant:position` | `lane`, `sidewalk`, `green` | Ubicació relativa                       |
 | `couplings`             | `1`, `2`, `3`, `4`          | Nombre d'acoblaments                    |
 | `couplings:diameters`   | Qualsevol                   | Diàmetres (warnings per 45, 70, 100 mm) |
-| `fire_hydrant:pressure` | Números vàlids (-123.45)    | Pressió (bar)                           |
+| `fire_hydrant:pressure` | Qualsevol (número o text)   | Pressió (bar o `yes`, `low`, `high`...) |
 | `survey:date`           | Format ISO (YYYY-MM-DD)     | Data de revisió                         |
 
 ### 8.2. Validacions generals

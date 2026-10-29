@@ -4,7 +4,7 @@
  * Estratègia:
  * - Select fields: validar contra la llista de valors permesos
  * - Text lliure: detectar majuscules evidents (tot el text en majuscules)
- * - Numèrics: validar que és un número
+ * - Pressió: format lliure, perquè a OSM també hi ha valors no numèrics ("yes", "low"...)
  * - Dates: validar format ISO (YYYY-MM-DD)
  * - Longitud: màxim 255 caràcters per clau i valor
  *
@@ -32,7 +32,6 @@ const VALID_TYPES = ["", "pillar", "underground"];
 const VALID_POSITIONS = ["", "lane", "sidewalk", "green"];
 const VALID_COUPLINGS = ["", "1", "2", "3", "4"];
 const VALID_DIAMETERS = ["", "45", "70", "100"];
-const VALID_PRESSURE = /^-?\d+(\.\d+)?$/;
 const VALID_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 // Tags que gestionem des de l'UI — els altres (venguts d'OSM) no es validen
@@ -114,13 +113,9 @@ function validateManagedTag(tag: string, value: string): ValidationIssue[] {
     }
 
     case "fire_hydrant:pressure":
-      if (value && !VALID_PRESSURE.test(value)) {
-        issues.push({
-          tag,
-          level: "error",
-          message: `"${value}" no és un número vàlid de pressió`,
-        });
-      }
+      // A OSM la pressió pot ser numèrica (bar) o textual: `yes`, però també
+      // `low`/`medium`/`high` o qualsevol altra cosa que hi hagi posat algú
+      // directament a OSM. No restringim el format per no bloquejar aquests valors.
       break;
 
     case "survey:date":

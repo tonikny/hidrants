@@ -55,12 +55,15 @@ export async function pushSyncToOSM(options?: {
   let pending: HidrantData[];
 
   if (options?.ids && options.ids.length > 0) {
-    // Push selectiu: només els IDs especificats
+    // Push selectiu: només els IDs especificats. S'hi inclouen els ERROR perquè
+    // el botó "Reintentar" del panell OSM pugui reintentar hidrants que van
+    // quedar bloquejats per una validació (p. ex. pressió no numèrica).
     pending = HidrantsRepository.findByIds(options.ids).filter(
       (h) =>
         h.sync_status === "PENDING_CREATE" ||
         h.sync_status === "PENDING_UPDATE" ||
-        h.sync_status === "PENDING_DELETE",
+        h.sync_status === "PENDING_DELETE" ||
+        h.sync_status === "ERROR",
     );
   } else {
     // Push global: tots els pending
@@ -98,6 +101,14 @@ export async function pushSyncToOSM(options?: {
         await processUpdate(h, changesetId, result, conflictDetails);
       } else if (h.sync_status === "PENDING_DELETE") {
         await processDelete(h, changesetId, result, conflictDetails);
+      } else if (h.sync_status === "ERROR") {
+        // Reintent d'un hidrant que va quedar bloquejat: si mai s'ha publicat,
+        // es crea; si ja existeix a OSM, s'actualitza.
+        if (h.osm_id) {
+          await processUpdate(h, changesetId, result, conflictDetails);
+        } else {
+          await processCreate(h, changesetId, result);
+        }
       }
     } catch (err) {
       log.error({ err, hydrantId: h.id }, "Error processant hidrant a OSM push");

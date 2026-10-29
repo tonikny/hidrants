@@ -338,14 +338,14 @@ Fitxer OSM XML compatible JOSM.
 
 Abans de pujar, `back/src/services/osmDataValidator.ts` valida tags:
 
-| Camp        | Tag OSM                 | Valors permesos                      |
-| ----------- | ----------------------- | ------------------------------------ |
-| Tipus       | `fire_hydrant:type`     | `pillar`, `underground`              |
-| Posició     | `fire_hydrant:position` | `lane`, `sidewalk`, `green`          |
-| Acoblaments | `couplings`             | `1`, `2`, `3`, `4`                   |
-| Diàmetres   | `couplings:diameters`   | `45`, `70`, `100` (altres → warning) |
-| Pressió     | `fire_hydrant:pressure` | Número vàlid                         |
-| Data        | `survey:date`           | `YYYY-MM-DD`                         |
+| Camp        | Tag OSM                 | Valors permesos                            |
+| ----------- | ----------------------- | ------------------------------------------ |
+| Tipus       | `fire_hydrant:type`     | `pillar`, `underground`                    |
+| Posició     | `fire_hydrant:position` | `lane`, `sidewalk`, `green`                |
+| Acoblaments | `couplings`             | `1`, `2`, `3`, `4`                         |
+| Diàmetres   | `couplings:diameters`   | `45`, `70`, `100` (altres → warning)       |
+| Pressió     | `fire_hydrant:pressure` | Qualsevol (número o text: `yes`, `low`...) |
+| Data        | `survey:date`           | `YYYY-MM-DD`                               |
 
 Addicional: majúscules ≥3 caràcters → warning; tag >255 caràcters → error; tags buits s'eliminen. **Error → `ERROR` (bloqueja push); Warning → `REVIEW` (es mostra perquè admin revisi, `docs/OSM_SYNC.md#8` i `OsmReviewList.tsx`).**
 

@@ -104,8 +104,8 @@ export const HydrantFormFields: React.FC<HydrantFormFieldsProps> = ({
         <label className="flex-1 text-xs italic">
           Pressió (bar):
           <input
-            type="number"
-            step="any"
+            type="text"
+            inputMode="decimal"
             value={data.pressure}
             onChange={(e) => handleFieldChange("pressure", e.target.value)}
             className={inputClass}

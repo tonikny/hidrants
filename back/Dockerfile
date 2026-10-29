@@ -3,7 +3,7 @@
 # monorepo (npm workspaces) en lloc de resoldre els rangs ^ a cada build.
 
 # Estadi de construcció
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /app
 
@@ -32,7 +32,7 @@ COPY back ./back
 RUN npm run build -w back
 
 # Estadi de dependències de producció
-FROM node:24-alpine AS prod-deps
+FROM node:26-alpine AS prod-deps
 
 WORKDIR /app
 
@@ -48,7 +48,7 @@ RUN apk add --no-cache --virtual .build-deps python3 make g++ \
  && npm rebuild -w back
 
 # Estadi de producció
-FROM node:24-alpine
+FROM node:26-alpine
 
 # curl per al healthcheck i libstdc++ per al binari compilat de better-sqlite3
 RUN apk add --no-cache curl libstdc++

@@ -18,7 +18,7 @@ Aquesta guia cobreix **desenvolupament local**. Per a altres entorns i temes esp
 
 ## 1. Requisits
 
-- **Node.js >=24** i **npm** (vegeu `package.json:60`, `.nvmrc`)
+- **Node.js >=26** i **npm** (vegeu `package.json:60`, `.nvmrc`)
 - **Docker** i **Docker Compose** (per `mqtt:up` i `docker:up`)
 - **Python 3** (per `scripts/init-dynsec.py` → `mqtt:sync-dynsec` / `mqtt:regen-dynsec`)
 - **Git**
@@ -474,7 +474,7 @@ Identitat aplanada `278/GI/011` → `278_GI_011` (`mqttNameFor()` a `back/src/se
 
 - **ESLint** (flat `eslint.config.mjs`, un per `front/` i `back/`): `npm run lint` / `lint:fix` a arrel o paquet. Stack `typescript-eslint` (recommended) + `eslint-config-prettier`, `eslint-plugin-react-hooks` i `react-refresh` (front). Objectiu **0 errors, 0 warnings**. `no-console` via `front/src/utils/log.ts`; `no-explicit-any` adapter Fastify amb `eslint-disable` justificat (`back/src/server.ts:1`).
 - **Husky + lint-staged** (hook pre-commit): `.husky/pre-commit` → `npx lint-staged` (ESLint `--fix` als staged). **No `--no-verify`** sense justificació. Config a `package.json:51` (`*.{ts,tsx,js,jsx}` → `eslint --fix` + `prettier`, `*.{json,md,yml}` → `prettier`).
-- **CI** (`.github/workflows/ci.yml`): `push` a `main`/`develop` i `pull_request`. Pipeline Node 24: `npm ci` → `typecheck` → `lint` → `build`. Mínim: no tests ni deploy encara.
+- **CI** (`.github/workflows/ci.yml`): `push` a `main`/`develop` i `pull_request`. Pipeline Node 26: `npm ci` → `typecheck` → `lint` → `build`. Mínim: no tests ni deploy encara.
 
 ---
 

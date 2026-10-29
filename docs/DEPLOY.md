@@ -124,7 +124,7 @@ Per actualitzar a l'última versió de Git i reconstruir els contenidors:
 npm run docker:deploy
 ```
 
-Cal que `node` i `npm` siguin al `PATH` (amb fnm: `eval "$(fnm env)"`, que el hook de shell fa sol en entrar al directori).
+Cal que `node` i `npm` siguin al `PATH` (amb fnm: `eval "$(fnm env)"`, que el hook de shell fa sol en entrar al directori) i que la versió de Node sigui la del `.nvmrc` (Node 26). Si el `.nvmrc` apunta a una versió que no tens instal·lada, el canvi automàtic de fnm no es fa i l'script s'atura amb «npm no és al PATH»: instal·la-la abans del primer desplegament (`fnm install`, sense argument, llegeix el `.nvmrc`).
 
 L'script (`scripts/deploy/update.sh`) fa, en aquest ordre i aturant-se al primer error:
 

@@ -37,7 +37,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
     "@types/geojson": "^7946.0.16",
-    "@types/node": "^25.8.0",
+    "@types/node": "^26.6.6",
     "@types/uuid": "^10.0.0",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.0.0",

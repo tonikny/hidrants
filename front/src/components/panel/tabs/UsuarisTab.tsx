@@ -66,6 +66,11 @@ export function UsuarisTab() {
   const [editDraft, setEditDraft] = useState<(Draft & { username: string; adfId: number }) | null>(
     null,
   );
+  // Canvi de la contrasenya del propi usuari (només contrasenya: ni username ni rol).
+  const [pwDraft, setPwDraft] = useState<{ current: string; next: string; repeat: string } | null>(
+    null,
+  );
+  const [pwSubmitting, setPwSubmitting] = useState(false);
 
   useEffect(() => {
     if (!canManage) {
@@ -115,6 +120,7 @@ export function UsuarisTab() {
     setCreateAdf(adfId);
     setCreateDraft({ numero: "", gi: false, role: "voluntari", password: "" });
     setEditDraft(null);
+    setPwDraft(null);
   }
 
   function startEdit(u: ManagedUser) {
@@ -128,6 +134,14 @@ export function UsuarisTab() {
       password: "",
     });
     setCreateAdf(null);
+    setPwDraft(null);
+  }
+
+  /** El propi usuari només pot canviar la seva contrasenya (ni username ni rol). */
+  function startSelfEdit() {
+    setEditDraft(null);
+    setCreateAdf(null);
+    setPwDraft({ current: "", next: "", repeat: "" });
   }
 
   async function doRequest(url: string, method: string, body: unknown) {
@@ -190,6 +204,30 @@ export function UsuarisTab() {
       toast.error(err instanceof Error ? err.message : "Error");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function submitPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pwDraft) {
+      return;
+    }
+    if (pwDraft.next !== pwDraft.repeat) {
+      toast.error("Les contrasenyes noves no coincideixen");
+      return;
+    }
+    setPwSubmitting(true);
+    try {
+      await doRequest("/api/auth/password", "PUT", {
+        currentPassword: pwDraft.current,
+        newPassword: pwDraft.next,
+      });
+      toast.success("Contrasenya actualitzada");
+      setPwDraft(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error");
+    } finally {
+      setPwSubmitting(false);
     }
   }
 
@@ -365,16 +403,16 @@ export function UsuarisTab() {
                             <div className="font-medium text-ink">{u.username}</div>
                             <div className="text-muted text-xs capitalize">{u.role}</div>
                           </div>
-                          {u.id !== user.id && (
-                            <div className="flex gap-1 shrink-0">
-                              {u.adf_id !== null && (
-                                <button
-                                  onClick={() => startEdit(u)}
-                                  className="bg-transparent border border-border rounded px-2 py-1 cursor-pointer text-[0.8rem]"
-                                >
-                                  ✏️
-                                </button>
-                              )}
+                          <div className="flex gap-1 shrink-0">
+                            {(u.id === user.id || u.adf_id !== null) && (
+                              <button
+                                onClick={() => (u.id === user.id ? startSelfEdit() : startEdit(u))}
+                                className="bg-transparent border border-border rounded px-2 py-1 cursor-pointer text-[0.8rem]"
+                              >
+                                ✏️
+                              </button>
+                            )}
+                            {u.id !== user.id && (
                               <button
                                 onClick={() => {
                                   void del(u);
@@ -383,8 +421,8 @@ export function UsuarisTab() {
                               >
                                 🗑️
                               </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                         {editDraft && editDraft.username === u.username && (
                           <form
@@ -458,6 +496,75 @@ export function UsuarisTab() {
                               <button
                                 type="button"
                                 onClick={() => setEditDraft(null)}
+                                className={`${secondaryButtonClass} flex-1 p-2 text-[0.8rem]`}
+                              >
+                                Cancel·la
+                              </button>
+                            </div>
+                          </form>
+                        )}
+                        {pwDraft && u.id === user.id && (
+                          <form
+                            onSubmit={(e) => {
+                              void submitPassword(e);
+                            }}
+                            className="border-t border-primary bg-soft p-3"
+                          >
+                            <div className="text-[0.8rem] font-semibold mb-2">
+                              Canviar contrasenya · {u.username}
+                            </div>
+                            <label className="block text-[0.8rem] italic mb-2">
+                              Contrasenya actual:
+                              <input
+                                type="password"
+                                autoComplete="current-password"
+                                value={pwDraft.current}
+                                onChange={(e) =>
+                                  setPwDraft((d) => (d ? { ...d, current: e.target.value } : d))
+                                }
+                                className={`${inputClass} bg-white`}
+                                required
+                              />
+                            </label>
+                            <label className="block text-[0.8rem] italic mb-2">
+                              Nova contrasenya:
+                              <input
+                                type="password"
+                                autoComplete="new-password"
+                                minLength={6}
+                                value={pwDraft.next}
+                                onChange={(e) =>
+                                  setPwDraft((d) => (d ? { ...d, next: e.target.value } : d))
+                                }
+                                className={`${inputClass} bg-white`}
+                                required
+                              />
+                            </label>
+                            <label className="block text-[0.8rem] italic mb-2">
+                              Repeteix la nova contrasenya:
+                              <input
+                                type="password"
+                                autoComplete="new-password"
+                                minLength={6}
+                                value={pwDraft.repeat}
+                                onChange={(e) =>
+                                  setPwDraft((d) => (d ? { ...d, repeat: e.target.value } : d))
+                                }
+                                className={`${inputClass} bg-white`}
+                                required
+                              />
+                            </label>
+                            <div className="flex gap-2 mt-1">
+                              <button
+                                type="submit"
+                                disabled={pwSubmitting}
+                                className={`${primaryButtonClass} flex-1 p-2 text-[0.8rem] disabled:opacity-70`}
+                              >
+                                {pwSubmitting ? "Guardant..." : "Guardar"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPwDraft(null)}
                                 className={`${secondaryButtonClass} flex-1 p-2 text-[0.8rem]`}
                               >
                                 Cancel·la

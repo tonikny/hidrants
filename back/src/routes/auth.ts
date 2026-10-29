@@ -80,6 +80,39 @@ export const logout: ApiHandler = async (req, res) => {
 };
 
 /**
+ * Canvi de la pròpia contrasenya
+ * PUT /api/auth/password
+ * Body: { currentPassword, newPassword }
+ */
+export const changePassword: ApiHandler = async (req, res) => {
+  const userId = req.user!.id;
+  const { currentPassword, newPassword } = req.body ?? {};
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "Cal indicar la contrasenya actual i la nova" });
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    return res
+      .status(400)
+      .json({ error: "La contrasenya nova ha de tenir com a mínim 6 caràcters" });
+  }
+
+  const user = db.select().from(users).where(eq(users.id, userId)).get();
+  if (!user || !bcrypt.compareSync(currentPassword, user.password_hash)) {
+    return res.status(401).json({ error: "La contrasenya actual no és correcta" });
+  }
+
+  const hash = bcrypt.hashSync(newPassword, 10);
+  db.update(users).set({ password_hash: hash }).where(eq(users.id, userId)).run();
+
+  req.log
+    .child({ module: "auth", operation: "changePassword" })
+    .info({ username: user.username }, "Contrasenya actualitzada");
+
+  return res.json({ success: true });
+};
+
+/**
  * Get current user
  * GET /api/auth/me
  */

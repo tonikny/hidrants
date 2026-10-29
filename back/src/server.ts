@@ -12,7 +12,7 @@ import municipisList from "./routes/municipis.js";
 import boundary from "./routes/boundary.js";
 import hidrants from "./routes/hidrants.js";
 import incidencies from "./routes/incidencies.js";
-import { login, me, logout } from "./routes/auth.js";
+import { login, me, logout, changePassword } from "./routes/auth.js";
 import users from "./routes/users.js";
 import tracking from "./routes/tracking.js";
 import trackingSharing from "./routes/trackingSharing.js";
@@ -240,6 +240,7 @@ const routes = [
   { path: "/api/auth/login", handler: login },
   { path: "/api/auth/logout", handler: logout },
   { path: "/api/auth/me", handler: me },
+  { path: "/api/auth/password", handler: changePassword, protected: true },
   { path: "/api/config", handler: appConfig },
   { path: "/api/overpass", handler: overpass },
   { path: "/api/hidrants/sync", handler: hidrants, protected: true },

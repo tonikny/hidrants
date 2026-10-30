@@ -92,6 +92,9 @@ export function LeafletMap({
   features,
   loadingHidrants,
   hidrantsError,
+  hidrantsEmpty,
+  canSyncFromOsm,
+  onDismissEmptyHidrants,
   refreshHidrants,
   incidenciaFeatures,
   loadingIncidencies,
@@ -119,6 +122,9 @@ export function LeafletMap({
   features: HidrantFeature[];
   loadingHidrants: boolean;
   hidrantsError: string | null;
+  hidrantsEmpty?: boolean;
+  canSyncFromOsm?: boolean;
+  onDismissEmptyHidrants?: () => void;
   refreshHidrants: () => void;
   incidenciaFeatures: IncidenciaFeature[];
   loadingIncidencies: boolean;
@@ -260,6 +266,9 @@ export function LeafletMap({
         <MapUIOverlays
           loadingHidrants={loadingHidrants}
           hidrantsError={hidrantsError}
+          emptyHidrants={hidrantsEmpty}
+          canSyncFromOsm={canSyncFromOsm}
+          onDismissEmptyHidrants={onDismissEmptyHidrants}
           setLocatePosition={setPosition}
           setLocateAccuracy={setAccuracy}
         />

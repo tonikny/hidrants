@@ -52,6 +52,7 @@ Per importar hidrants des d'OSM:
 3. Compara amb l'estat local i aplica les següents regles:
    - Hidrants `SYNCED`: S'actualitzen si OSM té versions més noves
    - Hidrants `PENDING_CREATE`: Es mantenen locals (no es toquen)
+   - Hidrants que ja no són a OSM: es marquen `MISSING_IN_OSM` (no s'esborren; es conserven amb les dades locals)
    - Hidrants `PENDING_UPDATE/PENDING_DELETE`: Es marquen com `CONFLICT` si OSM és més nou
    - Altres estats (`CONFLICT`, `ERROR`, `REVIEW`): Es mantenen sense canvis
 
@@ -156,6 +157,7 @@ Comparació visual entre tags locals vs OSM:
 | Estat            | Color | Descripció                  | Accions disponibles                              |
 | ---------------- | ----- | --------------------------- | ------------------------------------------------ |
 | `SYNCED`         | 🟢    | Sincronitzat amb OSM        | Modificar, baixar, pujar                         |
+| `MISSING_IN_OSM` | ⚪    | Ja no és a OSM              | Esborrar de la BD (purga manual)                 |
 | `PENDING_CREATE` | 🔵    | Nou hidrant local per crear | Pujar, descartar                                 |
 | `PENDING_UPDATE` | 🔵    | Canvi local per pujar       | Pujar, descartar, veure diferències              |
 | `PENDING_DELETE` | 🔵    | Marcat per esborrar         | Pujar (esborrar), descartar                      |

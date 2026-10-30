@@ -21,11 +21,18 @@ interface SyncStats {
   CONFLICT: number;
   ERROR: number;
   REVIEW: number;
+  MISSING_IN_OSM: number;
   total_pending: number;
 }
 
 type SectionKey =
-  "PENDING_CREATE" | "PENDING_UPDATE" | "PENDING_DELETE" | "CONFLICT" | "ERROR" | "REVIEW";
+  | "PENDING_CREATE"
+  | "PENDING_UPDATE"
+  | "PENDING_DELETE"
+  | "CONFLICT"
+  | "ERROR"
+  | "REVIEW"
+  | "MISSING_IN_OSM";
 
 const SECTION_CONFIG: Record<SectionKey, { label: string; color: string; hint: string }> = {
   PENDING_CREATE: {
@@ -57,6 +64,11 @@ const SECTION_CONFIG: Record<SectionKey, { label: string; color: string; hint: s
     label: "Per revisar",
     color: "text-yellow-600",
     hint: "Dades amb warnings de validació. Revisa-les abans de pujar.",
+  },
+  MISSING_IN_OSM: {
+    label: "Ja no són a OSM",
+    color: "text-muted",
+    hint: "L'últim pull no els ha trobat a OSM. Es conserven amb les seves dades locals fins que els esborris.",
   },
 };
 
@@ -175,6 +187,7 @@ export function OsmSyncPanel({
       CONFLICT: [],
       ERROR: [],
       REVIEW: [],
+      MISSING_IN_OSM: [],
     },
   );
 
@@ -380,6 +393,34 @@ export function OsmSyncPanel({
     }
   };
 
+  /** Purga manual dels hidrants que ja no són a OSM (no s'esborren durant el pull). */
+  const handlePurgeMissing = async (adfId: number, ids?: string[]) => {
+    const msg =
+      ids && ids.length > 0
+        ? `Esborrar definitivament ${ids.length} hidrant(s) de la base de dades?\nLes seves dades locals (observacions incloses) es perdran.`
+        : `Esborrar definitivament tots els hidrants d'aquesta ADF que ja no són a OSM?\nLes seves dades locals (observacions incloses) es perdran.`;
+    if (!window.confirm(msg)) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/osm/missing/purge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adf_id: adfId, ids }),
+      });
+      const data = await res.json();
+      toast.success(`${data.deleted ?? 0} hidrants esborrats`);
+      setSelected(new Set());
+      refreshHydrants();
+      void reload();
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handlePullFromOsm = async (id: string, label: string) => {
     if (
       !window.confirm(`Aplicar versió d'OSM a "${label}"?\nLes dades locals es sobreescriuran.`)
@@ -482,7 +523,7 @@ export function OsmSyncPanel({
                     <span className={`text-[0.8rem] font-semibold ${config.color}`}>
                       {isOpen ? "▾" : "▸"} {config.label} ({items.length})
                     </span>
-                    {isOpen && (
+                    {isOpen && key !== "MISSING_IN_OSM" && (
                       <span
                         onClick={(e) => {
                           e.stopPropagation();
@@ -501,6 +542,15 @@ export function OsmSyncPanel({
                   {isOpen && (
                     <div className="px-3 py-1 text-[0.7rem] text-muted bg-bg/50 border-t border-border">
                       {config.hint}
+                      {key === "MISSING_IN_OSM" && activeAdf && (
+                        <button
+                          onClick={() => void handlePurgeMissing(activeAdf.id)}
+                          disabled={actionLoading}
+                          className="ml-2 text-[0.7rem] px-1.5 py-0.5 bg-white text-red-600 border border-border rounded cursor-pointer disabled:opacity-50"
+                        >
+                          Esborrar-los tots
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -514,12 +564,14 @@ export function OsmSyncPanel({
                             key={h.id}
                             className="flex items-start gap-2 px-3 py-2 border-t border-border"
                           >
-                            <input
-                              type="checkbox"
-                              checked={selected.has(h.id)}
-                              onChange={() => toggleSelect(h.id)}
-                              className="mt-0.5"
-                            />
+                            {key !== "MISSING_IN_OSM" && (
+                              <input
+                                type="checkbox"
+                                checked={selected.has(h.id)}
+                                onChange={() => toggleSelect(h.id)}
+                                className="mt-0.5"
+                              />
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <button
@@ -584,19 +636,32 @@ export function OsmSyncPanel({
                                   ↑
                                 </button>
                               )}
-                              {/* Descartar: tots */}
-                              <button
-                                onClick={() => void handleDiscardOne(h.id, key, hydrantLabel(h))}
-                                disabled={actionLoading}
-                                className="text-[0.7rem] px-1.5 py-0.5 bg-white border border-border rounded cursor-pointer disabled:opacity-50"
-                                title={
-                                  key === "PENDING_CREATE"
-                                    ? "Esborrar de la BD"
-                                    : "Revertir als valors d'OSM? Es perdràn els canvis locals."
-                                }
-                              >
-                                ✕
-                              </button>
+                              {/* Ja no és a OSM → purga manual; la resta → descartar */}
+                              {key === "MISSING_IN_OSM" ? (
+                                <button
+                                  onClick={() =>
+                                    activeAdf && void handlePurgeMissing(activeAdf.id, [h.id])
+                                  }
+                                  disabled={actionLoading}
+                                  className="text-[0.7rem] px-1.5 py-0.5 bg-white text-red-600 border border-border rounded cursor-pointer disabled:opacity-50"
+                                  title="Esborrar definitivament de la base de dades"
+                                >
+                                  🗑
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => void handleDiscardOne(h.id, key, hydrantLabel(h))}
+                                  disabled={actionLoading}
+                                  className="text-[0.7rem] px-1.5 py-0.5 bg-white border border-border rounded cursor-pointer disabled:opacity-50"
+                                  title={
+                                    key === "PENDING_CREATE"
+                                      ? "Esborrar de la BD"
+                                      : "Revertir als valors d'OSM? Es perdràn els canvis locals."
+                                  }
+                                >
+                                  ✕
+                                </button>
+                              )}
                             </div>
                           </div>
                         );

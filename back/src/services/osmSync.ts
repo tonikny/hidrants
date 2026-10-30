@@ -99,7 +99,8 @@ export async function syncAdfFromOSM(adfId: number, force = false) {
         const status = existing.sync_status;
 
         // Si és SYNCED → actualitzar normalment (ciclo inferior)
-        if (status === "SYNCED") {
+        // Si havia desaparegut d'OSM i hi torna → es restaura com a SYNCED
+        if (status === "SYNCED" || status === "MISSING_IN_OSM") {
           // cau al cicle inferior d'inserció/actualització
         } else {
           // Qualsevol altre estat local → no sobreescriure locals
@@ -159,6 +160,11 @@ export async function syncAdfFromOSM(adfId: number, force = false) {
       // Per force=true, el remote ja es va guardar al principi
       // (si existing existeix, saveRemoteData ja s'ha cridat)
 
+      // FORAT CONEGUT: la coincidència amb el que tenim és només per osm_id. Si algú ha
+      // creat un hidrant local (PENDING_CREATE) exactament on OSM ja en té un, aquí
+      // s'insereix una fila nova i en queden dos marcadors quasi superposats; publicar
+      // el pendent crearia un node duplicat a OSM. Per això els canvis es validen a mà
+      // abans de pujar-los (vegeu el panell OSM → «Canvis pendents»).
       const id = existing ? existing.id : uuidv4();
 
       tx.insert(hidrants)
@@ -190,42 +196,43 @@ export async function syncAdfFromOSM(adfId: number, force = false) {
         .run();
     }
 
-    // Neteja d'hidrants esborrats a OSM
-    // NOMÉS esborrem si hem pogut consultar TOTES les relacions de l'ADF amb èxit
+    // Hidrants que ja no són a OSM: NO s'esborren. Es marquen com a MISSING_IN_OSM i
+    // es conserven amb totes les seves dades locals (private_tags inclosos) fins que
+    // un admin els purgui des del panell OSM. Així un pull erroni, una resposta
+    // parcial d'Overpass o una relació mal configurada no destrueixen res.
+    // NOMÉS es marca si hem pogut consultar TOTES les relacions de l'ADF amb èxit.
     if (successCount === relations.length) {
       const currentOsmIds = uniqueElements.map((n) => n.id);
 
-      if (currentOsmIds.length > 0) {
-        tx.delete(hidrants)
-          .where(
-            and(
+      const missingCondition =
+        currentOsmIds.length > 0
+          ? and(
               eq(hidrants.adf_id, adfId),
               eq(hidrants.sync_status, "SYNCED"),
               notInArray(hidrants.osm_id, currentOsmIds as number[]),
-            ),
-          )
-          .run();
+            )
+          : and(eq(hidrants.adf_id, adfId), eq(hidrants.sync_status, "SYNCED"));
 
-        log.info(
-          {
-            adfId,
-            syncedRelations: successCount,
-            totalRelations: relations.length,
-            currentOsmIds: currentOsmIds.length,
-            cleanedIds: currentOsmIds,
-          },
-          "Neteja d'hidrants esborrats a OSM",
-        );
-      } else {
-        tx.delete(hidrants)
-          .where(and(eq(hidrants.adf_id, adfId), eq(hidrants.sync_status, "SYNCED")))
-          .run();
-        log.warn({ adfId }, "Netejant tots els hidrants SYNCED (no hi ha IDs OSM)");
-      }
+      const marked = tx
+        .update(hidrants)
+        .set({ sync_status: "MISSING_IN_OSM", updated_at: syncTimestamp })
+        .where(missingCondition)
+        .run().changes;
+
+      log.warn(
+        {
+          adfId,
+          markedMissing: marked,
+          syncedRelations: successCount,
+          totalRelations: relations.length,
+          currentOsmIds: currentOsmIds.length,
+        },
+        "Hidrants que ja no són a OSM: marcats com a MISSING_IN_OSM (no esborrats)",
+      );
     } else {
       log.warn(
         { adfId, successCount, totalRelations: relations.length },
-        "Saltant neteja per errors en relacions",
+        "Saltant detecció d'hidrants que ja no són a OSM per errors en relacions",
       );
     }
   });

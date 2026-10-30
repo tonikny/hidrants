@@ -9,6 +9,7 @@ import sendToTelegram from "./routes/sendToTelegram.js";
 import route from "./routes/route.js";
 import municipi from "./routes/municipi.js";
 import municipisList from "./routes/municipis.js";
+import adfBoundaries from "./routes/adfBoundaries.js";
 import boundary from "./routes/boundary.js";
 import hidrants from "./routes/hidrants.js";
 import incidencies from "./routes/incidencies.js";
@@ -250,6 +251,8 @@ const routes = [
   { path: "/api/route", handler: route },
   { path: "/api/adf", handler: municipi },
   { path: "/api/adfs", handler: municipisList },
+  { path: "/api/adfs/:id", handler: municipisList },
+  { path: "/api/adfs/:id/boundaries", handler: adfBoundaries, protected: true },
   { path: "/api/adf/boundary", handler: boundary },
   { path: "/api/incidencies", handler: incidencies },
   { path: "/api/incidencies/:id", handler: incidencies },

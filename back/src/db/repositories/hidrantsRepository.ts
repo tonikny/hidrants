@@ -1,6 +1,6 @@
 import { db } from "../index.js";
 import { hidrants } from "../schema.js";
-import { count, eq, and, ne, sql, inArray } from "drizzle-orm";
+import { count, eq, and, ne, inArray, notInArray } from "drizzle-orm";
 
 function nowISO(): string {
   return new Date().toISOString();
@@ -8,6 +8,7 @@ function nowISO(): string {
 
 type SyncStatus =
   | "SYNCED"
+  | "MISSING_IN_OSM"
   | "PENDING_CREATE"
   | "PENDING_UPDATE"
   | "PENDING_DELETE"
@@ -48,7 +49,13 @@ export const HidrantsRepository = {
     return db
       .select()
       .from(hidrants)
-      .where(and(eq(hidrants.adf_id, adfId), ne(hidrants.sync_status, "PENDING_DELETE")))
+      .where(
+        and(
+          eq(hidrants.adf_id, adfId),
+          // El que s'esborrarà aviat i el que ja no és a OSM no es pinten al mapa.
+          notInArray(hidrants.sync_status, ["PENDING_DELETE", "MISSING_IN_OSM"]),
+        ),
+      )
       .all() as HidrantData[];
   },
 
@@ -63,26 +70,6 @@ export const HidrantsRepository = {
   findByOsmId(osmId: number): HidrantData | undefined {
     return db.select().from(hidrants).where(eq(hidrants.osm_id, osmId)).get() as
       HidrantData | undefined;
-  },
-
-  findNearbyPending(
-    lat: number,
-    lon: number,
-    adfId: number,
-    threshold = 0.00003,
-  ): HidrantData | undefined {
-    return db
-      .select()
-      .from(hidrants)
-      .where(
-        and(
-          eq(hidrants.adf_id, adfId),
-          eq(hidrants.sync_status, "PENDING_CREATE"),
-          sql`abs(${hidrants.lat} - ${lat}) < ${threshold}`,
-          sql`abs(${hidrants.lon} - ${lon}) < ${threshold}`,
-        ),
-      )
-      .get() as HidrantData | undefined;
   },
 
   /**
@@ -268,6 +255,7 @@ export const HidrantsRepository = {
 
     const stats = {
       SYNCED: 0,
+      MISSING_IN_OSM: 0,
       PENDING_CREATE: 0,
       PENDING_UPDATE: 0,
       PENDING_DELETE: 0,
@@ -281,13 +269,38 @@ export const HidrantsRepository = {
       const status = res.status as keyof typeof stats;
       if (status in stats) {
         stats[status] = res.count;
-        if (status !== "SYNCED" && status !== "CONFLICT" && status !== "ERROR") {
+        if (
+          status !== "SYNCED" &&
+          status !== "CONFLICT" &&
+          status !== "ERROR" &&
+          status !== "MISSING_IN_OSM"
+        ) {
           stats.total_pending += res.count;
         }
       }
     }
 
     return stats;
+  },
+
+  /**
+   * Esborrar definitivament els hidrants marcats com a MISSING_IN_OSM (el pull no
+   * els ha trobat a OSM). Cal indicar ids concrets o una ADF: mai tota la base.
+   * Retorna el nombre de files esborrades.
+   */
+  purgeMissingInOsm(opts: { adfId?: number; ids?: string[] }): number {
+    const conditions = [eq(hidrants.sync_status, "MISSING_IN_OSM")];
+    if (opts.ids && opts.ids.length > 0) {
+      conditions.push(inArray(hidrants.id, opts.ids));
+    } else if (opts.adfId) {
+      conditions.push(eq(hidrants.adf_id, opts.adfId));
+    } else {
+      return 0;
+    }
+    return db
+      .delete(hidrants)
+      .where(and(...conditions))
+      .run().changes;
   },
 
   markReview(id: string, issues: Array<{ tag: string; level: string; message: string }>) {

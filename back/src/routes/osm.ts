@@ -24,6 +24,7 @@ import { eq } from "drizzle-orm";
  * GET  /api/osm/conflicts/osc  → descarregar .osc únic amb tots els conflictes
  * POST /api/osm/conflicts/resolve → resoldre un conflicte després de JOSM
  * GET  /api/osm/reviews        → hidrants amb dades per revisar abans de pujar
+ * POST /api/osm/missing/purge  → esborrar definitivament els hidrants que ja no són a OSM
  */
 const handler: ApiHandler = async (req, res) => {
   const { method, url, body } = req;
@@ -168,6 +169,21 @@ const handler: ApiHandler = async (req, res) => {
     }
     const resolved = await resolveAfterJOSM(id);
     return res.json({ resolved });
+  }
+
+  // POST /api/osm/missing/purge — purgar els hidrants marcats com a MISSING_IN_OSM
+  if (method === "POST" && path === "/api/osm/missing/purge") {
+    const adfId = body?.adf_id ? Number(body.adf_id) : undefined;
+    const ids =
+      Array.isArray(body?.ids) && body.ids.length > 0 ? (body.ids as string[]) : undefined;
+    if (!adfId && !ids) {
+      throw new BadRequestError("Cal especificar adf_id o els ids a esborrar");
+    }
+    const deleted = HidrantsRepository.purgeMissingInOsm({ adfId, ids });
+    req.log
+      .child({ module: "osm", operation: "purgeMissing" })
+      .info({ adfId, ids: ids?.length, deleted }, "Hidrants que ja no són a OSM esborrats");
+    return res.json({ deleted });
   }
 
   // GET /api/osm/reviews

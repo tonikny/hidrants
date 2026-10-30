@@ -37,6 +37,7 @@ export function useHydrantData() {
   const { activeAdf } = useAdf();
   const [features, setFeatures] = useState<HidrantFeature[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
   const loadedAdfIdRef = useRef<number | null>(null);
@@ -49,6 +50,7 @@ export function useHydrantData() {
       setFeatures([]);
       setError(null);
       setLoading(false);
+      setLoaded(false);
       return;
     }
 
@@ -58,6 +60,7 @@ export function useHydrantData() {
       loadedAdfIdRef.current = adfId;
       setFeatures([]);
       setError(null);
+      setLoaded(false);
     }
 
     const requestId = ++requestIdRef.current;
@@ -84,6 +87,7 @@ export function useHydrantData() {
     } finally {
       if (requestId === requestIdRef.current) {
         setLoading(false);
+        setLoaded(true);
       }
     }
   }, [activeAdf]);
@@ -93,5 +97,5 @@ export function useHydrantData() {
     void fetchData();
   }, [fetchData]);
 
-  return { features, loading, error, mutate: fetchData };
+  return { features, loading, loaded, error, mutate: fetchData };
 }

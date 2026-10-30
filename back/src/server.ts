@@ -274,6 +274,7 @@ const routes = [
   { path: "/api/osm/conflicts", handler: osm, protected: true },
   { path: "/api/osm/conflicts/osc", handler: osm, protected: true },
   { path: "/api/osm/conflicts/resolve", handler: osm, protected: true },
+  { path: "/api/osm/missing/purge", handler: osm, protected: true },
   { path: "/api/osm/pull-hydrant", handler: osm, protected: true },
   { path: "/api/osm/diff/:id", handler: osm, protected: true },
   { path: "/api/osm/reviews", handler: osm, protected: true },

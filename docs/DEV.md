@@ -295,15 +295,18 @@ Descarrega via Overpass per les `osm_relations` de l'ADF.
 
 **Comportament segons estat local:**
 
-| Estat local      | Pull normal                                 | Pull `force=true`      |
-| ---------------- | ------------------------------------------- | ---------------------- |
-| `SYNCED`         | Actualitza des d'OSM                        | Actualitza des d'OSM   |
-| `PENDING_CREATE` | No toca (es manté)                          | Sobreescriu → `SYNCED` |
-| `PENDING_UPDATE` | No toca si local més nou; sinó → `CONFLICT` | Sobreescriu → `SYNCED` |
-| `PENDING_DELETE` | No toca                                     | Torna d'OSM → `SYNCED` |
-| `CONFLICT`       | No toca                                     | Sobreescriu → `SYNCED` |
-| `ERROR`          | No toca                                     | Sobreescriu → `SYNCED` |
-| `REVIEW`         | No toca                                     | Sobreescriu → `SYNCED` |
+| Estat local      | Pull normal                                 | Pull `force=true`        |
+| ---------------- | ------------------------------------------- | ------------------------ |
+| `SYNCED`         | Actualitza des d'OSM                        | Actualitza des d'OSM     |
+| `MISSING_IN_OSM` | Es restaura → `SYNCED` si OSM el té         | Igual que el pull normal |
+| `PENDING_CREATE` | No toca (es manté)                          | Sobreescriu → `SYNCED`   |
+| `PENDING_UPDATE` | No toca si local més nou; sinó → `CONFLICT` | Sobreescriu → `SYNCED`   |
+| `PENDING_DELETE` | No toca                                     | Torna d'OSM → `SYNCED`   |
+| `CONFLICT`       | No toca                                     | Sobreescriu → `SYNCED`   |
+| `ERROR`          | No toca                                     | Sobreescriu → `SYNCED`   |
+| `REVIEW`         | No toca                                     | Sobreescriu → `SYNCED`   |
+
+Els hidrants que hi havia a la BD i ja no apareixen a OSM **no s'esborren**: es marquen `MISSING_IN_OSM`, es conserven amb `osm_tags` i `private_tags` i s'amaguen del mapa. La purga és manual: panell OSM → secció «Ja no són a OSM» (🗑 per fila o «Esborrar-los tots») o `POST /api/osm/missing/purge` amb `{ adf_id }` o `{ ids }`.
 
 ### 9.3 Push sync (publicació)
 
@@ -354,6 +357,7 @@ Addicional: majúscules ≥3 caràcters → warning; tag >255 caràcters → err
 | Estat            | Significat                               |
 | ---------------- | ---------------------------------------- |
 | `SYNCED`         | Sincronitzat amb OSM                     |
+| `MISSING_IN_OSM` | Ja no és a OSM; es conserva localment    |
 | `PENDING_CREATE` | Nou local, pendent crear                 |
 | `PENDING_UPDATE` | Modificat localment, pendent actualitzar |
 | `PENDING_DELETE` | Marcat per esborrar                      |
@@ -414,7 +418,7 @@ Tots els `POST/PUT/DELETE` d'hidrants i incidències requereixen sessió (`auth_
 | `/api/hidrants?adf=ID`       | GET    | no                    | GeoJSON hidrants ADF (`back/src/routes/hidrants.ts:48`, `Cache-Control: no-cache`)             |
 | `/api/hidrants`              | POST   | sí (`create_hydrant`) | Crea hidrant local `PENDING_CREATE` `{ lat, lon, ui_fields?, private_tags? }`                  |
 | `/api/hidrants/:id`          | PUT    | sí (`edit_hydrant`)   | Actualitza `{ lat?, lon?, ui_fields?, private_tags? }`; valida límit `max_hydrant_move_meters` |
-| `/api/hidrants/:id?id=ID`    | DELETE | sí (`delete_hydrant`) | Marca `PENDING_DELETE` (esborra directe si era `PENDING_CREATE`)                               |
+| `/api/hidrants/:id?id=ID`    | DELETE | sí (`delete_hydrant`) | Marca `PENDING_DELETE` (esborra directe si era `PENDING_CREATE` o `MISSING_IN_OSM`)            |
 | `/api/hidrants/sync?adf=ID`  | POST   | sí (`sync_osm`)       | Pull Overpass (vegeu §9.2)                                                                     |
 | `/api/hidrants/stats?adf=ID` | GET    | no                    | Comptadors per `sync_status`                                                                   |
 

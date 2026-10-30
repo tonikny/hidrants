@@ -27,6 +27,7 @@ export const hidrants = sqliteTable(
     sync_status: text("sync_status", {
       enum: [
         "SYNCED",
+        "MISSING_IN_OSM",
         "PENDING_CREATE",
         "PENDING_UPDATE",
         "PENDING_DELETE",

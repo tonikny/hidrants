@@ -38,11 +38,14 @@ export function MapPanel() {
   const [position, setPosition] = useState<L.LatLng | null>(null);
   const [showRoute, setShowRoute] = useState(false);
   const [nodeInfoKey, setNodeInfoKey] = useState(0); // Nova clau per forzar re-render
+  // Avís d'ADF sense hidrants: es tanca per ADF i no torna a sortir fins a canviar-ne.
+  const [emptyNoticeDismissedFor, setEmptyNoticeDismissedFor] = useState<number | null>(null);
   const sheetRef = useRef<BottomSheetHandle>(null);
 
   const {
     features,
     loading: loadingHidrants,
+    loaded: hidrantsLoaded,
     error: hidrantsError,
     mutate: refreshHidrants,
   } = useHydrantData();
@@ -187,6 +190,13 @@ export function MapPanel() {
           features={features}
           loadingHidrants={loadingHidrants}
           hidrantsError={hidrantsError}
+          hidrantsEmpty={
+            hidrantsLoaded &&
+            features.length === 0 &&
+            emptyNoticeDismissedFor !== (activeAdf?.id ?? null)
+          }
+          canSyncFromOsm={(user?.permissions ?? []).includes("sync_osm")}
+          onDismissEmptyHidrants={() => setEmptyNoticeDismissedFor(activeAdf?.id ?? null)}
           refreshHidrants={() => {
             void refreshHidrants();
           }}

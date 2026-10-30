@@ -18,10 +18,6 @@ import {
   hasPositionChanged,
   MAX_HYDRANT_MOVE_METERS,
 } from "../utils/geo.js";
-import { logger } from "../utils/logger.js";
-
-const log = logger.child({ module: "hidrants", operation: "service" });
-
 /**
  * Parseja un camp de text que hauria de contenir un objecte JSON.
  * Retorna {} si és buit o malmès perquè una fila defectuosa no faci
@@ -64,17 +60,10 @@ export const HidrantsService = {
   },
 
   async getGeoJson(adfId: number) {
-    const count = HidrantsRepository.countByAdf(adfId);
-
-    if (count === 0) {
-      log.info({ adfId }, "Inicialitzant dades per ADF");
-      try {
-        await syncAdfFromOSM(adfId);
-      } catch (syncErr) {
-        log.error({ err: syncErr, adfId }, "Error a la sincronització inicial d'OSM");
-      }
-    }
-
+    // Lectura pura: aquí no es fa cap pull d'OSM. Baixar els hidrants és una acció
+    // explícita (panell OSM → "Baixar d'OSM", o POST /api/hidrants/sync), de manera
+    // que una recàrrega de la pàgina no depèn de cap servei extern ni es queda
+    // esperant Overpass.
     const rows = HidrantsRepository.findActiveByAdf(adfId);
 
     const features = rows.map((row) => {
@@ -280,7 +269,11 @@ export const HidrantsService = {
       throw new NotFoundError("Hydrant not found");
     }
 
-    if (current.sync_status === "PENDING_CREATE") {
+    // PENDING_CREATE: mai publicat a OSM. MISSING_IN_OSM: ja no és a OSM, així que no
+    // hi ha res a esborrar allà. En tots dos casos la fila desapareix directament de la
+    // BD; marcar-lo PENDING_DELETE faria que el push intentés esborrar a OSM un node
+    // inexistent i el deixés en ERROR.
+    if (current.sync_status === "PENDING_CREATE" || current.sync_status === "MISSING_IN_OSM") {
       HidrantsRepository.delete(id);
     } else {
       HidrantsRepository.markForDeletion(id);

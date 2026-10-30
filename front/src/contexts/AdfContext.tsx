@@ -20,6 +20,7 @@ interface AdfContextType {
   isLoading: boolean;
   error: string | null;
   boundaryGeojson: string | null;
+  refreshAdfs: () => Promise<AdfData[]>;
 }
 
 const AdfContext = createContext<AdfContextType | undefined>(undefined);
@@ -49,6 +50,17 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     },
     [setAuthActiveAdfId],
   );
+
+  /** Torna a carregar la llista d'ADFs (després de crear, editar o eliminar-ne una). */
+  const refreshAdfs = useCallback(async () => {
+    const response = await fetch("/api/adfs");
+    if (!response.ok) {
+      throw new Error("Error carregant ADFs");
+    }
+    const data = (await response.json()) as AdfData[];
+    setAdfs(data);
+    return data;
+  }, []);
 
   // Carregar llista d'ADFs inicial
   useEffect(() => {
@@ -118,8 +130,8 @@ export const AdfProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const boundaryGeojson = activeAdf ? boundaryGeojsonRaw : null;
 
   const value = useMemo(
-    () => ({ activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson }),
-    [activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson],
+    () => ({ activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson, refreshAdfs }),
+    [activeAdf, setActiveAdf, adfs, isLoading, error, boundaryGeojson, refreshAdfs],
   );
 
   return <AdfContext.Provider value={value}>{children}</AdfContext.Provider>;

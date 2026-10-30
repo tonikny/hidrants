@@ -57,7 +57,7 @@ mosquitto:
     - ./mosquitto/certs:/mosquitto/certs:ro
     - /etc/letsencrypt:/etc/letsencrypt:ro # backup
   healthcheck:
-    test: ['CMD', 'pidof', 'mosquitto']
+    test: ["CMD", "pidof", "mosquitto"]
     interval: 60s
     start_period: 10s
 ```
@@ -79,13 +79,36 @@ sudo chown 1883:1883 mosquitto/certs/privkey.pem
 
 `scripts/copy-mosquitto-certs.sh` (versionat) copia i reinicia Mosquitto quan certbot renova. Llegeix el domini de `OTRC_HOST` a `back/.env` (no hi ha hostname hardcodejat al repo).
 
-Instal·lar:
+Instal·lar (un sol cop). El `chmod` el pot fer l'usuari de desplegament, que és el propietari del repo; l'enllaç a `/etc/letsencrypt` i `certbot` requereixen root:
 
 ```bash
-sudo chmod +x scripts/copy-mosquitto-certs.sh
-sudo ln -s "$(pwd)/scripts/copy-mosquitto-certs.sh" \
+# usuari de desplegament (deployuser), dins del repo
+chmod +x scripts/copy-mosquitto-certs.sh
+
+# usuari amb sudo
+sudo mkdir -p /etc/letsencrypt/renewal-hooks/deploy
+sudo ln -sf "$(pwd)/scripts/copy-mosquitto-certs.sh" \
   /etc/letsencrypt/renewal-hooks/deploy/copy-mosquitto-certs.sh
 ```
+
+`deployuser` **no necessita sudo en cap moment**: el hook l'executa certbot (timer de systemd) com a root, i dins del script no hi ha cap crida a `sudo` (`cp`, `chmod`, `chown` i `docker compose restart` ja s'executen com a root). Per això tampoc no cal afegir-lo al grup `docker`.
+
+Conseqüència pràctica: per provar el hook manualment, fes-ho amb l'usuari amb sudo (`sudo /etc/letsencrypt/renewal-hooks/deploy/copy-mosquitto-certs.sh`). Executat com a `deployuser` fallaria al `chown` i al `docker compose restart`.
+
+Única excepció: si Docker és **rootless** per a `deployuser`, el `docker` de root no veu els contenidors i el `restart` del hook falla (`no such service: mosquitto`) tot i haver copiat els certs. Comprova-ho amb `sudo docker ps` (ha de llistar `hidrants-mosquitto`).
+
+L'script resol l'enllaç simbòlic abans de calcular la ruta del projecte: certbot l'executa amb `$0` apuntant a `/etc/letsencrypt/renewal-hooks/deploy/`, i sense `readlink` buscaria `back/.env` allà i sortiria amb `ERROR: no trobo OTRC_HOST a back/.env` (el hook falla, però certbot no ho fa visible i el broker es queda amb el certificat vell).
+
+Provar-lo tal com l'executa certbot, des de fora del repo:
+
+```bash
+cd / && sudo RENEWED_LINEAGE=/etc/letsencrypt/live/<DOMINI> \
+  /etc/letsencrypt/renewal-hooks/deploy/copy-mosquitto-certs.sh
+```
+
+Ha d'imprimir `Hook: certificat de <DOMINI> copiat...` i reiniciar el contenidor. Si surt l'error d'`OTRC_HOST`, l'enllaç apunta a un script vell sense la resolució de `readlink`.
+
+Com que copia sempre de `/etc/letsencrypt/live/<DOMINI>` (no de `$RENEWED_LINEAGE`), executar-lo amb `certbot renew --dry-run` no instal·la mai un certificat d'staging: com a molt reescriu el mateix.
 
 ---
 
@@ -191,10 +214,10 @@ cp mosquitto/data/mosquitto.db "/var/backups/hidrants/mosquitto/mosquitto.$(date
 
 ## 7. Resolució de problemes
 
-| Error                                                      | Causa                                                         | Solució                                                          |
-| ---------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Error                                                      | Causa                                                          | Solució                                                                                                           |
+| ---------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `Permission denied` al generar JSON                        | fitxer propietat del contenidor (root) i deployuser sense grup | Configurar accés compartit (secció 4): grup `mosquitto` + `chown root:mosquitto` + `chmod 2770/660` + default ACL |
-| `Not authorized` amb `mosquitto_sub -u backend`            | Password mismatch o format JSON incorrecte                    | Regenerar amb `init-dynsec.py` + Python directe                  |
-| `Not authorized` al healthcheck (antic)                    | `$SYS/#` amb DynSec és impredicible                           | Usar `pidof mosquitto` (ja configurat)                           |
-| Backend no connecta (`Connection refused: Not authorized`) | Password diferent entre `back/.env` i `dynamic-security.json` | Carregar des de `back/.env` amb Python directe, regenerar        |
-| `mosquitto_passwd` retorna error                           | Password passat per argument de shell té caràcters especials  | Usar `cat > /tmp/pw && mosquitto_passwd -U` (el script ja ho fa) |
+| `Not authorized` amb `mosquitto_sub -u backend`            | Password mismatch o format JSON incorrecte                     | Regenerar amb `init-dynsec.py` + Python directe                                                                   |
+| `Not authorized` al healthcheck (antic)                    | `$SYS/#` amb DynSec és impredicible                            | Usar `pidof mosquitto` (ja configurat)                                                                            |
+| Backend no connecta (`Connection refused: Not authorized`) | Password diferent entre `back/.env` i `dynamic-security.json`  | Carregar des de `back/.env` amb Python directe, regenerar                                                         |
+| `mosquitto_passwd` retorna error                           | Password passat per argument de shell té caràcters especials   | Usar `cat > /tmp/pw && mosquitto_passwd -U` (el script ja ho fa)                                                  |
